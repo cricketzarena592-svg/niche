@@ -1,0 +1,3087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Niche</title>
+
+<style>
+:root {
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --text: #171717;
+    --muted: #737373;
+    --border: #e5e5e5;
+    --hover: #f1f1f1;
+    --accent: #111111;
+    --accent-text: #ffffff;
+    --danger: #dc2626;
+    --shadow: 0 2px 12px rgba(0,0,0,.05);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background .2s, color .2s;
+}
+
+body.dark {
+    --bg: #0e0e0f;
+    --card: #171719;
+    --text: #f5f5f5;
+    --muted: #9b9b9f;
+    --border: #2b2b2f;
+    --hover: #222225;
+    --accent: #f5f5f5;
+    --accent-text: #111111;
+    --shadow: 0 2px 15px rgba(0,0,0,.25);
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* APP */
+
+.app {
+    min-height: 100vh;
+}
+
+.layout {
+    width: min(1400px, 100%);
+    margin: auto;
+    display: grid;
+    grid-template-columns: 230px minmax(0, 1fr) 280px;
+    min-height: 100vh;
+}
+
+/* LEFT SIDEBAR */
+
+.sidebar {
+    padding: 22px 14px;
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px 25px;
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.logo-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 17px;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.nav button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    padding: 12px 13px;
+    border-radius: 10px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+}
+
+.nav button:hover,
+.nav button.active {
+    background: var(--hover);
+}
+
+.nav-icon {
+    width: 22px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.create-side {
+    margin-top: 18px;
+    background: var(--accent) !important;
+    color: var(--accent-text) !important;
+    justify-content: center;
+}
+
+/* MAIN */
+
+.main {
+    min-width: 0;
+    border-right: 1px solid var(--border);
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 65px;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-btn,
+.icon-btn {
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 19px;
+}
+
+.back-btn:hover,
+.icon-btn:hover {
+    background: var(--hover);
+}
+
+.page-title {
+    font-size: 19px;
+    font-weight: 750;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.primary-btn {
+    border: 0;
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 9px 15px;
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+.primary-btn:hover {
+    opacity: .88;
+}
+
+/* CONTENT */
+
+.content {
+    padding: 20px;
+}
+
+.home-search {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.home-search input,
+.explore-search input {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 13px 16px 13px 42px;
+    outline: none;
+}
+
+.home-search input:focus,
+.explore-search input:focus {
+    border-color: var(--muted);
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+}
+
+/* COMPOSER */
+
+.composer {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 15px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+}
+
+.composer textarea {
+    display: block;
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.composer-bottom {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 9px;
+}
+
+/* POSTS */
+
+.feed {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.post {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+}
+
+.post-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.avatar {
+    width: 39px;
+    height: 39px;
+    flex: 0 0 39px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--hover);
+    font-weight: 800;
+}
+
+.user-name {
+    font-weight: 750;
+}
+
+.handle {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.post-menu {
+    position: relative;
+}
+
+.more-btn {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+}
+
+.more-btn:hover {
+    background: var(--hover);
+}
+
+.delete-btn {
+    position: absolute;
+    right: 0;
+    top: 35px;
+    z-index: 10;
+    display: none;
+    white-space: nowrap;
+    background: var(--card);
+    color: var(--danger);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 12px;
+    box-shadow: var(--shadow);
+}
+
+.post-menu.open .delete-btn {
+    display: block;
+}
+
+.post-content {
+    margin: 14px 0 12px;
+    font-size: 15px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.hashtag {
+    color: #3b82f6;
+    cursor: pointer;
+}
+
+body.dark .hashtag {
+    color: #60a5fa;
+}
+
+.post-niche {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--border);
+    background: var(--hover);
+    color: var(--text);
+    padding: 5px 9px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 11px;
+}
+
+.post-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+
+.action-btn {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    padding: 7px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.action-btn:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.like-btn.liked {
+    color: #ef4444;
+}
+
+.like-btn.like-pop {
+    animation: likePop .35s ease;
+}
+
+@keyframes likePop {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.35);
+    }
+    70% {
+        transform: scale(.92);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* COMMENTS */
+
+.comments {
+    display: none;
+    margin-top: 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+
+.comments.open {
+    display: block;
+}
+
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.comment {
+    background: var(--hover);
+    border-radius: 9px;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.comment strong {
+    margin-right: 5px;
+}
+
+.comment-form {
+    display: flex;
+    gap: 7px;
+}
+
+.comment-form input {
+    min-width: 0;
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 9px 10px;
+    outline: none;
+}
+
+.comment-form button {
+    border: 0;
+    background: var(--accent);
+    color: var(--accent-text);
+    border-radius: 8px;
+    padding: 0 13px;
+}
+
+/* RIGHTBAR */
+
+.rightbar {
+    padding: 20px 14px;
+}
+
+.right-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 14px;
+    margin-bottom: 13px;
+}
+
+.right-title {
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.niche-mini {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 5px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.niche-mini:hover {
+    background: var(--hover);
+}
+
+.niche-mini-emoji {
+    width: 30px;
+    text-align: center;
+    font-size: 20px;
+}
+
+.niche-mini-name {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.niche-mini-count {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* NICHE */
+
+.niche-header {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 16px;
+}
+
+.niche-title-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    align-items: center;
+}
+
+.niche-big {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.niche-big-emoji {
+    width: 55px;
+    height: 55px;
+    display: grid;
+    place-items: center;
+    background: var(--hover);
+    border-radius: 14px;
+    font-size: 28px;
+}
+
+.niche-big-name {
+    font-size: 25px;
+    font-weight: 850;
+}
+
+.niche-followers {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.follow-btn {
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    padding: 9px 14px;
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+.follow-btn.following {
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
+/* EXPLORE */
+
+.explore-search {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.niche-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.niche-card {
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 13px;
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+}
+
+.niche-card:hover {
+    background: var(--hover);
+}
+
+.niche-card-top {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.niche-card-emoji {
+    font-size: 27px;
+}
+
+.niche-card-name {
+    font-weight: 800;
+}
+
+.niche-card-followers {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+/* EMPTY */
+
+.empty {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 35px 20px;
+    text-align: center;
+    color: var(--muted);
+}
+
+/* PROFILE */
+
+.profile-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 16px;
+}
+
+.profile-avatar {
+    width: 68px;
+    height: 68px;
+    display: grid;
+    place-items: center;
+    background: var(--hover);
+    border-radius: 50%;
+    font-size: 25px;
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.profile-name {
+    font-size: 22px;
+    font-weight: 850;
+}
+
+.profile-handle {
+    color: var(--muted);
+}
+
+/* MODAL */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal {
+    width: min(500px, 100%);
+    max-height: calc(100vh - 30px);
+    overflow-y: auto;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+
+.modal-head {
+    padding: 17px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.modal-body {
+    padding: 18px;
+}
+
+.modal textarea,
+.modal input {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 9px;
+    padding: 11px;
+    outline: none;
+}
+
+.modal textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 7px;
+}
+
+.emoji-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.emoji-option {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 9px;
+    font-size: 20px;
+}
+
+.emoji-option.selected {
+    border: 2px solid var(--text);
+    background: var(--hover);
+}
+
+.modal-foot {
+    padding: 13px 18px 18px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.secondary-btn {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    padding: 9px 14px;
+    border-radius: 9px;
+    font-weight: 700;
+}
+
+/* TOAST */
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 25px;
+    transform: translate(-50%, 20px);
+    background: #18181b;
+    color: white;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 300;
+    max-width: calc(100% - 30px);
+    text-align: center;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.toast.warning {
+    background: #b45309;
+}
+
+/* MOBILE NAV */
+
+.mobile-nav {
+    display: none;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1050px) {
+    .layout {
+        grid-template-columns: 210px minmax(0, 1fr);
+    }
+
+    .rightbar {
+        display: none;
+    }
+}
+
+@media (max-width: 720px) {
+    .layout {
+        display: block;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .main {
+        border: 0;
+        padding-bottom: 70px;
+    }
+
+    .content {
+        padding: 13px;
+    }
+
+    .topbar {
+        padding: 9px 12px;
+    }
+
+    .topbar .primary-btn {
+        display: none;
+    }
+
+    .mobile-nav {
+        position: fixed;
+        display: flex;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 50;
+        height: 62px;
+        background: var(--card);
+        border-top: 1px solid var(--border);
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    .mobile-nav button {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        padding: 7px;
+        font-size: 19px;
+    }
+
+    .mobile-nav button.active {
+        color: var(--text);
+    }
+
+    .niche-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .niche-title-row {
+        align-items: flex-start;
+    }
+
+    .niche-big-name {
+        font-size: 21px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+    <div class="layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <div class="logo" id="logoButton" title="Reload Niche">
+                <div class="logo-mark">N</div>
+                <span>Niche</span>
+            </div>
+
+            <nav class="nav">
+                <button data-page="home">
+                    <span class="nav-icon">⌂</span>
+                    Home
+                </button>
+
+                <button data-page="explore">
+                    <span class="nav-icon">⌕</span>
+                    Explore
+                </button>
+
+                <button data-page="following">
+                    <span class="nav-icon">★</span>
+                    Following
+                </button>
+
+                <button data-page="profile">
+                    <span class="nav-icon">●</span>
+                    Profile
+                </button>
+
+                <button class="create-side" id="createNicheButton">
+                    ＋ Create niche
+                </button>
+            </nav>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <header class="topbar">
+                <div class="topbar-left">
+
+                    <button class="back-btn" id="backButton" title="Go back">
+                        ←
+                    </button>
+
+                    <div class="page-title" id="pageTitle">
+                        Home
+                    </div>
+                </div>
+
+                <div class="top-actions">
+                    <button class="icon-btn" id="themeButton" title="Toggle theme">
+                        ☾
+                    </button>
+
+                    <button class="primary-btn" id="createPostButton">
+                        Create post
+                    </button>
+                </div>
+            </header>
+
+            <section class="content" id="content">
+            </section>
+
+        </main>
+
+        <!-- RIGHT SIDEBAR -->
+        <aside class="rightbar">
+
+            <div class="right-card">
+                <div class="right-title">Popular niches</div>
+                <div id="popularNiches"></div>
+            </div>
+
+            <div class="right-card">
+                <div class="right-title">Your niches</div>
+                <div id="followedNiches"></div>
+            </div>
+
+        </aside>
+    </div>
+
+    <!-- MOBILE NAV -->
+    <nav class="mobile-nav">
+        <button data-page="home" title="Home">⌂</button>
+        <button data-page="explore" title="Explore">⌕</button>
+        <button data-page="following" title="Following">★</button>
+        <button data-page="profile" title="Profile">●</button>
+    </nav>
+</div>
+
+
+<!-- CREATE POST MODAL -->
+<div class="modal-overlay" id="postModal">
+
+    <div class="modal">
+
+        <div class="modal-head">
+            <div class="modal-title">Create post</div>
+
+            <button class="icon-btn close-modal" data-close="postModal">
+                ×
+            </button>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="form-group">
+                <textarea
+                    id="modalPostText"
+                    placeholder="What's happening in your niche?"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Niche
+                </label>
+
+                <input
+                    id="modalPostNiche"
+                    placeholder="e.g. cricket"
+                >
+            </div>
+
+        </div>
+
+        <div class="modal-foot">
+            <button class="secondary-btn close-modal" data-close="postModal">
+                Cancel
+            </button>
+
+            <button class="primary-btn" id="modalPostSubmit">
+                Post
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- CREATE NICHE MODAL -->
+<div class="modal-overlay" id="nicheModal">
+
+    <div class="modal">
+
+        <div class="modal-head">
+
+            <div class="modal-title">
+                Create niche
+            </div>
+
+            <button class="icon-btn close-modal" data-close="nicheModal">
+                ×
+            </button>
+
+        </div>
+
+        <div class="modal-body">
+
+            <div class="form-group">
+                <label class="form-label">
+                    Niche name
+                </label>
+
+                <input
+                    id="newNicheName"
+                    placeholder="e.g. cricket"
+                    maxlength="40"
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Choose emoji
+                </label>
+
+                <div class="emoji-picker" id="emojiPicker"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Private description
+                </label>
+
+                <input
+                    id="newNicheDescription"
+                    placeholder="Describe your niche..."
+                    maxlength="120"
+                >
+            </div>
+
+            <div style="font-size:12px;color:var(--muted);">
+                The description is stored only for your local Niche account
+                and is not displayed publicly.
+            </div>
+
+        </div>
+
+        <div class="modal-foot">
+
+            <button class="secondary-btn close-modal" data-close="nicheModal">
+                Cancel
+            </button>
+
+            <button class="primary-btn" id="createNicheSubmit">
+                Create niche
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+
+<script>
+"use strict";
+
+/* =========================================================
+   DATA
+========================================================= */
+
+const STORAGE = {
+    posts: "niche_v3_posts",
+    niches: "niche_v3_niches",
+    followed: "niche_v3_followed",
+    theme: "niche_v3_theme",
+    privateNicheInfo: "niche_v3_private_niche_info"
+};
+
+const DEFAULT_NICHES = {
+    cricket: {
+        name: "cricket",
+        emoji: "🏏",
+        followers: 124000
+    },
+    gaming: {
+        name: "gaming",
+        emoji: "🎮",
+        followers: 89000
+    },
+    programming: {
+        name: "programming",
+        emoji: "💻",
+        followers: 76000
+    },
+    music: {
+        name: "music",
+        emoji: "🎵",
+        followers: 64000
+    },
+    football: {
+        name: "football",
+        emoji: "⚽",
+        followers: 58000
+    },
+    movies: {
+        name: "movies",
+        emoji: "🎬",
+        followers: 51000
+    },
+    photography: {
+        name: "photography",
+        emoji: "📷",
+        followers: 43000
+    },
+    books: {
+        name: "books",
+        emoji: "📚",
+        followers: 31000
+    }
+};
+
+const DEFAULT_POSTS = [
+    {
+        id: "default-1",
+        user: "Arjun",
+        handle: "@arjun",
+        text: "India has been playing some amazing cricket lately! 🏏 #cricket",
+        niche: "cricket",
+        likes: 31,
+        liked: false,
+        comments: [
+            {
+                id: "comment-1",
+                user: "Maya",
+                text: "Absolutely!"
+            }
+        ],
+        createdAt: Date.now() - 1000 * 60 * 15
+    },
+    {
+        id: "default-2",
+        user: "Maya",
+        handle: "@maya",
+        text: "What game should I play this weekend? #gaming",
+        niche: "gaming",
+        likes: 18,
+        liked: false,
+        comments: [],
+        createdAt: Date.now() - 1000 * 60 * 35
+    },
+    {
+        id: "default-3",
+        user: "Dev",
+        handle: "@dev",
+        text: "Learning something new every day. #programming",
+        niche: "programming",
+        likes: 24,
+        liked: false,
+        comments: [],
+        createdAt: Date.now() - 1000 * 60 * 55
+    },
+    {
+        id: "default-4",
+        user: "Riya",
+        handle: "@riya",
+        text: "Drop your favorite songs below! #music",
+        niche: "music",
+        likes: 42,
+        liked: false,
+        comments: [],
+        createdAt: Date.now() - 1000 * 60 * 80
+    }
+];
+
+/*
+   Add/remove words from this list as needed.
+
+   IMPORTANT:
+   This version does NOT censor words.
+   It completely blocks the post and shows a warning.
+*/
+const BAD_WORDS = [
+    "fuck",
+    "fucking",
+    "shit",
+    "bitch",
+    "asshole",
+    "dumbass"
+];
+
+const NICHE_EMOJIS = [
+    "🔥", "🏏", "🎮", "💻", "🎵",
+    "⚽", "🎬", "📷", "📚", "🎨",
+    "🚀", "💡", "🌎", "🍔", "🏎️",
+    "🐱", "🐶", "🎯", "🧪", "📖"
+];
+
+let posts = load(STORAGE.posts, null);
+let niches = load(STORAGE.niches, null);
+let followed = load(STORAGE.followed, null);
+let privateNicheInfo = load(STORAGE.privateNicheInfo, null);
+
+if (!posts) {
+    posts = structuredClone(DEFAULT_POSTS);
+}
+
+if (!niches) {
+    niches = structuredClone(DEFAULT_NICHES);
+}
+
+if (!followed) {
+    followed = ["cricket", "programming"];
+}
+
+if (!privateNicheInfo) {
+    privateNicheInfo = {};
+}
+
+let currentPage = "home";
+let currentNiche = null;
+let homeSearch = "";
+let exploreSearch = "";
+let selectedEmoji = "🔥";
+
+const navigationHistory = [];
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function load(key, fallback) {
+    try {
+        const value = localStorage.getItem(key);
+
+        if (value === null) {
+            return fallback;
+        }
+
+        return JSON.parse(value);
+
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function saveState() {
+    localStorage.setItem(STORAGE.posts, JSON.stringify(posts));
+    localStorage.setItem(STORAGE.niches, JSON.stringify(niches));
+    localStorage.setItem(STORAGE.followed, JSON.stringify(followed));
+    localStorage.setItem(STORAGE.privateNicheInfo, JSON.stringify(privateNicheInfo));
+}
+
+function escapeHTML(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function normalizeNiche(value) {
+    return String(value)
+        .trim()
+        .replace(/^#+/, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "");
+}
+
+function containsBadLanguage(text) {
+    const lower = String(text).toLowerCase();
+
+    return BAD_WORDS.some(word => {
+        const pattern = new RegExp(
+            "(^|[^a-z0-9])" +
+            word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
+            "([^a-z0-9]|$)",
+            "i"
+        );
+
+        return pattern.test(lower);
+    });
+}
+
+function censorWarning() {
+    showToast(
+        "This post contains bad language. Please remove it to post.",
+        true
+    );
+}
+
+function formatPostText(text) {
+    const safe = escapeHTML(text);
+
+    return safe.replace(
+        /#([a-zA-Z0-9_-]+)/g,
+        '<span class="hashtag" data-open-niche="$1">#$1</span>'
+    );
+}
+
+function formatCount(number) {
+    if (number >= 1000000) {
+        return (number / 1000000).toFixed(1).replace(".0", "") + "M";
+    }
+
+    if (number >= 1000) {
+        return (number / 1000).toFixed(1).replace(".0", "") + "K";
+    }
+
+    return String(number);
+}
+
+function timeAgo(timestamp) {
+    if (!timestamp) {
+        return "just now";
+    }
+
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+
+    if (seconds < 60) {
+        return "just now";
+    }
+
+    const minutes = Math.floor(seconds / 60);
+
+    if (minutes < 60) {
+        return minutes + "m";
+    }
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) {
+        return hours + "h";
+    }
+
+    const days = Math.floor(hours / 24);
+
+    if (days < 30) {
+        return days + "d";
+    }
+
+    return Math.floor(days / 30) + "mo";
+}
+
+function showToast(message, warning = false) {
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.classList.toggle("warning", warning);
+    toast.classList.add("show");
+
+    clearTimeout(showToast.timer);
+
+    showToast.timer = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2800);
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function navigate(page, options = {}) {
+
+    if (!options.fromBack && currentPage !== page) {
+        navigationHistory.push({
+            page: currentPage,
+            niche: currentNiche,
+            homeSearch,
+            exploreSearch
+        });
+    }
+
+    currentPage = page;
+
+    if (page !== "niche") {
+        currentNiche = null;
+    }
+
+    renderEverything();
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+function openNiche(name, options = {}) {
+
+    const normalized = normalizeNiche(name);
+
+    if (!niches[normalized]) {
+        return;
+    }
+
+    if (!options.fromBack) {
+        navigationHistory.push({
+            page: currentPage,
+            niche: currentNiche,
+            homeSearch,
+            exploreSearch
+        });
+    }
+
+    currentPage = "niche";
+    currentNiche = normalized;
+
+    renderEverything();
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+function goBack() {
+
+    if (navigationHistory.length === 0) {
+        navigate("home");
+        return;
+    }
+
+    const previous = navigationHistory.pop();
+
+    currentPage = previous.page;
+    currentNiche = previous.niche || null;
+    homeSearch = previous.homeSearch || "";
+    exploreSearch = previous.exploreSearch || "";
+
+    renderEverything();
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+/* =========================================================
+   CREATE NICHE
+========================================================= */
+
+function createNiche(name, emoji, description) {
+
+    const normalized = normalizeNiche(name);
+
+    if (!normalized) {
+        showToast("Please enter a valid niche name.", true);
+        return false;
+    }
+
+    if (normalized.length < 2) {
+        showToast("Niche name is too short.", true);
+        return false;
+    }
+
+    if (niches[normalized]) {
+        showToast("That niche already exists.", true);
+        return false;
+    }
+
+    niches[normalized] = {
+        name: normalized,
+        emoji: emoji || "🔥",
+        followers: 1
+    };
+
+    privateNicheInfo[normalized] = {
+        description: String(description || "").trim(),
+        emoji: emoji || "🔥"
+    };
+
+    followed.push(normalized);
+
+    saveState();
+
+    closeModal("nicheModal");
+
+    showToast("Niche #" + normalized + " created!");
+
+    openNiche(normalized);
+
+    return true;
+}
+
+
+/* =========================================================
+   POSTS
+========================================================= */
+
+function extractHashtags(text) {
+
+    const matches = text.match(/#[a-zA-Z0-9_-]+/g);
+
+    if (!matches) {
+        return [];
+    }
+
+    return [
+        ...new Set(
+            matches
+                .map(tag => normalizeNiche(tag))
+                .filter(Boolean)
+        )
+    ];
+}
+
+function createMissingNiches(tags) {
+
+    tags.forEach(name => {
+
+        if (!niches[name]) {
+
+            niches[name] = {
+                name,
+                emoji: "🔥",
+                followers: 1
+            };
+        }
+    });
+}
+
+function createPost(rawText, manualNiche = "") {
+
+    const text = String(rawText).trim();
+
+    if (!text) {
+        showToast("Write something before posting.", true);
+        return false;
+    }
+
+    /*
+       BAD LANGUAGE:
+       Do not censor.
+       Do not modify the text.
+       Simply block submission.
+    */
+    if (containsBadLanguage(text)) {
+        censorWarning();
+        return false;
+    }
+
+    const tags = extractHashtags(text);
+
+    let nicheName = normalizeNiche(manualNiche);
+
+    if (!nicheName && tags.length > 0) {
+        nicheName = tags[0];
+    }
+
+    if (!nicheName) {
+        nicheName = "general";
+
+        if (!niches.general) {
+            niches.general = {
+                name: "general",
+                emoji: "💬",
+                followers: 1
+            };
+        }
+    }
+
+    createMissingNiches(tags);
+
+    if (!niches[nicheName]) {
+        niches[nicheName] = {
+            name: nicheName,
+            emoji: "🔥",
+            followers: 1
+        };
+    }
+
+    if (!followed.includes(nicheName)) {
+        followed.push(nicheName);
+        niches[nicheName].followers++;
+    }
+
+    const post = {
+        id: "post-" + Date.now() + "-" + Math.random().toString(36).slice(2),
+        user: "You",
+        handle: "@you",
+        text,
+        niche: nicheName,
+        likes: 0,
+        liked: false,
+        comments: [],
+        createdAt: Date.now()
+    };
+
+    posts.unshift(post);
+
+    saveState();
+
+    renderEverything();
+
+    showToast("Post published!");
+
+    return true;
+}
+
+function deletePost(postId) {
+
+    const index = posts.findIndex(post => post.id === postId);
+
+    if (index === -1) {
+        return;
+    }
+
+    const post = posts[index];
+
+    if (post.user !== "You") {
+        showToast("You can only delete your own posts.", true);
+        return;
+    }
+
+    posts.splice(index, 1);
+
+    saveState();
+
+    renderEverything();
+
+    showToast("Post deleted.");
+}
+
+
+/* =========================================================
+   LIKE
+========================================================= */
+
+function toggleLike(postId, button) {
+
+    const post = posts.find(item => item.id === postId);
+
+    if (!post) {
+        return;
+    }
+
+    post.liked = !post.liked;
+
+    if (post.liked) {
+        post.likes++;
+    } else {
+        post.likes = Math.max(0, post.likes - 1);
+    }
+
+    saveState();
+
+    /*
+       Only update this button.
+       This keeps the animation alive even after filtering/searching.
+    */
+    if (button) {
+
+        button.classList.toggle("liked", post.liked);
+
+        const icon = button.querySelector(".like-icon");
+        const count = button.querySelector(".like-count");
+
+        if (icon) {
+            icon.textContent = post.liked ? "♥" : "♡";
+        }
+
+        if (count) {
+            count.textContent = post.likes;
+        }
+
+        button.classList.remove("like-pop");
+
+        void button.offsetWidth;
+
+        button.classList.add("like-pop");
+    }
+}
+
+
+/* =========================================================
+   COMMENTS
+========================================================= */
+
+function toggleComments(postId) {
+
+    const comments = document.querySelector(
+        '[data-comments="' + CSS.escape(postId) + '"]'
+    );
+
+    if (!comments) {
+        return;
+    }
+
+    comments.classList.toggle("open");
+
+    if (comments.classList.contains("open")) {
+
+        const input = comments.querySelector(".comment-input");
+
+        if (input) {
+            setTimeout(() => input.focus(), 30);
+        }
+    }
+}
+
+function addComment(postId, input) {
+
+    const post = posts.find(item => item.id === postId);
+
+    if (!post || !input) {
+        return;
+    }
+
+    const text = input.value.trim();
+
+    if (!text) {
+        return;
+    }
+
+    if (containsBadLanguage(text)) {
+        showToast(
+            "This comment contains bad language. Please remove it.",
+            true
+        );
+        return;
+    }
+
+    post.comments.push({
+        id: "comment-" + Date.now() + "-" + Math.random().toString(36).slice(2),
+        user: "You",
+        text
+    });
+
+    saveState();
+
+    /*
+       Re-render the post/feed.
+       Because all events use delegated handling,
+       comments continue working after the re-render.
+    */
+    renderEverything();
+
+    const comments = document.querySelector(
+        '[data-comments="' + CSS.escape(postId) + '"]'
+    );
+
+    if (comments) {
+        comments.classList.add("open");
+
+        const newInput = comments.querySelector(".comment-input");
+
+        if (newInput) {
+            newInput.focus();
+        }
+    }
+}
+
+
+/* =========================================================
+   FOLLOWING
+========================================================= */
+
+function toggleFollow(name) {
+
+    const normalized = normalizeNiche(name);
+
+    if (!niches[normalized]) {
+        return;
+    }
+
+    const index = followed.indexOf(normalized);
+
+    if (index >= 0) {
+
+        followed.splice(index, 1);
+
+        niches[normalized].followers = Math.max(
+            0,
+            niches[normalized].followers - 1
+        );
+
+        showToast("Unfollowed #" + normalized);
+
+    } else {
+
+        followed.push(normalized);
+        niches[normalized].followers++;
+
+        showToast("Following #" + normalized);
+    }
+
+    saveState();
+
+    renderEverything();
+}
+
+
+/* =========================================================
+   SHARE
+========================================================= */
+
+async function sharePost(postId) {
+
+    const post = posts.find(item => item.id === postId);
+
+    if (!post) {
+        return;
+    }
+
+    const shareText =
+        post.text +
+        "\n\n#" +
+        post.niche;
+
+    try {
+
+        await navigator.clipboard.writeText(shareText);
+
+        showToast("Post copied to clipboard.");
+
+    } catch (error) {
+
+        showToast("Could not copy the post.", true);
+    }
+}
+
+
+/* =========================================================
+   POST RENDER
+========================================================= */
+
+function renderPost(post) {
+
+    const comments = Array.isArray(post.comments)
+        ? post.comments
+        : [];
+
+    const commentsHTML = comments.length
+        ? comments.map(comment => `
+            <div class="comment">
+                <strong>${escapeHTML(comment.user)}</strong>
+                ${escapeHTML(comment.text)}
+            </div>
+        `).join("")
+        : `<div style="color:var(--muted);font-size:13px;">
+            No comments yet.
+        </div>`;
+
+    const niche = niches[post.niche];
+
+    const nicheEmoji = niche
+        ? niche.emoji
+        : "🔥";
+
+    const deleteHTML = post.user === "You"
+        ? `
+            <button
+                class="delete-btn"
+                data-delete-post="${escapeHTML(post.id)}"
+            >
+                🗑 Delete post
+            </button>
+        `
+        : "";
+
+    return `
+        <article class="post" data-post-id="${escapeHTML(post.id)}">
+
+            <div class="post-head">
+
+                <div class="user-info">
+
+                    <div class="avatar">
+                        ${escapeHTML(
+                            post.user.charAt(0).toUpperCase()
+                        )}
+                    </div>
+
+                    <div>
+                        <div class="user-name">
+                            ${escapeHTML(post.user)}
+                        </div>
+
+                        <div class="handle">
+                            ${escapeHTML(post.handle)}
+                            ·
+                            ${escapeHTML(timeAgo(post.createdAt))}
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="post-menu">
+
+                    <button
+                        class="more-btn"
+                        data-more-post="${escapeHTML(post.id)}"
+                    >
+                        ⋯
+                    </button>
+
+                    ${deleteHTML}
+
+                </div>
+
+            </div>
+
+            <div class="post-content">
+                ${formatPostText(post.text)}
+            </div>
+
+            <button
+                class="post-niche"
+                data-open-niche="${escapeHTML(post.niche)}"
+            >
+                ${escapeHTML(nicheEmoji)}
+                #${escapeHTML(post.niche)}
+            </button>
+
+            <div class="post-actions">
+
+                <button
+                    class="action-btn like-btn ${post.liked ? "liked" : ""}"
+                    data-like-post="${escapeHTML(post.id)}"
+                >
+                    <span class="like-icon">
+                        ${post.liked ? "♥" : "♡"}
+                    </span>
+
+                    <span class="like-count">
+                        ${post.likes}
+                    </span>
+                </button>
+
+                <button
+                    class="action-btn"
+                    data-comment-post="${escapeHTML(post.id)}"
+                >
+                    💬
+                    <span>${comments.length}</span>
+                </button>
+
+                <button
+                    class="action-btn"
+                    data-share-post="${escapeHTML(post.id)}"
+                >
+                    ↗
+                    Share
+                </button>
+
+            </div>
+
+            <div
+                class="comments"
+                data-comments="${escapeHTML(post.id)}"
+            >
+
+                <div class="comment-list">
+                    ${commentsHTML}
+                </div>
+
+                <div class="comment-form">
+
+                    <input
+                        class="comment-input"
+                        data-comment-input="${escapeHTML(post.id)}"
+                        placeholder="Write a comment..."
+                        autocomplete="off"
+                    >
+
+                    <button
+                        data-submit-comment="${escapeHTML(post.id)}"
+                    >
+                        Send
+                    </button>
+
+                </div>
+
+            </div>
+
+        </article>
+    `;
+}
+
+function renderFeed(postList) {
+
+    if (!postList.length) {
+        return `
+            <div class="empty">
+                No posts found.
+            </div>
+        `;
+    }
+
+    return `
+        <div class="feed">
+            ${postList.map(renderPost).join("")}
+        </div>
+    `;
+}
+
+
+/* =========================================================
+   HOME
+========================================================= */
+
+function renderHome() {
+
+    const filteredPosts = posts.filter(post => {
+
+        if (!homeSearch.trim()) {
+            return true;
+        }
+
+        const query = homeSearch.toLowerCase();
+
+        return (
+            post.text.toLowerCase().includes(query) ||
+            post.user.toLowerCase().includes(query) ||
+            post.niche.toLowerCase().includes(query) ||
+            post.handle.toLowerCase().includes(query)
+        );
+    });
+
+    return `
+
+        <div class="home-search">
+
+            <span class="search-icon">
+                ⌕
+            </span>
+
+            <input
+                id="homeSearchInput"
+                value="${escapeHTML(homeSearch)}"
+                placeholder="Search posts..."
+                autocomplete="off"
+            >
+
+        </div>
+
+        <div class="composer">
+
+            <textarea
+                id="homeComposer"
+                placeholder="Post something... Use #niche"
+            ></textarea>
+
+            <div class="composer-bottom">
+
+                <button
+                    class="primary-btn"
+                    id="homePostButton"
+                >
+                    Post
+                </button>
+
+            </div>
+
+        </div>
+
+        ${renderFeed(filteredPosts)}
+    `;
+}
+
+
+/* =========================================================
+   EXPLORE
+========================================================= */
+
+function renderExplore() {
+
+    const query = exploreSearch.trim().toLowerCase();
+
+    const filteredNiches = Object.values(niches).filter(niche =>
+        niche.name.toLowerCase().includes(query)
+    );
+
+    const filteredPosts = posts.filter(post => {
+
+        if (!query) {
+            return false;
+        }
+
+        return (
+            post.text.toLowerCase().includes(query) ||
+            post.niche.toLowerCase().includes(query) ||
+            post.user.toLowerCase().includes(query)
+        );
+    });
+
+    return `
+
+        <div class="explore-search">
+
+            <span class="search-icon">
+                ⌕
+            </span>
+
+            <input
+                id="exploreSearchInput"
+                value="${escapeHTML(exploreSearch)}"
+                placeholder="Search niches and posts..."
+                autocomplete="off"
+            >
+
+        </div>
+
+        <div class="niche-grid">
+
+            ${filteredNiches.length
+                ? filteredNiches.map(niche => `
+                    <div
+                        class="niche-card"
+                        data-open-niche="${escapeHTML(niche.name)}"
+                    >
+
+                        <div class="niche-card-top">
+
+                            <div class="niche-card-emoji">
+                                ${escapeHTML(niche.emoji)}
+                            </div>
+
+                            <div>
+                                <div class="niche-card-name">
+                                    #${escapeHTML(niche.name)}
+                                </div>
+
+                                <div class="niche-card-followers">
+                                    ${formatCount(niche.followers)}
+                                    followers
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                `).join("")
+                : `<div class="empty" style="grid-column:1/-1;">
+                    No niches found.
+                </div>`
+            }
+
+        </div>
+
+        ${
+            query
+                ? `
+                    <h3 style="margin:20px 0 12px;">
+                        Matching posts
+                    </h3>
+
+                    ${renderFeed(filteredPosts)}
+                `
+                : `
+                    <div class="empty">
+                        Search for a niche or post.
+                    </div>
+                `
+        }
+    `;
+}
+
+
+/* =========================================================
+   FOLLOWING
+========================================================= */
+
+function renderFollowing() {
+
+    const followedPosts = posts.filter(post =>
+        followed.includes(post.niche)
+    );
+
+    return renderFeed(followedPosts);
+}
+
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+function renderProfile() {
+
+    const yourPosts = posts.filter(post =>
+        post.user === "You"
+    );
+
+    return `
+
+        <div class="profile-card">
+
+            <div class="profile-avatar">
+                Y
+            </div>
+
+            <div class="profile-name">
+                You
+            </div>
+
+            <div class="profile-handle">
+                @you
+            </div>
+
+            <div style="
+                display:flex;
+                gap:25px;
+                margin-top:17px;
+                font-size:13px;
+            ">
+
+                <div>
+                    <strong>${yourPosts.length}</strong>
+                    <span style="color:var(--muted);">
+                        posts
+                    </span>
+                </div>
+
+                <div>
+                    <strong>${followed.length}</strong>
+                    <span style="color:var(--muted);">
+                        niches
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <h3 style="margin:18px 0 12px;">
+            Your posts
+        </h3>
+
+        ${renderFeed(yourPosts)}
+    `;
+}
+
+
+/* =========================================================
+   NICHE PAGE
+========================================================= */
+
+function renderNichePage() {
+
+    const niche = niches[currentNiche];
+
+    if (!niche) {
+        return `
+            <div class="empty">
+                Niche not found.
+            </div>
+        `;
+    }
+
+    const nichePosts = posts.filter(post =>
+        post.niche === currentNiche
+    );
+
+    const isFollowing = followed.includes(currentNiche);
+
+    return `
+
+        <div class="niche-header">
+
+            <div class="niche-title-row">
+
+                <div class="niche-big">
+
+                    <div class="niche-big-emoji">
+                        ${escapeHTML(niche.emoji)}
+                    </div>
+
+                    <div>
+
+                        <div class="niche-big-name">
+                            #${escapeHTML(niche.name)}
+                        </div>
+
+                        <div class="niche-followers">
+                            ${formatCount(niche.followers)}
+                            followers
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="follow-btn ${isFollowing ? "following" : ""}"
+                    data-follow-niche="${escapeHTML(niche.name)}"
+                >
+                    ${isFollowing ? "Following" : "Follow"}
+                </button>
+
+            </div>
+
+        </div>
+
+        ${renderFeed(nichePosts)}
+    `;
+}
+
+
+/* =========================================================
+   RIGHT SIDEBAR
+========================================================= */
+
+function renderRightSidebar() {
+
+    const popular = Object.values(niches)
+        .sort((a, b) => b.followers - a.followers)
+        .slice(0, 6);
+
+    const followedItems = followed
+        .map(name => niches[name])
+        .filter(Boolean)
+        .slice(0, 6);
+
+    document.getElementById("popularNiches").innerHTML =
+        popular.length
+            ? popular.map(niche => `
+                <div
+                    class="niche-mini"
+                    data-open-niche="${escapeHTML(niche.name)}"
+                >
+
+                    <div class="niche-mini-emoji">
+                        ${escapeHTML(niche.emoji)}
+                    </div>
+
+                    <div>
+                        <div class="niche-mini-name">
+                            #${escapeHTML(niche.name)}
+                        </div>
+
+                        <div class="niche-mini-count">
+                            ${formatCount(niche.followers)}
+                            followers
+                        </div>
+                    </div>
+
+                </div>
+            `).join("")
+            : `<div style="color:var(--muted);font-size:13px;">
+                No niches yet.
+            </div>`;
+
+    document.getElementById("followedNiches").innerHTML =
+        followedItems.length
+            ? followedItems.map(niche => `
+                <div
+                    class="niche-mini"
+                    data-open-niche="${escapeHTML(niche.name)}"
+                >
+
+                    <div class="niche-mini-emoji">
+                        ${escapeHTML(niche.emoji)}
+                    </div>
+
+                    <div>
+                        <div class="niche-mini-name">
+                            #${escapeHTML(niche.name)}
+                        </div>
+
+                        <div class="niche-mini-count">
+                            ${formatCount(niche.followers)}
+                            followers
+                        </div>
+                    </div>
+
+                </div>
+            `).join("")
+            : `<div style="color:var(--muted);font-size:13px;">
+                You are not following any niches.
+            </div>`;
+}
+
+
+/* =========================================================
+   RENDER EVERYTHING
+========================================================= */
+
+function renderEverything() {
+
+    const content = document.getElementById("content");
+    const title = document.getElementById("pageTitle");
+
+    let html = "";
+
+    if (currentPage === "home") {
+        title.textContent = "Home";
+        html = renderHome();
+
+    } else if (currentPage === "explore") {
+        title.textContent = "Explore";
+        html = renderExplore();
+
+    } else if (currentPage === "following") {
+        title.textContent = "Following";
+        html = renderFollowing();
+
+    } else if (currentPage === "profile") {
+        title.textContent = "Profile";
+        html = renderProfile();
+
+    } else if (currentPage === "niche") {
+
+        const niche = niches[currentNiche];
+
+        title.textContent = niche
+            ? "#" + niche.name
+            : "Niche";
+
+        html = renderNichePage();
+    }
+
+    content.innerHTML = html;
+
+    updateNavigation();
+
+    renderRightSidebar();
+
+    updateThemeButton();
+}
+
+function updateNavigation() {
+
+    document.querySelectorAll("[data-page]").forEach(button => {
+
+        button.classList.toggle(
+            "active",
+            button.dataset.page === currentPage
+        );
+    });
+}
+
+
+/* =========================================================
+   THEME
+========================================================= */
+
+function applyTheme() {
+
+    const theme = localStorage.getItem(STORAGE.theme);
+
+    document.body.classList.toggle(
+        "dark",
+        theme === "dark"
+    );
+
+    updateThemeButton();
+}
+
+function updateThemeButton() {
+
+    const button = document.getElementById("themeButton");
+
+    if (!button) {
+        return;
+    }
+
+    button.textContent =
+        document.body.classList.contains("dark")
+            ? "☀"
+            : "☾";
+
+    button.title =
+        document.body.classList.contains("dark")
+            ? "Switch to light mode"
+            : "Switch to dark mode";
+}
+
+function toggleTheme() {
+
+    const dark =
+        document.body.classList.toggle("dark");
+
+    localStorage.setItem(
+        STORAGE.theme,
+        dark ? "dark" : "light"
+    );
+
+    updateThemeButton();
+}
+
+
+/* =========================================================
+   MODALS
+========================================================= */
+
+function openModal(id) {
+
+    const modal = document.getElementById(id);
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("show");
+}
+
+function closeModal(id) {
+
+    const modal = document.getElementById(id);
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove("show");
+}
+
+function setupEmojiPicker() {
+
+    const picker = document.getElementById("emojiPicker");
+
+    picker.innerHTML = NICHE_EMOJIS.map(emoji => `
+        <button
+            type="button"
+            class="emoji-option ${emoji === selectedEmoji ? "selected" : ""}"
+            data-select-emoji="${emoji}"
+        >
+            ${emoji}
+        </button>
+    `).join("");
+}
+
+
+/* =========================================================
+   GLOBAL CLICK HANDLER
+=========================================================
+
+   IMPORTANT:
+   All post interactions use this single delegated handler.
+
+   This means comments, likes, shares and delete continue
+   working even after:
+   - Explore search
+   - Home search
+   - Following page rendering
+   - Feed filtering
+   - Re-rendering
+*/
+
+document.addEventListener("click", event => {
+
+    const pageButton =
+        event.target.closest("[data-page]");
+
+    if (pageButton) {
+        navigate(pageButton.dataset.page);
+        return;
+    }
+
+
+    const nicheButton =
+        event.target.closest("[data-open-niche]");
+
+    if (nicheButton) {
+        event.stopPropagation();
+
+        openNiche(nicheButton.dataset.openNiche);
+
+        return;
+    }
+
+
+    const likeButton =
+        event.target.closest("[data-like-post]");
+
+    if (likeButton) {
+
+        event.stopPropagation();
+
+        toggleLike(
+            likeButton.dataset.likePost,
+            likeButton
+        );
+
+        return;
+    }
+
+
+    const commentButton =
+        event.target.closest("[data-comment-post]");
+
+    if (commentButton) {
+
+        event.stopPropagation();
+
+        toggleComments(
+            commentButton.dataset.commentPost
+        );
+
+        return;
+    }
+
+
+    const submitComment =
+        event.target.closest("[data-submit-comment]");
+
+    if (submitComment) {
+
+        event.stopPropagation();
+
+        const postId =
+            submitComment.dataset.submitComment;
+
+        const input = document.querySelector(
+            '[data-comment-input="' +
+            CSS.escape(postId) +
+            '"]'
+        );
+
+        addComment(postId, input);
+
+        return;
+    }
+
+
+    const shareButton =
+        event.target.closest("[data-share-post]");
+
+    if (shareButton) {
+
+        event.stopPropagation();
+
+        sharePost(
+            shareButton.dataset.sharePost
+        );
+
+        return;
+    }
+
+
+    const moreButton =
+        event.target.closest("[data-more-post]");
+
+    if (moreButton) {
+
+        event.stopPropagation();
+
+        const menu = moreButton.closest(".post-menu");
+
+        if (menu) {
+            menu.classList.toggle("open");
+        }
+
+        return;
+    }
+
+
+    const deleteButton =
+        event.target.closest("[data-delete-post]");
+
+    if (deleteButton) {
+
+        event.stopPropagation();
+
+        const postId =
+            deleteButton.dataset.deletePost;
+
+        const confirmed = confirm(
+            "Delete this post?"
+        );
+
+        if (confirmed) {
+            deletePost(postId);
+        }
+
+        return;
+    }
+
+
+    const followButton =
+        event.target.closest("[data-follow-niche]");
+
+    if (followButton) {
+
+        event.stopPropagation();
+
+        toggleFollow(
+            followButton.dataset.followNiche
+        );
+
+        return;
+    }
+
+
+    const emojiButton =
+        event.target.closest("[data-select-emoji]");
+
+    if (emojiButton) {
+
+        selectedEmoji =
+            emojiButton.dataset.selectEmoji;
+
+        document
+            .querySelectorAll("[data-select-emoji]")
+            .forEach(button => {
+                button.classList.toggle(
+                    "selected",
+                    button.dataset.selectEmoji === selectedEmoji
+                );
+            });
+
+        return;
+    }
+
+
+    const closeButton =
+        event.target.closest("[data-close]");
+
+    if (closeButton) {
+
+        closeModal(
+            closeButton.dataset.close
+        );
+
+        return;
+    }
+
+
+    /*
+       Close post menus when clicking elsewhere.
+    */
+    document
+        .querySelectorAll(".post-menu.open")
+        .forEach(menu => {
+
+            if (!event.target.closest(".post-menu")) {
+                menu.classList.remove("open");
+            }
+        });
+});
+
+
+/* =========================================================
+   KEYBOARD HANDLER
+========================================================= */
+
+document.addEventListener("keydown", event => {
+
+    /*
+       Comments can be submitted with Enter.
+       Shift + Enter creates a new line.
+    */
+    if (
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        event.target.matches(".comment-input")
+    ) {
+
+        event.preventDefault();
+
+        const postId =
+            event.target.dataset.commentInput;
+
+        addComment(
+            postId,
+            event.target
+        );
+    }
+
+
+    if (event.key === "Escape") {
+
+        document
+            .querySelectorAll(".modal-overlay.show")
+            .forEach(modal => {
+                modal.classList.remove("show");
+            });
+
+        document
+            .querySelectorAll(".post-menu.open")
+            .forEach(menu => {
+                menu.classList.remove("open");
+            });
+    }
+});
+
+
+/* =========================================================
+   INPUT EVENTS
+========================================================= */
+
+document.addEventListener("input", event => {
+
+    if (event.target.id === "homeSearchInput") {
+
+        homeSearch = event.target.value;
+
+        /*
+           Keep the cursor usable after re-render.
+        */
+        const cursor = event.target.selectionStart;
+
+        renderEverything();
+
+        const input =
+            document.getElementById("homeSearchInput");
+
+        if (input) {
+            input.focus();
+
+            try {
+                input.setSelectionRange(cursor, cursor);
+            } catch (error) {
+                /* Ignore unsupported selection states. */
+            }
+        }
+
+        return;
+    }
+
+
+    if (event.target.id === "exploreSearchInput") {
+
+        exploreSearch = event.target.value;
+
+        const cursor = event.target.selectionStart;
+
+        renderEverything();
+
+        const input =
+            document.getElementById("exploreSearchInput");
+
+        if (input) {
+            input.focus();
+
+            try {
+                input.setSelectionRange(cursor, cursor);
+            } catch (error) {
+                /* Ignore unsupported selection states. */
+            }
+        }
+    }
+});
+
+
+/* =========================================================
+   HOME POST
+========================================================= */
+
+document.addEventListener("click", event => {
+
+    if (event.target.id === "homePostButton") {
+
+        const textarea =
+            document.getElementById("homeComposer");
+
+        if (!textarea) {
+            return;
+        }
+
+        if (createPost(textarea.value)) {
+            homeSearch = "";
+        }
+    }
+});
+
+
+/* =========================================================
+   MODAL POST
+========================================================= */
+
+document.getElementById("createPostButton")
+    .addEventListener("click", () => {
+
+        document.getElementById("modalPostText").value = "";
+        document.getElementById("modalPostNiche").value = "";
+
+        openModal("postModal");
+
+        setTimeout(() => {
+            document.getElementById("modalPostText").focus();
+        }, 50);
+    });
+
+document.getElementById("modalPostSubmit")
+    .addEventListener("click", () => {
+
+        const text =
+            document.getElementById("modalPostText").value;
+
+        const niche =
+            document.getElementById("modalPostNiche").value;
+
+        const success =
+            createPost(text, niche);
+
+        if (success) {
+            closeModal("postModal");
+        }
+    });
+
+
+/* =========================================================
+   CREATE NICHE
+========================================================= */
+
+document.getElementById("createNicheButton")
+    .addEventListener("click", () => {
+
+        document.getElementById("newNicheName").value = "";
+        document.getElementById("newNicheDescription").value = "";
+
+        selectedEmoji = "🔥";
+
+        setupEmojiPicker();
+
+        openModal("nicheModal");
+
+        setTimeout(() => {
+            document.getElementById("newNicheName").focus();
+        }, 50);
+    });
+
+document.getElementById("createNicheSubmit")
+    .addEventListener("click", () => {
+
+        const name =
+            document.getElementById("newNicheName").value;
+
+        const description =
+            document.getElementById("newNicheDescription").value;
+
+        createNiche(
+            name,
+            selectedEmoji,
+            description
+        );
+    });
+
+
+/* =========================================================
+   LOGO = RELOAD
+========================================================= */
+
+document.getElementById("logoButton")
+    .addEventListener("click", () => {
+
+        window.location.reload();
+    });
+
+
+/* =========================================================
+   BACK BUTTON
+========================================================= */
+
+document.getElementById("backButton")
+    .addEventListener("click", goBack);
+
+
+/* =========================================================
+   THEME
+========================================================= */
+
+document.getElementById("themeButton")
+    .addEventListener("click", toggleTheme);
+
+
+/* =========================================================
+   MODAL BACKGROUND CLICK
+========================================================= */
+
+document.querySelectorAll(".modal-overlay")
+    .forEach(overlay => {
+
+        overlay.addEventListener("click", event => {
+
+            if (event.target === overlay) {
+                overlay.classList.remove("show");
+            }
+        });
+    });
+
+
+/* =========================================================
+   ENTER TO POST IN MODAL
+========================================================= */
+
+document.getElementById("modalPostText")
+    .addEventListener("keydown", event => {
+
+        if (
+            event.key === "Enter" &&
+            (event.ctrlKey || event.metaKey)
+        ) {
+
+            event.preventDefault();
+
+            document
+                .getElementById("modalPostSubmit")
+                .click();
+        }
+    });
+
+
+/* =========================================================
+   START
+========================================================= */
+
+applyTheme();
+setupEmojiPicker();
+renderEverything();
+
+</script>
+
+</body>
+</html>
