@@ -2531,14 +2531,6 @@ function needsProfileSetup() {
   );
 }
 
-function isModerator() {
-  return Boolean(
-    state.profile?.role === "mod" ||
-    state.profile?.role === "admin" ||
-    state.profile?.is_mod === true
-  );
-}
-
 function renderProfileSetup() {
   const selected =
     state.profile?.avatar_emoji ||
@@ -3407,18 +3399,20 @@ async function deleteComment(
     return;
   }
 
-  let deleteQuery = supabaseClient
-    .from("comments")
-    .delete()
-    .eq("id", commentId);
-
-  if (!isModerator()) {
-    deleteQuery = deleteQuery.eq("author_id", state.user.id);
-  }
-
   const {
     error
-  } = await deleteQuery;
+  } =
+    await supabaseClient
+      .from("comments")
+      .delete()
+      .eq(
+        "id",
+        commentId
+      )
+      .eq(
+        "author_id",
+        state.user.id
+      );
 
   if (error) {
     showToast(
@@ -3454,18 +3448,20 @@ async function deletePost(
     return;
   }
 
-  let deleteQuery = supabaseClient
-    .from("posts")
-    .delete()
-    .eq("id", postId);
-
-  if (!isModerator()) {
-    deleteQuery = deleteQuery.eq("author_id", state.user.id);
-  }
-
   const {
     error
-  } = await deleteQuery;
+  } =
+    await supabaseClient
+      .from("posts")
+      .delete()
+      .eq(
+        "id",
+        postId
+      )
+      .eq(
+        "author_id",
+        state.user.id
+      );
 
   if (error) {
     showToast(
@@ -3941,8 +3937,7 @@ function renderComment(
 
   const canDelete =
     comment.author_id ===
-    state.user?.id ||
-    isModerator();
+    state.user?.id;
 
   return `
     <div class="comment">
@@ -4064,10 +4059,6 @@ function renderPost(
       ]?.length ||
       0
     );
-
-  const canDeletePost =
-    state.user?.id === post.author_id ||
-    isModerator();
 
   return `
     <article
@@ -4259,7 +4250,8 @@ function renderPost(
             </button>
 
             ${
-              canDeletePost
+              state.user?.id ===
+              post.author_id
                 ? `
                   <button
                     class="action-button delete-action"
@@ -6449,6 +6441,9 @@ async function render() {
   state.following =
     false;
 
+  state.search =
+    "";
+
   await loadPosts();
 
   document.getElementById(
@@ -6466,26 +6461,79 @@ async function render() {
    INITIALIZATION
    ============================================================= */
 
-if (supabaseClient) {
-  supabaseClient.auth.onAuthStateChange(
-    async (event, session) => {
-      state.session = session;
-      state.user = session?.user || null;
+async function initialize() {
+  if (!configured) {
+    configurationScreen();
 
-      if (session?.user) {
-        await loadProfile();
-      } else {
-        state.profile = null;
-      }
+    return;
+  }
 
-      await render();
-    }
-  );
+  const {
+    data,
+    error
+  } =
+    await supabaseClient.auth
+      .getSession();
+
+  if (error) {
+    console.error(
+      "Session:",
+      error
+    );
+  }
+
+  state.session =
+    data?.session ||
+    null;
+
+  state.user =
+    data?.session?.user ||
+    null;
+
+  if (state.user) {
+    await loadProfile();
+  }
+
+  await render();
 
   setupRealtime();
+
+  supabaseClient.auth
+    .onAuthStateChange(
+      async (
+        event,
+        session
+      ) => {
+
+        state.session =
+          session ||
+          null;
+
+        state.user =
+          session?.user ||
+          null;
+
+        if (
+          state.user
+        ) {
+          await loadProfile();
+        } else {
+          state.profile =
+            null;
+        }
+
+        await render();
+      }
+    );
 }
 
-render();
+/* =============================================================
+   START
+   ============================================================= */
+
+initialize();
+
 </script>
+
 </body>
 </html>
