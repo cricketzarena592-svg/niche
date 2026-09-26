@@ -1200,10 +1200,55 @@ async function signUp() {
   const {
     error
   } = await supabaseClient.auth
+async function signUp() {
+  const email =
+    document.getElementById(
+      "auth-email"
+    ).value.trim();
+
+  const password =
+    document.getElementById(
+      "auth-password"
+    ).value;
+
+  if (!email || !password) {
+    showToast(
+      "Enter your email and password."
+    );
+    return;
+  }
+
+  if (password.length < 6) {
+    showToast(
+      "Password must contain at least 6 characters."
+    );
+    return;
+  }
+
+  setAuthLoading(true);
+
+  const {
+    error
+  } = await supabaseClient.auth
     .signUp({
       email,
-      password
+      password,
+      options: {
+        emailRedirectTo:
+          "https://cricketzarena592-svg.github.io/niche/"
+      }
     });
+
+  setAuthLoading(false);
+
+  if (error) {
+    showToast(error.message);
+  } else {
+    showToast(
+      "Account created. Check your email for the verification link."
+    );
+  }
+}
 
   setAuthLoading(false);
 
