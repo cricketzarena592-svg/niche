@@ -4,24 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#ffffff">
+  <meta name="color-scheme" content="light dark">
   <title>NICHE — Everything starts with a topic</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    /* =========================================================
+       NICHE v2
+       ========================================================= */
+
     :root {
+      color-scheme: light;
+
       --bg: #ffffff;
       --surface: #ffffff;
       --surface-2: #f6f6f6;
       --surface-3: #eeeeee;
+
       --text: #111111;
       --muted: #737373;
+      --faint: #a3a3a3;
+
       --border: #e5e5e5;
+
       --accent: #111111;
-      --danger: #ef4444;
-      --success: #16a34a;
+      --accent-text: #ffffff;
+
       --blue: #2563eb;
-      --shadow: 0 10px 40px rgba(0,0,0,.08);
+      --red: #ef4444;
+      --green: #16a34a;
+
+      --danger-bg: #fef2f2;
+      --danger-text: #dc2626;
+
+      --shadow:
+        0 12px 40px rgba(0, 0, 0, .08);
+
+      --topbar-bg:
+        rgba(255, 255, 255, .88);
+    }
+
+    html.dark {
+      color-scheme: dark;
+
+      --bg: #0b0b0c;
+      --surface: #101011;
+      --surface-2: #181819;
+      --surface-3: #222224;
+
+      --text: #f5f5f5;
+      --muted: #99999f;
+      --faint: #707076;
+
+      --border: #29292d;
+
+      --accent: #f5f5f5;
+      --accent-text: #0b0b0c;
+
+      --blue: #60a5fa;
+      --red: #f87171;
+      --green: #4ade80;
+
+      --danger-bg: #2a1517;
+      --danger-text: #f87171;
+
+      --shadow:
+        0 12px 40px rgba(0, 0, 0, .35);
+
+      --topbar-bg:
+        rgba(11, 11, 12, .88);
     }
 
     * {
@@ -36,8 +88,10 @@
       margin: 0;
       min-width: 320px;
       min-height: 100vh;
+
       background: var(--bg);
       color: var(--text);
+
       font-family:
         Inter,
         ui-sans-serif,
@@ -46,11 +100,16 @@
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif;
+
+      transition:
+        background .2s,
+        color .2s;
     }
 
     button,
     input,
-    textarea {
+    textarea,
+    select {
       font: inherit;
     }
 
@@ -63,43 +122,67 @@
       text-decoration: none;
     }
 
+    img {
+      max-width: 100%;
+    }
+
     ::selection {
-      background: #111;
-      color: #fff;
+      background: var(--text);
+      color: var(--bg);
     }
 
     /* =========================================================
-       APP
+       GENERAL
        ========================================================= */
 
-    #app {
-      min-height: 100vh;
+    .hidden {
+      display: none !important;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 12px;
     }
 
     .app-shell {
       min-height: 100vh;
+
       display: grid;
-      grid-template-columns: 250px minmax(0, 650px) 280px;
+      grid-template-columns:
+        250px
+        minmax(0, 650px)
+        280px;
+
       justify-content: center;
     }
 
     .sidebar {
-      border-right: 1px solid var(--border);
-      padding: 28px 20px;
       min-height: 100vh;
+
+      padding: 28px 20px;
+
+      border-right:
+        1px solid var(--border);
+
       position: sticky;
       top: 0;
-      height: 100vh;
-    }
 
-    .rightbar {
-      padding: 28px 20px;
-      min-height: 100vh;
+      height: 100vh;
     }
 
     .main {
       min-width: 0;
-      border-right: 1px solid var(--border);
+
+      border-right:
+        1px solid var(--border);
+    }
+
+    .rightbar {
+      min-height: 100vh;
+      padding: 28px 20px;
     }
 
     /* =========================================================
@@ -107,51 +190,78 @@
        ========================================================= */
 
     .logo {
+      display: inline-block;
+
       font-size: 30px;
-      font-weight: 900;
-      letter-spacing: -.07em;
+      font-weight: 950;
+
+      letter-spacing: -.075em;
     }
 
     .logo-subtitle {
       color: var(--muted);
+
       font-size: 12px;
+
       margin-top: 5px;
     }
 
     /* =========================================================
-       NAV
+       NAVIGATION
        ========================================================= */
 
     .nav {
       margin-top: 40px;
+
       display: flex;
       flex-direction: column;
+
       gap: 4px;
     }
 
     .nav-button {
       width: 100%;
+
       display: flex;
       align-items: center;
+
       gap: 12px;
+
       padding: 12px 14px;
+
       border: 0;
       border-radius: 14px;
+
       background: transparent;
       color: var(--text);
+
       text-align: left;
-      font-weight: 600;
-      transition: .15s;
+
+      font-weight: 650;
+
+      transition:
+        background .15s,
+        transform .1s;
     }
 
     .nav-button:hover {
       background: var(--surface-2);
     }
 
+    .nav-button:active {
+      transform: scale(.98);
+    }
+
+    .nav-button.active {
+      background: var(--surface-2);
+    }
+
     .nav-icon {
       width: 22px;
+
       text-align: center;
-      font-size: 18px;
+
+      font-size: 19px;
     }
 
     /* =========================================================
@@ -160,30 +270,55 @@
 
     .topbar {
       height: 66px;
+
       position: sticky;
       top: 0;
       z-index: 20;
+
       display: flex;
       align-items: center;
+
       gap: 12px;
+
       padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(255,255,255,.9);
-      backdrop-filter: blur(15px);
+
+      border-bottom:
+        1px solid var(--border);
+
+      background: var(--topbar-bg);
+
+      backdrop-filter:
+        blur(16px);
     }
 
     .mobile-logo {
       display: none;
+
+      font-size: 20px;
+      font-weight: 950;
+
+      letter-spacing: -.06em;
     }
 
     .search {
       flex: 1;
+
+      min-width: 0;
+
       border: 0;
       outline: 0;
+
       background: var(--surface-2);
+
+      color: var(--text);
+
       border-radius: 999px;
+
       padding: 11px 16px;
-      min-width: 0;
+    }
+
+    .search::placeholder {
+      color: var(--muted);
     }
 
     .search:focus {
@@ -191,56 +326,74 @@
     }
 
     /* =========================================================
-       PROFILE
+       PROFILE MINI
        ========================================================= */
 
     .profile-mini {
       margin-top: 45px;
+
       padding-top: 20px;
-      border-top: 1px solid var(--border);
+
+      border-top:
+        1px solid var(--border);
     }
 
     .profile-row {
       display: flex;
       align-items: center;
+
       gap: 11px;
     }
 
     .avatar {
       width: 44px;
       height: 44px;
-      border-radius: 50%;
-      background: var(--surface-2);
+
+      flex: 0 0 44px;
+
       display: flex;
       align-items: center;
       justify-content: center;
+
+      border-radius: 50%;
+
+      background: var(--surface-2);
+
       font-size: 23px;
-      flex-shrink: 0;
     }
 
     .avatar.large {
-      width: 64px;
-      height: 64px;
-      font-size: 34px;
+      width: 76px;
+      height: 76px;
+
+      flex-basis: 76px;
+
+      font-size: 38px;
     }
 
     .profile-name {
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 750;
     }
 
     .profile-username {
       color: var(--muted);
+
       font-size: 12px;
+
       margin-top: 2px;
     }
 
     .logout-button {
       border: 0;
-      background: none;
+      background: transparent;
+
       padding: 0;
+
       margin-top: 15px;
+
       color: var(--muted);
+
       font-size: 13px;
     }
 
@@ -249,169 +402,260 @@
     }
 
     /* =========================================================
-       CREATE POST
+       BUTTONS
+       ========================================================= */
+
+    .primary-button {
+      border: 0;
+
+      background: var(--accent);
+      color: var(--accent-text);
+
+      border-radius: 999px;
+
+      padding: 9px 17px;
+
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .primary-button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .secondary-button {
+      border: 1px solid var(--border);
+
+      background: var(--surface);
+
+      color: var(--text);
+
+      border-radius: 999px;
+
+      padding: 9px 17px;
+
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .secondary-button:hover {
+      background: var(--surface-2);
+    }
+
+    /* =========================================================
+       COMPOSER
        ========================================================= */
 
     .composer {
       padding: 18px;
-      border-bottom: 1px solid var(--border);
+
+      border-bottom:
+        1px solid var(--border);
     }
 
     .composer textarea {
       width: 100%;
+
+      min-height: 105px;
+
+      resize: vertical;
+
       border: 0;
       outline: 0;
-      resize: none;
-      min-height: 100px;
+
+      background: transparent;
+      color: var(--text);
+
       font-size: 17px;
       line-height: 1.6;
-      background: transparent;
     }
 
     .composer textarea::placeholder {
-      color: #a3a3a3;
+      color: var(--faint);
     }
 
     .composer-footer {
       display: flex;
       align-items: center;
+
       gap: 10px;
+
+      margin-top: 5px;
     }
 
     .hashtag-preview {
       flex: 1;
+
+      min-width: 0;
+
       display: flex;
       flex-wrap: wrap;
+
       gap: 6px;
-      min-width: 0;
     }
 
     .tag-pill {
       background: var(--surface-2);
+
+      color: var(--text);
+
       border-radius: 999px;
+
       padding: 5px 9px;
+
       font-size: 12px;
-      font-weight: 600;
-    }
-
-    .post-button {
-      border: 0;
-      background: #111;
-      color: white;
-      border-radius: 999px;
-      padding: 9px 18px;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .post-button:disabled {
-      opacity: .3;
-      cursor: not-allowed;
+      font-weight: 650;
     }
 
     /* =========================================================
-       POST
+       POSTS
        ========================================================= */
 
     .post {
       padding: 18px;
-      border-bottom: 1px solid var(--border);
-      transition: background .15s;
+
+      border-bottom:
+        1px solid var(--border);
+
+      transition:
+        background .15s;
     }
 
     .post:hover {
-      background: #fdfdfd;
+      background: var(--surface);
     }
 
     .post-inner {
       display: flex;
+
       gap: 12px;
     }
 
     .post-content {
       flex: 1;
+
       min-width: 0;
     }
 
     .post-header {
       display: flex;
       align-items: center;
+
       gap: 7px;
+
+      min-width: 0;
+    }
+
+    .post-author-link {
+      display: flex;
+      align-items: center;
+
+      gap: 7px;
+
       min-width: 0;
     }
 
     .post-display-name {
       font-size: 14px;
       font-weight: 750;
+
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .post-username,
-    .post-time {
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
+    .post-time,
     .post-dot {
-      color: #bdbdbd;
+      color: var(--muted);
+
+      font-size: 12px;
+
+      white-space: nowrap;
     }
 
     .post-body {
       margin-top: 8px;
+
       white-space: pre-wrap;
+
       word-break: break-word;
+
       line-height: 1.55;
+
       font-size: 15px;
     }
 
     .post-body a {
       color: var(--blue);
-      font-weight: 600;
+
+      font-weight: 650;
     }
 
     .post-tag {
       display: inline-flex;
+
       margin-top: 11px;
+
       padding: 5px 10px;
+
       border-radius: 999px;
+
       background: var(--surface-2);
+
       font-size: 12px;
       font-weight: 700;
+    }
+
+    .post-tag:hover {
+      background: var(--surface-3);
     }
 
     .post-actions {
       display: flex;
       align-items: center;
+
       justify-content: space-between;
+
       max-width: 430px;
+
       margin-top: 14px;
+
       color: var(--muted);
     }
 
     .action-button {
       border: 0;
+
       background: transparent;
+
       color: inherit;
+
       display: flex;
       align-items: center;
+
       gap: 6px;
-      padding: 4px;
+
+      padding: 5px;
+
       font-size: 13px;
+
+      border-radius: 8px;
     }
 
     .action-button:hover {
+      background: var(--surface-2);
+
       color: var(--text);
     }
 
     .action-button.liked {
-      color: #ef4444;
+      color: var(--red);
     }
 
     .action-button.reposted {
-      color: #16a34a;
+      color: var(--green);
     }
 
     .action-icon {
@@ -419,7 +663,7 @@
     }
 
     .delete-action:hover {
-      color: var(--danger);
+      color: var(--red);
     }
 
     /* =========================================================
@@ -428,36 +672,141 @@
 
     .comments {
       margin-top: 15px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
+
+      padding-top: 14px;
+
+      border-top:
+        1px solid var(--border);
     }
 
     .comment-form {
       display: flex;
+
       gap: 8px;
     }
 
     .comment-input {
       min-width: 0;
+
       flex: 1;
-      border: 1px solid var(--border);
+
+      border:
+        1px solid var(--border);
+
       outline: 0;
+
       border-radius: 999px;
+
       padding: 9px 13px;
+
+      background: var(--surface);
+
+      color: var(--text);
     }
 
     .comment-input:focus {
-      border-color: #111;
+      border-color: var(--text);
     }
 
     .comment-button {
       border: 0;
-      background: #111;
-      color: #fff;
+
+      background: var(--accent);
+      color: var(--accent-text);
+
       border-radius: 999px;
+
       padding: 9px 14px;
+
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 750;
+    }
+
+    .comment-list {
+      margin-top: 15px;
+
+      display: flex;
+      flex-direction: column;
+
+      gap: 12px;
+    }
+
+    .comment {
+      display: flex;
+
+      gap: 9px;
+    }
+
+    .comment-avatar {
+      width: 32px;
+      height: 32px;
+
+      flex: 0 0 32px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: var(--surface-2);
+
+      border-radius: 50%;
+
+      font-size: 17px;
+    }
+
+    .comment-box {
+      min-width: 0;
+
+      flex: 1;
+
+      padding: 9px 11px;
+
+      border-radius: 12px;
+
+      background: var(--surface-2);
+    }
+
+    .comment-header {
+      display: flex;
+      align-items: center;
+
+      gap: 6px;
+    }
+
+    .comment-name {
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .comment-time {
+      color: var(--muted);
+
+      font-size: 11px;
+    }
+
+    .comment-body {
+      margin-top: 4px;
+
+      font-size: 13px;
+
+      line-height: 1.5;
+
+      word-break: break-word;
+    }
+
+    .comment-delete {
+      border: 0;
+      background: transparent;
+
+      color: var(--muted);
+
+      font-size: 11px;
+
+      padding: 3px;
+    }
+
+    .comment-delete:hover {
+      color: var(--red);
     }
 
     /* =========================================================
@@ -466,54 +815,105 @@
 
     .niche-header {
       padding: 26px 20px;
-      border-bottom: 1px solid var(--border);
+
+      border-bottom:
+        1px solid var(--border);
+    }
+
+    .back-button {
+      border: 0;
+
+      background: transparent;
+
+      color: var(--muted);
+
+      padding: 4px 0;
+
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .back-button:hover {
+      color: var(--text);
     }
 
     .niche-title-row {
+      margin-top: 18px;
+
       display: flex;
+
       justify-content: space-between;
+
       gap: 15px;
+
       align-items: flex-start;
     }
 
     .niche-hash {
       font-size: 28px;
-      font-weight: 900;
+
+      font-weight: 950;
     }
 
     .niche-name {
       margin: 2px 0 0;
+
       font-size: 30px;
-      font-weight: 900;
+
+      font-weight: 950;
+
       letter-spacing: -.04em;
     }
 
     .niche-slug {
       margin-top: 4px;
+
       color: var(--muted);
+
       font-size: 13px;
+    }
+
+    .niche-description {
+      margin-top: 12px;
+
+      color: var(--muted);
+
+      line-height: 1.55;
+
+      font-size: 14px;
     }
 
     .follow-button {
       border: 0;
+
       border-radius: 999px;
+
       padding: 9px 17px;
-      background: #111;
-      color: #fff;
-      font-weight: 700;
+
+      background: var(--accent);
+      color: var(--accent-text);
+
+      font-weight: 750;
+
       font-size: 13px;
     }
 
     .follow-button.following {
-      color: #111;
-      background: #fff;
-      border: 1px solid var(--border);
+      background: var(--surface);
+
+      color: var(--text);
+
+      border:
+        1px solid var(--border);
     }
 
     .niche-stats {
       display: flex;
+
       gap: 25px;
+
       margin-top: 23px;
+
       font-size: 13px;
     }
 
@@ -526,25 +926,288 @@
     }
 
     /* =========================================================
-       RIGHT SIDE
+       PROFILE PAGE
+       ========================================================= */
+
+    .profile-page {
+      padding-bottom: 30px;
+    }
+
+    .profile-cover {
+      height: 110px;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--surface-2),
+          var(--surface-3)
+        );
+
+      border-bottom:
+        1px solid var(--border);
+    }
+
+    .profile-header {
+      padding: 0 20px 20px;
+    }
+
+    .profile-header-top {
+      display: flex;
+
+      justify-content: space-between;
+
+      align-items: flex-end;
+
+      gap: 15px;
+
+      margin-top: -38px;
+    }
+
+    .profile-avatar {
+      width: 76px;
+      height: 76px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 50%;
+
+      border:
+        4px solid var(--bg);
+
+      background: var(--surface-2);
+
+      font-size: 38px;
+    }
+
+    .profile-header-info {
+      margin-top: 12px;
+    }
+
+    .profile-display-name {
+      font-size: 23px;
+
+      font-weight: 900;
+
+      letter-spacing: -.03em;
+    }
+
+    .profile-handle {
+      margin-top: 3px;
+
+      color: var(--muted);
+
+      font-size: 13px;
+    }
+
+    .profile-bio {
+      margin-top: 13px;
+
+      font-size: 14px;
+
+      line-height: 1.55;
+    }
+
+    .profile-stats {
+      display: flex;
+
+      gap: 22px;
+
+      margin-top: 17px;
+    }
+
+    .profile-stat {
+      font-size: 13px;
+    }
+
+    .profile-stat strong {
+      font-size: 15px;
+    }
+
+    .profile-stat span {
+      color: var(--muted);
+    }
+
+    .profile-tabs {
+      display: flex;
+
+      border-bottom:
+        1px solid var(--border);
+    }
+
+    .profile-tab {
+      flex: 1;
+
+      border: 0;
+
+      background: transparent;
+
+      color: var(--muted);
+
+      padding: 14px;
+
+      font-weight: 700;
+    }
+
+    .profile-tab.active {
+      color: var(--text);
+
+      box-shadow:
+        inset 0 -2px 0 var(--text);
+    }
+
+    /* =========================================================
+       EXPLORE
+       ========================================================= */
+
+    .page-header {
+      padding: 24px 20px;
+
+      border-bottom:
+        1px solid var(--border);
+    }
+
+    .page-title {
+      margin: 0;
+
+      font-size: 28px;
+
+      font-weight: 950;
+
+      letter-spacing: -.04em;
+    }
+
+    .page-subtitle {
+      margin-top: 5px;
+
+      color: var(--muted);
+
+      font-size: 13px;
+    }
+
+    .search-results {
+      padding: 10px 0;
+    }
+
+    .result-section-title {
+      padding: 13px 20px;
+
+      font-size: 13px;
+
+      font-weight: 800;
+
+      color: var(--muted);
+
+      text-transform: uppercase;
+
+      letter-spacing: .05em;
+    }
+
+    .result-item {
+      width: 100%;
+
+      display: flex;
+      align-items: center;
+
+      gap: 12px;
+
+      border: 0;
+
+      background: transparent;
+
+      color: var(--text);
+
+      padding: 13px 20px;
+
+      text-align: left;
+    }
+
+    .result-item:hover {
+      background: var(--surface-2);
+    }
+
+    .result-icon {
+      width: 42px;
+      height: 42px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 50%;
+
+      background: var(--surface-2);
+
+      font-size: 20px;
+    }
+
+    .result-main {
+      min-width: 0;
+    }
+
+    .result-name {
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .result-meta {
+      margin-top: 3px;
+
+      color: var(--muted);
+
+      font-size: 12px;
+    }
+
+    /* =========================================================
+       RIGHTBAR
        ========================================================= */
 
     .info-card {
       background: var(--surface-2);
+
       border-radius: 18px;
+
       padding: 18px;
     }
 
     .info-title {
-      font-weight: 800;
+      font-weight: 850;
+
       font-size: 15px;
     }
 
     .info-text {
       margin-top: 8px;
+
       color: var(--muted);
+
       font-size: 13px;
+
       line-height: 1.6;
+    }
+
+    .theme-card {
+      margin-top: 15px;
+    }
+
+    .theme-select {
+      width: 100%;
+
+      margin-top: 12px;
+
+      border:
+        1px solid var(--border);
+
+      border-radius: 10px;
+
+      background: var(--surface);
+
+      color: var(--text);
+
+      padding: 9px 10px;
+
+      outline: 0;
     }
 
     /* =========================================================
@@ -553,6 +1216,7 @@
 
     .empty {
       padding: 70px 25px;
+
       text-align: center;
     }
 
@@ -562,20 +1226,52 @@
 
     .empty-title {
       margin-top: 15px;
+
       font-size: 20px;
-      font-weight: 800;
+
+      font-weight: 850;
     }
 
     .empty-text {
       margin-top: 7px;
+
       color: var(--muted);
+
       font-size: 14px;
+
+      line-height: 1.55;
     }
 
     .loading {
       padding: 60px;
+
       text-align: center;
+
       color: var(--muted);
+    }
+
+    .spinner {
+      width: 22px;
+      height: 22px;
+
+      margin: 0 auto 12px;
+
+      border:
+        2px solid var(--border);
+
+      border-top-color:
+        var(--text);
+
+      border-radius: 50%;
+
+      animation:
+        spin .7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     /* =========================================================
@@ -584,92 +1280,151 @@
 
     .auth-screen {
       min-height: 100vh;
+
       display: flex;
+
       align-items: center;
       justify-content: center;
+
       padding: 25px;
-      background: #fff;
+
+      background: var(--bg);
     }
 
     .auth-box {
       width: 100%;
-      max-width: 380px;
+
+      max-width: 390px;
     }
 
     .auth-logo {
       text-align: center;
+
       font-size: 48px;
+
       font-weight: 950;
+
       letter-spacing: -.08em;
     }
 
     .auth-tagline {
       margin: 10px 0 30px;
+
       text-align: center;
+
       color: var(--muted);
+
       font-size: 14px;
     }
 
     .auth-form {
       display: flex;
+
       flex-direction: column;
+
       gap: 10px;
     }
 
     .auth-input {
       width: 100%;
-      border: 1px solid var(--border);
+
+      border:
+        1px solid var(--border);
+
       border-radius: 14px;
+
       padding: 13px 14px;
+
       outline: 0;
+
+      background: var(--surface);
+
+      color: var(--text);
     }
 
     .auth-input:focus {
-      border-color: #111;
+      border-color: var(--text);
     }
 
     .auth-submit {
       border: 0;
+
       border-radius: 14px;
-      background: #111;
-      color: #fff;
+
+      background: var(--accent);
+      color: var(--accent-text);
+
       padding: 13px;
-      font-weight: 700;
+
+      font-weight: 750;
+    }
+
+    .auth-submit:disabled {
+      opacity: .5;
+
+      cursor: wait;
     }
 
     .auth-switch {
       width: 100%;
+
       margin-top: 18px;
+
       border: 0;
-      background: none;
+
+      background: transparent;
+
       color: var(--muted);
+
       font-size: 13px;
     }
 
+    .auth-switch:hover {
+      color: var(--text);
+    }
+
     .auth-message {
-      margin-top: 12px;
+      margin-top: 14px;
+
+      padding: 11px;
+
+      border-radius: 12px;
+
+      background: var(--surface-2);
+
       text-align: center;
+
       color: var(--muted);
+
       font-size: 13px;
+
       line-height: 1.5;
     }
 
     /* =========================================================
-       PROFILE SETUP
+       PROFILE SETUP / MODAL
        ========================================================= */
 
     .modal-overlay {
       position: fixed;
+
       inset: 0;
+
       z-index: 100;
-      background: rgba(255,255,255,.96);
+
+      background:
+        var(--bg);
+
       overflow-y: auto;
     }
 
     .setup {
       width: 100%;
+
       max-width: 500px;
+
       margin: auto;
+
       padding: 50px 20px;
     }
 
@@ -679,14 +1434,19 @@
 
     .setup-title {
       margin-top: 10px;
+
       font-size: 30px;
-      font-weight: 900;
+
+      font-weight: 950;
+
       letter-spacing: -.04em;
     }
 
     .setup-subtitle {
       margin-top: 6px;
+
       color: var(--muted);
+
       font-size: 14px;
     }
 
@@ -696,23 +1456,35 @@
 
     .form-label {
       display: block;
+
       margin-bottom: 8px;
+
       font-size: 13px;
+
       font-weight: 750;
     }
 
     .form-input,
     .form-textarea {
       width: 100%;
-      border: 1px solid var(--border);
+
+      border:
+        1px solid var(--border);
+
       border-radius: 14px;
+
       outline: 0;
+
       padding: 12px 14px;
+
+      background: var(--surface);
+
+      color: var(--text);
     }
 
     .form-input:focus,
     .form-textarea:focus {
-      border-color: #111;
+      border-color: var(--text);
     }
 
     .form-textarea {
@@ -721,37 +1493,61 @@
 
     .username-wrapper {
       display: flex;
-      border: 1px solid var(--border);
+
+      border:
+        1px solid var(--border);
+
       border-radius: 14px;
+
       overflow: hidden;
     }
 
     .username-prefix {
       padding: 12px 13px;
+
       background: var(--surface-2);
+
       color: var(--muted);
     }
 
     .username-input {
       flex: 1;
+
       min-width: 0;
+
       border: 0;
+
       outline: 0;
+
       padding: 12px;
+
+      background: var(--surface);
+
+      color: var(--text);
     }
 
     .emoji-grid {
       display: grid;
-      grid-template-columns: repeat(8, 1fr);
+
+      grid-template-columns:
+        repeat(8, 1fr);
+
       gap: 7px;
     }
 
     .emoji-button {
       aspect-ratio: 1;
+
       border: 0;
+
       border-radius: 11px;
+
       background: var(--surface-2);
+
+      color: var(--text);
+
       font-size: 22px;
+
       transition: .15s;
     }
 
@@ -760,26 +1556,38 @@
     }
 
     .emoji-button.selected {
-      background: #111;
+      background: var(--accent);
+      color: var(--accent-text);
     }
 
     .setup-submit {
       width: 100%;
+
       margin-top: 24px;
+
       border: 0;
+
       border-radius: 14px;
-      background: #111;
-      color: #fff;
+
+      background: var(--accent);
+      color: var(--accent-text);
+
       padding: 13px;
+
       font-weight: 750;
     }
 
     .error {
       margin-top: 12px;
+
       padding: 10px 13px;
+
       border-radius: 12px;
-      background: #fef2f2;
-      color: #dc2626;
+
+      background: var(--danger-bg);
+
+      color: var(--danger-text);
+
       font-size: 13px;
     }
 
@@ -789,23 +1597,38 @@
 
     .toast {
       position: fixed;
+
       left: 50%;
       bottom: 25px;
-      transform: translateX(-50%) translateY(20px);
+
+      transform:
+        translateX(-50%)
+        translateY(20px);
+
       z-index: 300;
+
       opacity: 0;
+
       pointer-events: none;
-      background: #111;
-      color: #fff;
+
+      background: var(--accent);
+      color: var(--accent-text);
+
       padding: 11px 16px;
+
       border-radius: 999px;
+
       font-size: 13px;
+
       transition: .2s;
     }
 
     .toast.show {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+
+      transform:
+        translateX(-50%)
+        translateY(0);
     }
 
     /* =========================================================
@@ -814,7 +1637,9 @@
 
     @media (max-width: 1000px) {
       .app-shell {
-        grid-template-columns: 80px minmax(0, 650px);
+        grid-template-columns:
+          80px
+          minmax(0, 650px);
       }
 
       .sidebar {
@@ -856,9 +1681,6 @@
 
       .mobile-logo {
         display: block;
-        font-size: 20px;
-        font-weight: 900;
-        letter-spacing: -.06em;
       }
 
       .topbar {
@@ -874,7 +1696,7 @@
       }
 
       .niche-header {
-        padding: 22px 15px;
+        padding: 20px 15px;
       }
 
       .niche-name {
@@ -888,6 +1710,16 @@
       .action-button {
         gap: 3px;
       }
+
+      .profile-header {
+        padding-left: 15px;
+        padding-right: 15px;
+      }
+
+      .page-header {
+        padding-left: 15px;
+        padding-right: 15px;
+      }
     }
 
     @media (max-width: 420px) {
@@ -898,7 +1730,16 @@
       }
 
       .emoji-grid {
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns:
+          repeat(6, 1fr);
+      }
+
+      .comment-form {
+        flex-direction: column;
+      }
+
+      .comment-button {
+        align-self: flex-end;
       }
     }
   </style>
@@ -911,28 +1752,30 @@
 
 <script>
 /* =============================================================
-   NICHE — SINGLE FILE APPLICATION
+   NICHE v2
+   Single-file Supabase social application
    ============================================================= */
 
-/*
- * =============================================================
- * 1. SUPABASE CONFIGURATION
- * =============================================================
- *
- * Replace these two values with your Supabase project details.
- */
+/* =============================================================
+   CONFIGURATION
+   ============================================================= */
 
-const SUPABASE_URL = "https://phdwefylrpcdlfjwpdge.supabase.co";
-const SUPABASE_KEY = "sb_publishable_yfzOWHkT7kg-gpgX_3v3aQ__vC-cRFE";
+const SUPABASE_URL =
+  "https://phdwefylrpcdlfjwpdge.supabase.co";
 
-/*
- * Do NOT put a Supabase service_role key here.
- * This file is public on GitHub Pages.
- */
+const SUPABASE_KEY =
+  "sb_publishable_yfzOWHkT7kg-gpgX_3v3aQ__vC-cRFE";
+
+const SITE_URL =
+  "https://cricketzarena592-svg.github.io/niche/";
+
+const BASE_PATH = "/niche";
 
 const configured =
-  SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
-  SUPABASE_KEY !== "YOUR_SUPABASE_PUBLISHABLE_KEY";
+  SUPABASE_URL &&
+  SUPABASE_KEY &&
+  !SUPABASE_URL.includes("YOUR_") &&
+  !SUPABASE_KEY.includes("YOUR_");
 
 let supabaseClient = null;
 
@@ -952,14 +1795,35 @@ const state = {
   session: null,
   user: null,
   profile: null,
+
   posts: [],
+
   currentNiche: null,
+  currentProfile: null,
+
   following: false,
+
   loading: false,
+
   authMode: "login",
+
+  search: "",
+
+  searchResults: null,
+
   commentOpen: {},
-  commentText: {},
-  search: ""
+
+  comments: {},
+
+  commentLoading: {},
+
+  profilePosts: [],
+
+  editingProfile: false,
+
+  profileTab: "posts",
+
+  theme: "system"
 };
 
 /* =============================================================
@@ -967,18 +1831,125 @@ const state = {
    ============================================================= */
 
 const EMOJIS = [
-  "🙂","😎","🤓","😄","😃","😌","🤠","🧑‍💻",
-  "👾","🚀","🌎","🌙","⭐","🔥","⚡","🎮",
-  "🏏","⚽","🏀","🎵","🎨","📚","💻","🐱",
-  "🐶","🦊","🐼","🦁","🐸","🐧","🍀","🌻"
+  "🙂","😎","🤓","😄",
+  "😃","😌","🤠","🧑‍💻",
+  "👾","🚀","🌎","🌙",
+  "⭐","🔥","⚡","🎮",
+  "🏏","⚽","🏀","🎵",
+  "🎨","📚","💻","🐱",
+  "🐶","🦊","🐼","🦁",
+  "🐸","🐧","🍀","🌻"
 ];
+
+/* =============================================================
+   THEME
+   ============================================================= */
+
+function getSavedTheme() {
+  try {
+    return (
+      localStorage.getItem(
+        "niche-theme"
+      ) || "system"
+    );
+  } catch {
+    return "system";
+  }
+}
+
+function systemPrefersDark() {
+  return window.matchMedia &&
+    window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+}
+
+function applyTheme(theme) {
+  state.theme = theme;
+
+  let dark = false;
+
+  if (theme === "dark") {
+    dark = true;
+  }
+
+  if (theme === "system") {
+    dark = systemPrefersDark();
+  }
+
+  document.documentElement.classList.toggle(
+    "dark",
+    dark
+  );
+
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute(
+      "content",
+      dark ? "#0b0b0c" : "#ffffff"
+    );
+
+  try {
+    localStorage.setItem(
+      "niche-theme",
+      theme
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function setTheme(theme) {
+  if (
+    !["light", "dark", "system"]
+      .includes(theme)
+  ) {
+    theme = "system";
+  }
+
+  applyTheme(theme);
+
+  render();
+
+  showToast(
+    theme === "system"
+      ? "Using system theme."
+      : theme === "dark"
+        ? "Dark mode enabled."
+        : "Light mode enabled."
+  );
+}
+
+applyTheme(
+  getSavedTheme()
+);
+
+if (window.matchMedia) {
+  window
+    .matchMedia(
+      "(prefers-color-scheme: dark)"
+    )
+    .addEventListener(
+      "change",
+      () => {
+        if (
+          state.theme === "system"
+        ) {
+          applyTheme("system");
+        }
+      }
+    );
+}
 
 /* =============================================================
    UTILITIES
    ============================================================= */
 
 function escapeHTML(value) {
-  if (value === null || value === undefined) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return "";
   }
 
@@ -990,9 +1961,16 @@ function escapeHTML(value) {
     .replace(/'/g, "&#039;");
 }
 
+function escapeAttribute(value) {
+  return escapeHTML(value);
+}
+
 function extractHashtags(text) {
   const matches =
-    text.match(/#[a-zA-Z0-9_-]+/g) || [];
+    String(text || "")
+      .match(
+        /#[a-zA-Z0-9_-]+/g
+      ) || [];
 
   return [
     ...new Set(
@@ -1001,7 +1979,10 @@ function extractHashtags(text) {
           tag
             .replace(/^#+/, "")
             .toLowerCase()
-            .replace(/[^a-z0-9_-]/g, "")
+            .replace(
+              /[^a-z0-9_-]/g,
+              ""
+            )
             .slice(0, 50)
         )
         .filter(Boolean)
@@ -1012,6 +1993,14 @@ function extractHashtags(text) {
 function formatTime(dateString) {
   const date =
     new Date(dateString);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "";
+  }
 
   const now = new Date();
 
@@ -1050,10 +2039,18 @@ function formatTime(dateString) {
 
 function showToast(message) {
   const toast =
-    document.getElementById("toast");
+    document.getElementById(
+      "toast"
+    );
 
-  toast.textContent = message;
-  toast.classList.add("show");
+  if (!toast) return;
+
+  toast.textContent =
+    message;
+
+  toast.classList.add(
+    "show"
+  );
 
   clearTimeout(
     showToast.timeout
@@ -1061,47 +2058,164 @@ function showToast(message) {
 
   showToast.timeout =
     setTimeout(() => {
-      toast.classList.remove("show");
-    }, 2500);
+      toast.classList.remove(
+        "show"
+      );
+    }, 2600);
 }
+
+function normalizeUsername(username) {
+  return String(
+    username || ""
+  )
+    .trim()
+    .replace(/^@/, "")
+    .toLowerCase();
+}
+
+/* =============================================================
+   ROUTING
+   ============================================================= */
 
 function getRoute() {
   const path =
     window.location.pathname;
 
-  const match =
-    path.match(/^\/niche\/([^/]+)/i);
+  const clean =
+    path
+      .replace(
+        new RegExp(
+          "^" +
+          BASE_PATH.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          )
+        ),
+        ""
+      )
+      .replace(
+        /^\/+/,
+        ""
+      )
+      .replace(
+        /\/+$/,
+        ""
+      );
 
-  if (match) {
+  if (!clean) {
+    return {
+      type: "home"
+    };
+  }
+
+  const parts =
+    clean.split(
+      "/"
+    ).filter(Boolean);
+
+  if (
+    parts[0] === "niche" &&
+    parts[1]
+  ) {
     return {
       type: "niche",
       topic: decodeURIComponent(
-        match[1]
-      ).replace(/^#/, "").toLowerCase()
+        parts
+          .slice(1)
+          .join("/")
+      )
+        .replace(/^#/, "")
+        .toLowerCase()
+    };
+  }
+
+  if (
+    parts[0] === "profile" &&
+    parts[1]
+  ) {
+    return {
+      type: "profile",
+      username:
+        decodeURIComponent(
+          parts[1]
+        )
+          .replace(/^@/, "")
+          .toLowerCase()
+    };
+  }
+
+  if (
+    parts[0] === "explore"
+  ) {
+    return {
+      type: "explore"
+    };
+  }
+
+  if (
+    parts[0] === "settings"
+  ) {
+    return {
+      type: "settings"
     };
   }
 
   return {
-    type: "home"
+    type: "notfound"
   };
 }
 
-function navigate(path) {
-  history.pushState({}, "", path);
-  render();
+function appPath(path) {
+  if (!path) {
+    return `${BASE_PATH}/`;
+  }
+
+  if (
+    path.startsWith(
+      BASE_PATH
+    )
+  ) {
+    return path;
+  }
+
+  return `${BASE_PATH}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+async function navigate(path) {
+  const finalPath =
+    appPath(path);
+
+  if (
+    window.location.pathname !==
+    finalPath
+  ) {
+    history.pushState(
+      {},
+      "",
+      finalPath
+    );
+  }
+
+  await render();
+  window.scrollTo(
+    0,
+    0
+  );
 }
 
 window.addEventListener(
   "popstate",
-  render
+  () => render()
 );
 
 /* =============================================================
-   SUPABASE CHECK
+   CONFIGURATION SCREEN
    ============================================================= */
 
 function configurationScreen() {
-  document.getElementById("app").innerHTML = `
+  document.getElementById(
+    "app"
+  ).innerHTML = `
     <div class="auth-screen">
       <div class="auth-box">
 
@@ -1110,20 +2224,20 @@ function configurationScreen() {
         </div>
 
         <div class="auth-tagline">
-          Supabase configuration required
+          Everything starts with a topic.
         </div>
 
         <div class="info-card">
+
           <div class="info-title">
-            Almost ready
+            Supabase configuration required
           </div>
 
           <div class="info-text">
-            Open this index.html file and replace
-            <b>YOUR_SUPABASE_URL</b> and
-            <b>YOUR_SUPABASE_PUBLISHABLE_KEY</b>
-            near the top of the JavaScript section.
+            Add your Supabase URL and publishable
+            key near the top of this file.
           </div>
+
         </div>
 
       </div>
@@ -1139,12 +2253,12 @@ async function signIn() {
   const email =
     document.getElementById(
       "auth-email"
-    ).value.trim();
+    )?.value.trim();
 
   const password =
     document.getElementById(
       "auth-password"
-    ).value;
+    )?.value;
 
   if (!email || !password) {
     showToast(
@@ -1157,16 +2271,19 @@ async function signIn() {
 
   const {
     error
-  } = await supabaseClient.auth
-    .signInWithPassword({
-      email,
-      password
-    });
+  } =
+    await supabaseClient.auth
+      .signInWithPassword({
+        email,
+        password
+      });
 
   setAuthLoading(false);
 
   if (error) {
-    showToast(error.message);
+    showToast(
+      error.message
+    );
   }
 }
 
@@ -1174,12 +2291,12 @@ async function signUp() {
   const email =
     document.getElementById(
       "auth-email"
-    ).value.trim();
+    )?.value.trim();
 
   const password =
     document.getElementById(
       "auth-password"
-    ).value;
+    )?.value;
 
   if (!email || !password) {
     showToast(
@@ -1188,7 +2305,9 @@ async function signUp() {
     return;
   }
 
-  if (password.length < 6) {
+  if (
+    password.length < 6
+  ) {
     showToast(
       "Password must contain at least 6 characters."
     );
@@ -1199,64 +2318,27 @@ async function signUp() {
 
   const {
     error
-  } = await supabaseClient.auth
-async function signUp() {
-  const email =
-    document.getElementById(
-      "auth-email"
-    ).value.trim();
+  } =
+    await supabaseClient.auth
+      .signUp({
+        email,
+        password,
 
-  const password =
-    document.getElementById(
-      "auth-password"
-    ).value;
-
-  if (!email || !password) {
-    showToast(
-      "Enter your email and password."
-    );
-    return;
-  }
-
-  if (password.length < 6) {
-    showToast(
-      "Password must contain at least 6 characters."
-    );
-    return;
-  }
-
-  setAuthLoading(true);
-
-  const {
-    error
-  } = await supabaseClient.auth
-    .signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo:
-          "https://cricketzarena592-svg.github.io/niche/"
-      }
-    });
+        options: {
+          emailRedirectTo:
+            SITE_URL
+        }
+      });
 
   setAuthLoading(false);
 
   if (error) {
-    showToast(error.message);
-  } else {
     showToast(
-      "Account created. Check your email for the verification link."
+      error.message
     );
-  }
-}
-
-  setAuthLoading(false);
-
-  if (error) {
-    showToast(error.message);
   } else {
     showToast(
-      "Account created. Check your email if confirmation is enabled."
+      "Account created. Check your email for verification."
     );
   }
 }
@@ -1269,19 +2351,24 @@ function setAuthLoading(value) {
 
   if (!button) return;
 
-  button.disabled = value;
+  button.disabled =
+    value;
 
   button.textContent =
     value
       ? "Please wait..."
-      : state.authMode === "login"
+      : state.authMode ===
+        "login"
         ? "Log in"
         : "Create account";
 }
 
 function renderAuth() {
-  document.getElementById("app").innerHTML = `
+  document.getElementById(
+    "app"
+  ).innerHTML = `
     <div class="auth-screen">
+
       <div class="auth-box">
 
         <div class="auth-logo">
@@ -1294,7 +2381,7 @@ function renderAuth() {
 
         <form
           class="auth-form"
-          onsubmit="event.preventDefault(); submitAuth();"
+          id="auth-form"
         >
 
           <input
@@ -1310,7 +2397,11 @@ function renderAuth() {
             id="auth-password"
             class="auth-input"
             type="password"
-            autocomplete="current-password"
+            autocomplete="${
+              state.authMode === "login"
+                ? "current-password"
+                : "new-password"
+            }"
             placeholder="Password"
             minlength="6"
             required
@@ -1322,7 +2413,8 @@ function renderAuth() {
             type="submit"
           >
             ${
-              state.authMode === "login"
+              state.authMode ===
+              "login"
                 ? "Log in"
                 : "Create account"
             }
@@ -1332,35 +2424,66 @@ function renderAuth() {
 
         <button
           class="auth-switch"
-          onclick="toggleAuthMode()"
+          id="auth-switch"
         >
           ${
-            state.authMode === "login"
+            state.authMode ===
+            "login"
               ? "Create a new account"
               : "Already have an account? Log in"
           }
         </button>
 
+        <div class="auth-message">
+          ${
+            state.authMode ===
+            "login"
+              ? "Use your verified NICHE account."
+              : "A verification email may be required."
+          }
+        </div>
+
       </div>
+
     </div>
   `;
-}
 
-function submitAuth() {
-  if (state.authMode === "login") {
-    signIn();
-  } else {
-    signUp();
-  }
-}
+  document
+    .getElementById(
+      "auth-form"
+    )
+    ?.addEventListener(
+      "submit",
+      event => {
+        event.preventDefault();
 
-function toggleAuthMode() {
-  state.authMode =
-    state.authMode === "login"
-      ? "signup"
-      : "login";
+        if (
+          state.authMode ===
+          "login"
+        ) {
+          signIn();
+        } else {
+          signUp();
+        }
+      }
+    );
 
-  renderAuth();
+  document
+    .getElementById(
+      "auth-switch"
+    )
+    ?.addEventListener(
+      "click",
+      () => {
+        state.authMode =
+          state.authMode ===
+          "login"
+            ? "signup"
+            : "login";
+
+        renderAuth();
+      }
+    );
 }
 
 /* =============================================================
@@ -1368,23 +2491,37 @@ function toggleAuthMode() {
    ============================================================= */
 
 async function loadProfile() {
-  if (!state.user) return;
+  if (!state.user) {
+    state.profile =
+      null;
+
+    return;
+  }
 
   const {
     data,
     error
-  } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", state.user.id)
-    .maybeSingle();
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq(
+        "id",
+        state.user.id
+      )
+      .maybeSingle();
 
   if (error) {
-    console.error(error);
+    console.error(
+      "Profile load:",
+      error
+    );
+
     return;
   }
 
-  state.profile = data;
+  state.profile =
+    data;
 }
 
 function needsProfileSetup() {
@@ -1395,32 +2532,39 @@ function needsProfileSetup() {
 }
 
 function renderProfileSetup() {
+  const selected =
+    state.profile?.avatar_emoji ||
+    "🙂";
+
   const emojiButtons =
     EMOJIS.map(
       emoji => `
         <button
           type="button"
           class="emoji-button ${
-            emoji ===
-            (state.profile?.avatar_emoji || "🙂")
+            emoji === selected
               ? "selected"
               : ""
           }"
-          onclick="selectEmoji('${emoji}')"
+          data-emoji="${escapeAttribute(emoji)}"
         >
           ${emoji}
         </button>
       `
     ).join("");
 
-  document.getElementById("app").innerHTML = `
+  document.getElementById(
+    "app"
+  ).innerHTML = `
     <div class="modal-overlay">
+
       <div class="setup">
 
-        <div class="setup-avatar" id="setup-avatar">
-          ${escapeHTML(
-            state.profile?.avatar_emoji || "🙂"
-          )}
+        <div
+          class="setup-avatar"
+          id="setup-avatar"
+        >
+          ${escapeHTML(selected)}
         </div>
 
         <div class="setup-title">
@@ -1438,7 +2582,10 @@ function renderProfileSetup() {
           </label>
 
           <div class="username-wrapper">
-            <span class="username-prefix">@</span>
+
+            <span class="username-prefix">
+              @
+            </span>
 
             <input
               id="setup-username"
@@ -1446,10 +2593,11 @@ function renderProfileSetup() {
               maxlength="24"
               pattern="[A-Za-z0-9_]+"
               placeholder="yourname"
-              value="${escapeHTML(
+              value="${escapeAttribute(
                 state.profile?.username || ""
               )}"
             >
+
           </div>
 
         </div>
@@ -1465,7 +2613,7 @@ function renderProfileSetup() {
             class="form-input"
             maxlength="40"
             placeholder="Your name"
-            value="${escapeHTML(
+            value="${escapeAttribute(
               state.profile?.display_name || ""
             )}"
           >
@@ -1478,7 +2626,10 @@ function renderProfileSetup() {
             Avatar
           </label>
 
-          <div class="emoji-grid">
+          <div
+            class="emoji-grid"
+            id="setup-emoji-grid"
+          >
             ${emojiButtons}
           </div>
 
@@ -1506,25 +2657,51 @@ function renderProfileSetup() {
 
         <button
           class="setup-submit"
-          onclick="saveProfile()"
+          id="setup-submit"
         >
           Continue to NICHE
         </button>
 
       </div>
+
     </div>
   `;
-}
 
-function selectEmoji(emoji) {
-  if (!state.profile) {
-    state.profile = {};
-  }
+  document
+    .getElementById(
+      "setup-emoji-grid"
+    )
+    ?.addEventListener(
+      "click",
+      event => {
+        const button =
+          event.target.closest(
+            "[data-emoji]"
+          );
 
-  state.profile.avatar_emoji =
-    emoji;
+        if (!button) return;
 
-  renderProfileSetup();
+        const emoji =
+          button.dataset.emoji;
+
+        state.profile =
+          state.profile || {};
+
+        state.profile.avatar_emoji =
+          emoji;
+
+        renderProfileSetup();
+      }
+    );
+
+  document
+    .getElementById(
+      "setup-submit"
+    )
+    ?.addEventListener(
+      "click",
+      saveProfile
+    );
 }
 
 async function saveProfile() {
@@ -1533,7 +2710,7 @@ async function saveProfile() {
       .getElementById(
         "setup-username"
       )
-      .value
+      ?.value
       .trim()
       .toLowerCase();
 
@@ -1542,7 +2719,7 @@ async function saveProfile() {
       .getElementById(
         "setup-display-name"
       )
-      .value
+      ?.value
       .trim();
 
   const bio =
@@ -1550,7 +2727,7 @@ async function saveProfile() {
       .getElementById(
         "setup-bio"
       )
-      .value
+      ?.value
       .trim();
 
   const avatarEmoji =
@@ -1563,9 +2740,8 @@ async function saveProfile() {
     );
 
   if (
-    !/^[a-zA-Z0-9_]{3,24}$/.test(
-      username
-    )
+    !/^[a-zA-Z0-9_]{3,24}$/
+      .test(username)
   ) {
     errorElement.innerHTML = `
       <div class="error">
@@ -1578,22 +2754,65 @@ async function saveProfile() {
   }
 
   const {
+    data: existing,
+    error: existingError
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("id")
+      .eq(
+        "username",
+        username
+      )
+      .neq(
+        "id",
+        state.user.id
+      )
+      .maybeSingle();
+
+  if (
+    existingError
+  ) {
+    console.error(
+      existingError
+    );
+  }
+
+  if (existing) {
+    errorElement.innerHTML = `
+      <div class="error">
+        That username is already taken.
+      </div>
+    `;
+
+    return;
+  }
+
+  const {
     error
-  } = await supabaseClient
-    .from("profiles")
-    .update({
-      username,
-      display_name:
-        displayName || username,
-      avatar_emoji: avatarEmoji,
-      bio
-    })
-    .eq("id", state.user.id);
+  } =
+    await supabaseClient
+      .from("profiles")
+      .update({
+        username,
+        display_name:
+          displayName ||
+          username,
+        avatar_emoji:
+          avatarEmoji,
+        bio
+      })
+      .eq(
+        "id",
+        state.user.id
+      );
 
   if (error) {
     errorElement.innerHTML = `
       <div class="error">
-        ${escapeHTML(error.message)}
+        ${escapeHTML(
+          error.message
+        )}
       </div>
     `;
 
@@ -1601,7 +2820,12 @@ async function saveProfile() {
   }
 
   await loadProfile();
-  render();
+
+  showToast(
+    "Profile saved!"
+  );
+
+  await render();
 }
 
 /* =============================================================
@@ -1609,7 +2833,8 @@ async function saveProfile() {
    ============================================================= */
 
 async function loadPosts() {
-  state.loading = true;
+  state.loading =
+    true;
 
   let query =
     supabaseClient
@@ -1620,17 +2845,23 @@ async function loadPosts() {
           id,
           username,
           display_name,
-          avatar_emoji
+          avatar_emoji,
+          bio
         ),
         likes(user_id),
         reposts(user_id)
       `)
-      .order("created_at", {
-        ascending: false
-      })
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      )
       .limit(50);
 
-  if (state.currentNiche) {
+  if (
+    state.currentNiche
+  ) {
     query =
       query.eq(
         "niche_id",
@@ -1641,16 +2872,28 @@ async function loadPosts() {
   const {
     data,
     error
-  } = await query;
+  } =
+    await query;
 
   if (error) {
-    console.error(error);
-    state.posts = [];
+    console.error(
+      "Posts:",
+      error
+    );
+
+    state.posts =
+      [];
+
+    showToast(
+      "Unable to load posts."
+    );
   } else {
-    state.posts = data || [];
+    state.posts =
+      data || [];
   }
 
-  state.loading = false;
+  state.loading =
+    false;
 }
 
 async function createPost() {
@@ -1669,10 +2912,13 @@ async function createPost() {
   const hashtags =
     extractHashtags(body);
 
-  if (hashtags.length === 0) {
+  if (
+    hashtags.length === 0
+  ) {
     showToast(
       "Add a hashtag such as #football."
     );
+
     return;
   }
 
@@ -1684,30 +2930,58 @@ async function createPost() {
       "create-post-button"
     );
 
-  button.disabled = true;
-  button.textContent = "Posting...";
+  button.disabled =
+    true;
+
+  button.textContent =
+    "Posting...";
 
   const {
     error
-  } = await supabaseClient
-    .from("posts")
-    .insert({
-      author_id: state.user.id,
-      body,
-      hashtag
-    });
+  } =
+    await supabaseClient
+      .from("posts")
+      .insert({
+        author_id:
+          state.user.id,
+
+        body,
+
+        hashtag
+      });
 
   if (error) {
-    showToast(error.message);
+    console.error(
+      error
+    );
+
+    showToast(
+      error.message
+    );
   } else {
-    textarea.value = "";
+    textarea.value =
+      "";
+
     updateHashtagPreview();
-    showToast("Posted!");
+
+    showToast(
+      "Posted!"
+    );
+
     await refreshFeed();
   }
 
-  button.disabled = false;
-  button.textContent = "Post";
+  if (
+    document.getElementById(
+      "create-post-button"
+    )
+  ) {
+    button.disabled =
+      false;
+
+    button.textContent =
+      "Post";
+  }
 }
 
 function updateHashtagPreview() {
@@ -1726,7 +3000,12 @@ function updateHashtagPreview() {
       "create-post-button"
     );
 
-  if (!textarea || !preview) return;
+  if (
+    !textarea ||
+    !preview
+  ) {
+    return;
+  }
 
   const tags =
     extractHashtags(
@@ -1741,7 +3020,16 @@ function updateHashtagPreview() {
               `<span class="tag-pill">#${escapeHTML(tag)}</span>`
           )
           .join("")
-      : `<span style="color:#a3a3a3;font-size:12px">Add #topic</span>`;
+      : `
+          <span
+            style="
+              color:var(--faint);
+              font-size:12px
+            "
+          >
+            Add #topic
+          </span>
+        `;
 
   if (button) {
     button.disabled =
@@ -1755,19 +3043,21 @@ function updateHashtagPreview() {
    ============================================================= */
 
 function isLiked(post) {
-  return (
+  return Boolean(
     post.likes?.some(
       like =>
         like.user_id ===
         state.user.id
-    ) || false
+    )
   );
 }
 
 async function toggleLike(postId) {
   const post =
     state.posts.find(
-      item => item.id === postId
+      item =>
+        String(item.id) ===
+        String(postId)
     );
 
   if (!post) return;
@@ -1778,28 +3068,45 @@ async function toggleLike(postId) {
   if (liked) {
     const {
       error
-    } = await supabaseClient
-      .from("likes")
-      .delete()
-      .eq("post_id", postId)
-      .eq("user_id", state.user.id);
+    } =
+      await supabaseClient
+        .from("likes")
+        .delete()
+        .eq(
+          "post_id",
+          postId
+        )
+        .eq(
+          "user_id",
+          state.user.id
+        );
 
     if (error) {
-      showToast(error.message);
+      showToast(
+        error.message
+      );
+
       return;
     }
   } else {
     const {
       error
-    } = await supabaseClient
-      .from("likes")
-      .insert({
-        post_id: postId,
-        user_id: state.user.id
-      });
+    } =
+      await supabaseClient
+        .from("likes")
+        .insert({
+          post_id:
+            postId,
+
+          user_id:
+            state.user.id
+        });
 
     if (error) {
-      showToast(error.message);
+      showToast(
+        error.message
+      );
+
       return;
     }
   }
@@ -1812,19 +3119,21 @@ async function toggleLike(postId) {
    ============================================================= */
 
 function isReposted(post) {
-  return (
+  return Boolean(
     post.reposts?.some(
       repost =>
         repost.user_id ===
         state.user.id
-    ) || false
+    )
   );
 }
 
 async function toggleRepost(postId) {
   const post =
     state.posts.find(
-      item => item.id === postId
+      item =>
+        String(item.id) ===
+        String(postId)
     );
 
   if (!post) return;
@@ -1835,28 +3144,45 @@ async function toggleRepost(postId) {
   if (reposted) {
     const {
       error
-    } = await supabaseClient
-      .from("reposts")
-      .delete()
-      .eq("post_id", postId)
-      .eq("user_id", state.user.id);
+    } =
+      await supabaseClient
+        .from("reposts")
+        .delete()
+        .eq(
+          "post_id",
+          postId
+        )
+        .eq(
+          "user_id",
+          state.user.id
+        );
 
     if (error) {
-      showToast(error.message);
+      showToast(
+        error.message
+      );
+
       return;
     }
   } else {
     const {
       error
-    } = await supabaseClient
-      .from("reposts")
-      .insert({
-        post_id: postId,
-        user_id: state.user.id
-      });
+    } =
+      await supabaseClient
+        .from("reposts")
+        .insert({
+          post_id:
+            postId,
+
+          user_id:
+            state.user.id
+        });
 
     if (error) {
-      showToast(error.message);
+      showToast(
+        error.message
+      );
+
       return;
     }
   }
@@ -1868,14 +3194,127 @@ async function toggleRepost(postId) {
    COMMENTS
    ============================================================= */
 
-function toggleComments(postId) {
-  state.commentOpen[postId] =
-    !state.commentOpen[postId];
+async function loadComments(
+  postId
+) {
+  state.commentLoading[
+    postId
+  ] = true;
+
+  render();
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("comments")
+      .select(`
+        *,
+        author:profiles!comments_author_id_fkey(
+          id,
+          username,
+          display_name,
+          avatar_emoji
+        )
+      `)
+      .eq(
+        "post_id",
+        postId
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
+
+  if (error) {
+    console.error(
+      "Comments:",
+      error
+    );
+
+    /*
+     * Some existing databases may not have
+     * the relationship named comments_author_id_fkey.
+     * Try the simpler query as a fallback.
+     */
+    const fallback =
+      await supabaseClient
+        .from("comments")
+        .select("*")
+        .eq(
+          "post_id",
+          postId
+        )
+        .order(
+          "created_at",
+          {
+            ascending: true
+          }
+        );
+
+    if (!fallback.error) {
+      state.comments[
+        postId
+      ] =
+        fallback.data || [];
+    } else {
+      state.comments[
+        postId
+      ] = [];
+
+      showToast(
+        "Unable to load comments."
+      );
+    }
+  } else {
+    state.comments[
+      postId
+    ] =
+      data || [];
+  }
+
+  state.commentLoading[
+    postId
+  ] = false;
 
   render();
 }
 
-async function submitComment(postId) {
+async function toggleComments(
+  postId
+) {
+  const open =
+    Boolean(
+      state.commentOpen[
+        postId
+      ]
+    );
+
+  state.commentOpen[
+    postId
+  ] =
+    !open;
+
+  if (
+    !open &&
+    !state.comments[
+      postId
+    ]
+  ) {
+    await loadComments(
+      postId
+    );
+  } else {
+    render();
+  }
+}
+
+async function submitComment(
+  postId
+) {
   const input =
     document.getElementById(
       `comment-${postId}`
@@ -1886,35 +3325,121 @@ async function submitComment(postId) {
   const body =
     input.value.trim();
 
-  if (!body) return;
-
-  const {
-    error
-  } = await supabaseClient
-    .from("comments")
-    .insert({
-      post_id: postId,
-      author_id: state.user.id,
-      body
-    });
-
-  if (error) {
-    showToast(error.message);
+  if (!body) {
     return;
   }
 
-  state.commentOpen[postId] = true;
+  const button =
+    document.querySelector(
+      `[data-comment-submit="${postId}"]`
+    );
 
-  showToast("Comment added.");
+  if (button) {
+    button.disabled =
+      true;
+
+    button.textContent =
+      "Sending...";
+  }
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("comments")
+      .insert({
+        post_id:
+          postId,
+
+        author_id:
+          state.user.id,
+
+        body
+      });
+
+  if (error) {
+    showToast(
+      error.message
+    );
+
+    if (button) {
+      button.disabled =
+        false;
+
+      button.textContent =
+        "Send";
+    }
+
+    return;
+  }
+
+  input.value =
+    "";
+
+  showToast(
+    "Comment added."
+  );
+
+  await loadComments(
+    postId
+  );
+
+  await refreshFeed();
+}
+
+async function deleteComment(
+  commentId,
+  postId
+) {
+  if (
+    !confirm(
+      "Delete this comment?"
+    )
+  ) {
+    return;
+  }
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("comments")
+      .delete()
+      .eq(
+        "id",
+        commentId
+      )
+      .eq(
+        "author_id",
+        state.user.id
+      );
+
+  if (error) {
+    showToast(
+      error.message
+    );
+
+    return;
+  }
+
+  showToast(
+    "Comment deleted."
+  );
+
+  await loadComments(
+    postId
+  );
 
   await refreshFeed();
 }
 
 /* =============================================================
-   DELETE
+   DELETE POST
    ============================================================= */
 
-async function deletePost(postId) {
+async function deletePost(
+  postId
+) {
   if (
     !confirm(
       "Delete this post?"
@@ -1925,21 +3450,30 @@ async function deletePost(postId) {
 
   const {
     error
-  } = await supabaseClient
-    .from("posts")
-    .delete()
-    .eq("id", postId)
-    .eq(
-      "author_id",
-      state.user.id
-    );
+  } =
+    await supabaseClient
+      .from("posts")
+      .delete()
+      .eq(
+        "id",
+        postId
+      )
+      .eq(
+        "author_id",
+        state.user.id
+      );
 
   if (error) {
-    showToast(error.message);
+    showToast(
+      error.message
+    );
+
     return;
   }
 
-  showToast("Post deleted.");
+  showToast(
+    "Post deleted."
+  );
 
   await refreshFeed();
 }
@@ -1948,17 +3482,29 @@ async function deletePost(postId) {
    SHARE
    ============================================================= */
 
-async function sharePost(post) {
+async function sharePost(
+  postId
+) {
   const url =
-    `${window.location.origin}` +
-    `${window.location.pathname}` +
-    `?post=${post.id}`;
+    `${window.location.origin}${BASE_PATH}/?post=${encodeURIComponent(postId)}`;
+
+  const post =
+    state.posts.find(
+      item =>
+        String(item.id) ===
+        String(postId)
+    );
 
   try {
-    if (navigator.share) {
+    if (
+      navigator.share
+    ) {
       await navigator.share({
-        title: "NICHE",
-        text: post.body,
+        title:
+          "NICHE",
+        text:
+          post?.body ||
+          "Check out this post on NICHE.",
         url
       });
     } else {
@@ -1971,7 +3517,7 @@ async function sharePost(post) {
       );
     }
   } catch {
-    // User cancelled sharing.
+    // User cancelled.
   }
 }
 
@@ -1979,66 +3525,95 @@ async function sharePost(post) {
    NICHE
    ============================================================= */
 
-async function loadNiche(topic) {
+async function loadNiche(
+  topic
+) {
   const cleanTopic =
-    topic
+    String(topic || "")
       .toLowerCase()
-      .replace(/^#/, "");
+      .replace(/^#/, "")
+      .trim();
 
   const {
     data,
     error
-  } = await supabaseClient
-    .from("niches")
-    .select("*")
-    .eq("slug", cleanTopic)
-    .maybeSingle();
+  } =
+    await supabaseClient
+      .from("niches")
+      .select("*")
+      .eq(
+        "slug",
+        cleanTopic
+      )
+      .maybeSingle();
 
   if (error) {
-    console.error(error);
-    state.currentNiche = null;
+    console.error(
+      "Niche:",
+      error
+    );
+
+    state.currentNiche =
+      null;
+
     return;
   }
 
-  state.currentNiche = data;
+  state.currentNiche =
+    data;
 }
 
 async function toggleFollow() {
-  if (!state.currentNiche) return;
+  if (
+    !state.currentNiche
+  ) {
+    return;
+  }
 
-  if (state.following) {
+  if (
+    state.following
+  ) {
     const {
       error
-    } = await supabaseClient
-      .from("niche_followers")
-      .delete()
-      .eq(
-        "niche_id",
-        state.currentNiche.id
-      )
-      .eq(
-        "user_id",
-        state.user.id
-      );
+    } =
+      await supabaseClient
+        .from("niche_followers")
+        .delete()
+        .eq(
+          "niche_id",
+          state.currentNiche.id
+        )
+        .eq(
+          "user_id",
+          state.user.id
+        );
 
     if (error) {
-      showToast(error.message);
+      showToast(
+        error.message
+      );
+
       return;
     }
   } else {
     const {
       error
-    } = await supabaseClient
-      .from("niche_followers")
-      .insert({
-        niche_id:
-          state.currentNiche.id,
-        user_id:
-          state.user.id
-      });
+    } =
+      await supabaseClient
+        .from("niche_followers")
+        .insert({
+          niche_id:
+            state.currentNiche.id,
+
+          user_id:
+            state.user.id
+        });
 
     if (error) {
-      showToast(error.message);
+      showToast(
+        error.message
+      );
+
       return;
     }
   }
@@ -2048,6 +3623,7 @@ async function toggleFollow() {
   );
 
   await loadFollowState();
+
   render();
 }
 
@@ -2056,34 +3632,399 @@ async function loadFollowState() {
     !state.currentNiche ||
     !state.user
   ) {
-    state.following = false;
+    state.following =
+      false;
+
     return;
   }
 
   const {
-    data
-  } = await supabaseClient
-    .from("niche_followers")
-    .select("user_id")
-    .eq(
-      "niche_id",
-      state.currentNiche.id
-    )
-    .eq(
-      "user_id",
-      state.user.id
-    )
-    .maybeSingle();
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("niche_followers")
+      .select("user_id")
+      .eq(
+        "niche_id",
+        state.currentNiche.id
+      )
+      .eq(
+        "user_id",
+        state.user.id
+      )
+      .maybeSingle();
+
+  if (error) {
+    console.error(
+      error
+    );
+  }
 
   state.following =
     Boolean(data);
 }
 
 /* =============================================================
-   RENDER POST
+   PROFILE PAGE DATA
    ============================================================= */
 
-function renderPost(post) {
+async function loadPublicProfile(
+  username
+) {
+  const clean =
+    normalizeUsername(
+      username
+    );
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq(
+        "username",
+        clean
+      )
+      .maybeSingle();
+
+  if (error) {
+    console.error(
+      "Public profile:",
+      error
+    );
+
+    state.currentProfile =
+      null;
+
+    return;
+  }
+
+  state.currentProfile =
+    data;
+}
+
+async function loadProfilePosts() {
+  if (
+    !state.currentProfile
+  ) {
+    state.profilePosts =
+      [];
+
+    return;
+  }
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("posts")
+      .select(`
+        *,
+        author:profiles!posts_author_id_fkey(
+          id,
+          username,
+          display_name,
+          avatar_emoji,
+          bio
+        ),
+        likes(user_id),
+        reposts(user_id)
+      `)
+      .eq(
+        "author_id",
+        state.currentProfile.id
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      )
+      .limit(50);
+
+  if (error) {
+    console.error(
+      "Profile posts:",
+      error
+    );
+
+    state.profilePosts =
+      [];
+
+    return;
+  }
+
+  state.profilePosts =
+    data || [];
+}
+
+/* =============================================================
+   PROFILE FOLLOW COUNTS
+   ============================================================= */
+
+async function getProfileStats(
+  profileId
+) {
+  /*
+   * The current database does not include a
+   * user_followers table in the supplied frontend.
+   * Return safe defaults instead of breaking
+   * the profile page.
+   */
+  return {
+    followers: 0,
+    following: 0
+  };
+}
+
+/* =============================================================
+   POST BODY RENDERING
+   ============================================================= */
+
+function renderPostBody(
+  text
+) {
+  const escaped =
+    escapeHTML(
+      text || ""
+    );
+
+  const parts =
+    escaped.split(
+      /(#[a-zA-Z0-9_-]+)/g
+    );
+
+  return parts
+    .map(part => {
+      if (
+        /^#[a-zA-Z0-9_-]+$/
+          .test(part)
+      ) {
+        const topic =
+          part
+            .slice(1)
+            .toLowerCase();
+
+        return `
+          <a
+            href="${appPath(
+              `/niche/${encodeURIComponent(topic)}`
+            )}"
+            data-route="niche"
+            data-topic="${escapeAttribute(topic)}"
+          >
+            ${escapeHTML(part)}
+          </a>
+        `;
+      }
+
+      return part;
+    })
+    .join("")
+    .replace(
+      /\n/g,
+      "<br>"
+    );
+}
+
+/* =============================================================
+   COMMENTS HTML
+   ============================================================= */
+
+function renderComments(
+  postId
+) {
+  const comments =
+    state.comments[
+      postId
+    ] || [];
+
+  const loading =
+    state.commentLoading[
+      postId
+    ];
+
+  return `
+    <div class="comments">
+
+      <form
+        class="comment-form"
+        data-comment-form="${escapeAttribute(
+          postId
+        )}"
+      >
+
+        <input
+          id="comment-${escapeAttribute(
+            postId
+          )}"
+          class="comment-input"
+          maxlength="500"
+          placeholder="Write a comment..."
+        >
+
+        <button
+          class="comment-button"
+          type="submit"
+          data-comment-submit="${escapeAttribute(
+            postId
+          )}"
+        >
+          Send
+        </button>
+
+      </form>
+
+      ${
+        loading
+          ? `
+            <div class="loading">
+              <div class="spinner"></div>
+              Loading comments...
+            </div>
+          `
+          : comments.length === 0
+            ? `
+              <div
+                class="muted small"
+                style="
+                  margin-top:14px;
+                  text-align:center
+                "
+              >
+                No comments yet.
+              </div>
+            `
+            : `
+              <div class="comment-list">
+                ${comments
+                  .map(
+                    comment =>
+                      renderComment(
+                        comment,
+                        postId
+                      )
+                  )
+                  .join("")}
+              </div>
+            `
+      }
+
+    </div>
+  `;
+}
+
+function renderComment(
+  comment,
+  postId
+) {
+  const author =
+    comment.author ||
+    {};
+
+  const username =
+    author.username ||
+    "";
+
+  const displayName =
+    author.display_name ||
+    username ||
+    "User";
+
+  const canDelete =
+    comment.author_id ===
+    state.user?.id;
+
+  return `
+    <div class="comment">
+
+      <a
+        class="comment-avatar"
+        href="${appPath(
+          `/profile/${encodeURIComponent(username)}`
+        )}"
+        data-route="profile"
+        data-username="${escapeAttribute(
+          username
+        )}"
+      >
+        ${escapeHTML(
+          author.avatar_emoji ||
+          "🙂"
+        )}
+      </a>
+
+      <div class="comment-box">
+
+        <div class="comment-header">
+
+          <a
+            class="comment-name"
+            href="${appPath(
+              `/profile/${encodeURIComponent(username)}`
+            )}"
+            data-route="profile"
+            data-username="${escapeAttribute(
+              username
+            )}"
+          >
+            ${escapeHTML(
+              displayName
+            )}
+          </a>
+
+          <span class="comment-time">
+            · ${escapeHTML(
+              formatTime(
+                comment.created_at
+              )
+            )}
+          </span>
+
+          ${
+            canDelete
+              ? `
+                <button
+                  class="comment-delete"
+                  data-delete-comment="${escapeAttribute(
+                    comment.id
+                  )}"
+                  data-post-id="${escapeAttribute(
+                    postId
+                  )}"
+                  type="button"
+                >
+                  Delete
+                </button>
+              `
+              : ""
+          }
+
+        </div>
+
+        <div class="comment-body">
+          ${renderPostBody(
+            comment.body
+          )}
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
+/* =============================================================
+   POST HTML
+   ============================================================= */
+
+function renderPost(
+  post
+) {
   const liked =
     isLiked(post);
 
@@ -2092,11 +4033,14 @@ function renderPost(post) {
 
   const commentOpen =
     Boolean(
-      state.commentOpen[post.id]
+      state.commentOpen[
+        post.id
+      ]
     );
 
   const author =
-    post.author || {};
+    post.author ||
+    {};
 
   const displayName =
     author.display_name ||
@@ -2104,51 +4048,83 @@ function renderPost(post) {
     "User";
 
   const username =
-    author.username
-      ? `@${author.username}`
-      : "";
+    author.username ||
+    "";
 
-  const bodyHTML =
-    escapeHTML(post.body)
-      .replace(
-        /(#[a-zA-Z0-9_-]+)/g,
-        `<a href="/niche/$1"
-            onclick="event.preventDefault(); navigate('/niche/${encodeURIComponent("$1".slice(1).toLowerCase())}')"
-          >$1</a>`
-      )
-      .replace(/\n/g, "<br>");
+  const commentCount =
+    Number(
+      post.comment_count ||
+      state.comments[
+        post.id
+      ]?.length ||
+      0
+    );
 
   return `
-    <article class="post">
+    <article
+      class="post"
+      data-post-id="${escapeAttribute(
+        post.id
+      )}"
+    >
 
       <div class="post-inner">
 
-        <div class="avatar">
+        <a
+          class="avatar"
+          href="${appPath(
+            `/profile/${encodeURIComponent(username)}`
+          )}"
+          data-route="profile"
+          data-username="${escapeAttribute(
+            username
+          )}"
+          aria-label="View profile"
+        >
           ${escapeHTML(
             author.avatar_emoji ||
             "🙂"
           )}
-        </div>
+        </a>
 
         <div class="post-content">
 
           <div class="post-header">
 
-            <span class="post-display-name">
-              ${escapeHTML(displayName)}
+            <a
+              class="post-author-link"
+              href="${appPath(
+                `/profile/${encodeURIComponent(username)}`
+              )}"
+              data-route="profile"
+              data-username="${escapeAttribute(
+                username
+              )}"
+            >
+
+              <span class="post-display-name">
+                ${escapeHTML(
+                  displayName
+                )}
+              </span>
+
+              ${
+                username
+                  ? `
+                    <span class="post-username">
+                      @${escapeHTML(
+                        username
+                      )}
+                    </span>
+                  `
+                  : ""
+              }
+
+            </a>
+
+            <span class="post-dot">
+              ·
             </span>
-
-            ${
-              username
-                ? `
-                  <span class="post-username">
-                    ${escapeHTML(username)}
-                  </span>
-                `
-                : ""
-            }
-
-            <span class="post-dot">·</span>
 
             <span class="post-time">
               ${escapeHTML(
@@ -2161,25 +4137,51 @@ function renderPost(post) {
           </div>
 
           <div class="post-body">
-            ${bodyHTML}
+            ${renderPostBody(
+              post.body
+            )}
           </div>
 
-          <a
-            class="post-tag"
-            href="/niche/${encodeURIComponent(post.hashtag)}"
-            onclick="event.preventDefault(); navigate('/niche/${encodeURIComponent(post.hashtag)}')"
-          >
-            #${escapeHTML(post.hashtag)}
-          </a>
+          ${
+            post.hashtag
+              ? `
+                <a
+                  class="post-tag"
+                  href="${appPath(
+                    `/niche/${encodeURIComponent(
+                      post.hashtag
+                    )}`
+                  )}"
+                  data-route="niche"
+                  data-topic="${escapeAttribute(
+                    post.hashtag
+                  )}"
+                >
+                  #${escapeHTML(
+                    post.hashtag
+                  )}
+                </a>
+              `
+              : ""
+          }
 
           <div class="post-actions">
 
             <button
               class="action-button"
-              onclick="toggleComments('${post.id}')"
+              data-action="comments"
+              data-post-id="${escapeAttribute(
+                post.id
+              )}"
+              type="button"
             >
-              <span class="action-icon">💬</span>
-              <span>${post.comment_count || 0}</span>
+              <span class="action-icon">
+                💬
+              </span>
+
+              <span>
+                ${commentCount}
+              </span>
             </button>
 
             <button
@@ -2188,10 +4190,23 @@ function renderPost(post) {
                   ? "reposted"
                   : ""
               }"
-              onclick="toggleRepost('${post.id}')"
+              data-action="repost"
+              data-post-id="${escapeAttribute(
+                post.id
+              )}"
+              type="button"
             >
-              <span class="action-icon">↻</span>
-              <span>${post.repost_count || 0}</span>
+              <span class="action-icon">
+                ↻
+              </span>
+
+              <span>
+                ${Number(
+                  post.repost_count ||
+                  post.reposts?.length ||
+                  0
+                )}
+              </span>
             </button>
 
             <button
@@ -2200,30 +4215,55 @@ function renderPost(post) {
                   ? "liked"
                   : ""
               }"
-              onclick="toggleLike('${post.id}')"
+              data-action="like"
+              data-post-id="${escapeAttribute(
+                post.id
+              )}"
+              type="button"
             >
               <span class="action-icon">
-                ${liked ? "♥" : "♡"}
+                ${liked
+                  ? "♥"
+                  : "♡"}
               </span>
-              <span>${post.like_count || 0}</span>
+
+              <span>
+                ${Number(
+                  post.like_count ||
+                  post.likes?.length ||
+                  0
+                )}
+              </span>
             </button>
 
             <button
               class="action-button"
-              onclick="sharePost(${JSON.stringify(post).replace(/"/g, "&quot;")})"
+              data-action="share"
+              data-post-id="${escapeAttribute(
+                post.id
+              )}"
+              type="button"
             >
-              <span class="action-icon">↗</span>
+              <span class="action-icon">
+                ↗
+              </span>
             </button>
 
             ${
-              state.user.id ===
+              state.user?.id ===
               post.author_id
                 ? `
                   <button
                     class="action-button delete-action"
-                    onclick="deletePost('${post.id}')"
+                    data-action="delete"
+                    data-post-id="${escapeAttribute(
+                      post.id
+                    )}"
+                    type="button"
                   >
-                    <span class="action-icon">×</span>
+                    <span class="action-icon">
+                      ×
+                    </span>
                   </button>
                 `
                 : ""
@@ -2233,42 +4273,22 @@ function renderPost(post) {
 
           ${
             commentOpen
-              ? `
-                <div class="comments">
-
-                  <form
-                    class="comment-form"
-                    onsubmit="event.preventDefault(); submitComment('${post.id}')"
-                  >
-
-                    <input
-                      id="comment-${post.id}"
-                      class="comment-input"
-                      maxlength="500"
-                      placeholder="Write a comment..."
-                    >
-
-                    <button
-                      class="comment-button"
-                    >
-                      Send
-                    </button>
-
-                  </form>
-
-                </div>
-              `
+              ? renderComments(
+                  post.id
+                )
               : ""
           }
 
         </div>
+
       </div>
+
     </article>
   `;
 }
 
 /* =============================================================
-   CREATE POST HTML
+   COMPOSER
    ============================================================= */
 
 function renderComposer() {
@@ -2279,7 +4299,6 @@ function renderComposer() {
         id="composer-text"
         maxlength="500"
         placeholder="What's happening in your niche?"
-        oninput="updateHashtagPreview()"
       ></textarea>
 
       <div class="composer-footer">
@@ -2289,7 +4308,10 @@ function renderComposer() {
           class="hashtag-preview"
         >
           <span
-            style="color:#a3a3a3;font-size:12px"
+            style="
+              color:var(--faint);
+              font-size:12px
+            "
           >
             Add #topic
           </span>
@@ -2297,9 +4319,9 @@ function renderComposer() {
 
         <button
           id="create-post-button"
-          class="post-button"
+          class="primary-button"
           disabled
-          onclick="createPost()"
+          type="button"
         >
           Post
         </button>
@@ -2322,6 +4344,7 @@ function renderHome() {
       state.loading
         ? `
           <div class="loading">
+            <div class="spinner"></div>
             Loading feed...
           </div>
         `
@@ -2355,7 +4378,9 @@ function renderHome() {
    ============================================================= */
 
 function renderNichePage() {
-  if (!state.currentNiche) {
+  if (
+    !state.currentNiche
+  ) {
     return `
       <div class="empty">
 
@@ -2368,13 +4393,14 @@ function renderNichePage() {
         </div>
 
         <div class="empty-text">
-          No posts have created this niche yet.
+          This niche doesn't exist yet.
         </div>
 
         <button
-          class="post-button"
+          class="primary-button"
           style="margin-top:20px"
-          onclick="navigate('/')"
+          data-nav="/"
+          type="button"
         >
           Back home
         </button>
@@ -2389,6 +4415,14 @@ function renderNichePage() {
   return `
     <header class="niche-header">
 
+      <button
+        class="back-button"
+        data-nav="/"
+        type="button"
+      >
+        ← Back
+      </button>
+
       <div class="niche-title-row">
 
         <div>
@@ -2398,12 +4432,29 @@ function renderNichePage() {
           </div>
 
           <h1 class="niche-name">
-            ${escapeHTML(niche.name)}
+            ${escapeHTML(
+              niche.name ||
+              niche.slug
+            )}
           </h1>
 
           <div class="niche-slug">
-            #${escapeHTML(niche.slug)}
+            #${escapeHTML(
+              niche.slug
+            )}
           </div>
+
+          ${
+            niche.description
+              ? `
+                <div class="niche-description">
+                  ${escapeHTML(
+                    niche.description
+                  )}
+                </div>
+              `
+              : ""
+          }
 
         </div>
 
@@ -2413,7 +4464,8 @@ function renderNichePage() {
               ? "following"
               : ""
           }"
-          onclick="toggleFollow()"
+          id="niche-follow-button"
+          type="button"
         >
           ${
             state.following
@@ -2428,16 +4480,28 @@ function renderNichePage() {
 
         <div class="niche-stat">
           <strong>
-            ${niche.post_count || 0}
+            ${Number(
+              niche.post_count ||
+              0
+            )}
           </strong>
-          <span>posts</span>
+
+          <span>
+            posts
+          </span>
         </div>
 
         <div class="niche-stat">
           <strong>
-            ${niche.follower_count || 0}
+            ${Number(
+              niche.follower_count ||
+              0
+            )}
           </strong>
-          <span>followers</span>
+
+          <span>
+            followers
+          </span>
         </div>
 
       </div>
@@ -2448,6 +4512,7 @@ function renderNichePage() {
       state.loading
         ? `
           <div class="loading">
+            <div class="spinner"></div>
             Loading niche...
           </div>
         `
@@ -2477,25 +4542,630 @@ function renderNichePage() {
 }
 
 /* =============================================================
+   PROFILE PAGE
+   ============================================================= */
+
+async function renderProfilePage() {
+  if (
+    !state.currentProfile
+  ) {
+    return `
+      <div class="empty">
+
+        <div class="empty-icon">
+          👤
+        </div>
+
+        <div class="empty-title">
+          Profile not found
+        </div>
+
+        <div class="empty-text">
+          This user doesn't exist.
+        </div>
+
+        <button
+          class="primary-button"
+          style="margin-top:20px"
+          data-nav="/"
+          type="button"
+        >
+          Back home
+        </button>
+
+      </div>
+    `;
+  }
+
+  const profile =
+    state.currentProfile;
+
+  const stats =
+    await getProfileStats(
+      profile.id
+    );
+
+  const isOwn =
+    state.user?.id ===
+    profile.id;
+
+  return `
+    <section class="profile-page">
+
+      <div class="profile-cover"></div>
+
+      <div class="profile-header">
+
+        <div class="profile-header-top">
+
+          <div class="profile-avatar">
+            ${escapeHTML(
+              profile.avatar_emoji ||
+              "🙂"
+            )}
+          </div>
+
+          ${
+            isOwn
+              ? `
+                <button
+                  class="secondary-button"
+                  id="edit-profile-button"
+                  type="button"
+                >
+                  Edit profile
+                </button>
+              `
+              : ""
+          }
+
+        </div>
+
+        <div class="profile-header-info">
+
+          <div class="profile-display-name">
+            ${escapeHTML(
+              profile.display_name ||
+              profile.username ||
+              "User"
+            )}
+          </div>
+
+          <div class="profile-handle">
+            @${escapeHTML(
+              profile.username
+            )}
+          </div>
+
+          ${
+            profile.bio
+              ? `
+                <div class="profile-bio">
+                  ${escapeHTML(
+                    profile.bio
+                  )}
+                </div>
+              `
+              : ""
+          }
+
+          <div class="profile-stats">
+
+            <div class="profile-stat">
+              <strong>
+                ${state.profilePosts.length}
+              </strong>
+              <span>posts</span>
+            </div>
+
+            <div class="profile-stat">
+              <strong>
+                ${stats.followers}
+              </strong>
+              <span>followers</span>
+            </div>
+
+            <div class="profile-stat">
+              <strong>
+                ${stats.following}
+              </strong>
+              <span>following</span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="profile-tabs">
+
+        <button
+          class="profile-tab active"
+          type="button"
+        >
+          Posts
+        </button>
+
+      </div>
+
+      ${
+        state.profilePosts.length
+          ? state.profilePosts
+              .map(
+                renderPost
+              )
+              .join("")
+          : `
+            <div class="empty">
+
+              <div class="empty-icon">
+                ✨
+              </div>
+
+              <div class="empty-title">
+                No posts yet
+              </div>
+
+              <div class="empty-text">
+                This profile hasn't posted anything.
+              </div>
+
+            </div>
+          `
+      }
+
+    </section>
+  `;
+}
+
+/* =============================================================
+   EXPLORE
+   ============================================================= */
+
+async function searchAll(
+  queryText
+) {
+  const q =
+    String(
+      queryText || ""
+    )
+      .trim()
+      .replace(/^#/, "");
+
+  if (!q) {
+    state.searchResults =
+      null;
+
+    render();
+
+    return;
+  }
+
+  state.search =
+    q;
+
+  state.searchResults = {
+    niches: [],
+    profiles: [],
+    posts: []
+  };
+
+  const [
+    nichesResult,
+    profilesResult,
+    postsResult
+  ] =
+    await Promise.all([
+      supabaseClient
+        .from("niches")
+        .select("*")
+        .ilike(
+          "slug",
+          `%${q}%`
+        )
+        .limit(10),
+
+      supabaseClient
+        .from("profiles")
+        .select("*")
+        .or(
+          `username.ilike.%${q}%,display_name.ilike.%${q}%`
+        )
+        .limit(10),
+
+      supabaseClient
+        .from("posts")
+        .select(`
+          *,
+          author:profiles!posts_author_id_fkey(
+            id,
+            username,
+            display_name,
+            avatar_emoji
+          )
+        `)
+        .ilike(
+          "body",
+          `%${q}%`
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        )
+        .limit(10)
+    ]);
+
+  state.searchResults =
+    {
+      niches:
+        nichesResult.data ||
+        [],
+      profiles:
+        profilesResult.data ||
+        [],
+      posts:
+        postsResult.data ||
+        []
+    };
+
+  render();
+}
+
+function renderExplore() {
+  const results =
+    state.searchResults;
+
+  if (!results) {
+    return `
+      <section>
+
+        <div class="page-header">
+
+          <h1 class="page-title">
+            Explore
+          </h1>
+
+          <div class="page-subtitle">
+            Find people, niches and conversations.
+          </div>
+
+        </div>
+
+        <div class="empty">
+
+          <div class="empty-icon">
+            🔎
+          </div>
+
+          <div class="empty-title">
+            Search NICHE
+          </div>
+
+          <div class="empty-text">
+            Search for a niche, username or topic
+            using the bar above.
+          </div>
+
+        </div>
+
+      </section>
+    `;
+  }
+
+  const hasResults =
+    results.niches.length ||
+    results.profiles.length ||
+    results.posts.length;
+
+  return `
+    <section>
+
+      <div class="page-header">
+
+        <h1 class="page-title">
+          Search
+        </h1>
+
+        <div class="page-subtitle">
+          Results for
+          <b>${escapeHTML(
+            state.search
+          )}</b>
+        </div>
+
+      </div>
+
+      ${
+        !hasResults
+          ? `
+            <div class="empty">
+
+              <div class="empty-icon">
+                🧐
+              </div>
+
+              <div class="empty-title">
+                Nothing found
+              </div>
+
+              <div class="empty-text">
+                Try another search.
+              </div>
+
+            </div>
+          `
+          : `
+            <div class="search-results">
+
+              ${
+                results.niches.length
+                  ? `
+                    <div class="result-section-title">
+                      Niches
+                    </div>
+
+                    ${results.niches
+                      .map(
+                        niche => `
+                          <button
+                            class="result-item"
+                            data-nav="/niche/${encodeURIComponent(
+                              niche.slug
+                            )}"
+                            type="button"
+                          >
+
+                            <div class="result-icon">
+                              #
+                            </div>
+
+                            <div class="result-main">
+
+                              <div class="result-name">
+                                ${escapeHTML(
+                                  niche.name ||
+                                  niche.slug
+                                )}
+                              </div>
+
+                              <div class="result-meta">
+                                #${escapeHTML(
+                                  niche.slug
+                                )}
+                              </div>
+
+                            </div>
+
+                          </button>
+                        `
+                      )
+                      .join("")}
+                  `
+                  : ""
+              }
+
+              ${
+                results.profiles.length
+                  ? `
+                    <div class="result-section-title">
+                      People
+                    </div>
+
+                    ${results.profiles
+                      .map(
+                        profile => `
+                          <button
+                            class="result-item"
+                            data-nav="/profile/${encodeURIComponent(
+                              profile.username
+                            )}"
+                            type="button"
+                          >
+
+                            <div class="result-icon">
+                              ${escapeHTML(
+                                profile.avatar_emoji ||
+                                "🙂"
+                              )}
+                            </div>
+
+                            <div class="result-main">
+
+                              <div class="result-name">
+                                ${escapeHTML(
+                                  profile.display_name ||
+                                  profile.username
+                                )}
+                              </div>
+
+                              <div class="result-meta">
+                                @${escapeHTML(
+                                  profile.username
+                                )}
+                              </div>
+
+                            </div>
+
+                          </button>
+                        `
+                      )
+                      .join("")}
+                  `
+                  : ""
+              }
+
+              ${
+                results.posts.length
+                  ? `
+                    <div class="result-section-title">
+                      Posts
+                    </div>
+
+                    ${results.posts
+                      .map(
+                        renderPost
+                      )
+                      .join("")}
+                  `
+                  : ""
+              }
+
+            </div>
+          `
+      }
+
+    </section>
+  `;
+}
+
+/* =============================================================
+   SETTINGS
+   ============================================================= */
+
+function renderSettings() {
+  return `
+    <section>
+
+      <div class="page-header">
+
+        <h1 class="page-title">
+          Settings
+        </h1>
+
+        <div class="page-subtitle">
+          Customize your NICHE experience.
+        </div>
+
+      </div>
+
+      <div style="padding:20px">
+
+        <div class="info-card">
+
+          <div class="info-title">
+            Appearance
+          </div>
+
+          <div class="info-text">
+            Choose how NICHE looks on this device.
+          </div>
+
+          <select
+            id="settings-theme"
+            class="theme-select"
+          >
+
+            <option
+              value="system"
+              ${
+                state.theme ===
+                "system"
+                  ? "selected"
+                  : ""
+              }
+            >
+              System
+            </option>
+
+            <option
+              value="light"
+              ${
+                state.theme ===
+                "light"
+                  ? "selected"
+                  : ""
+              }
+            >
+              Light
+            </option>
+
+            <option
+              value="dark"
+              ${
+                state.theme ===
+                "dark"
+                  ? "selected"
+                  : ""
+              }
+            >
+              Dark
+            </option>
+
+          </select>
+
+        </div>
+
+        <div
+          class="info-card"
+          style="margin-top:15px"
+        >
+
+          <div class="info-title">
+            Account
+          </div>
+
+          <div class="info-text">
+            Signed in as
+            <b>${escapeHTML(
+              state.user?.email ||
+              ""
+            )}</b>
+          </div>
+
+          <button
+            class="secondary-button"
+            style="margin-top:15px"
+            id="settings-logout"
+            type="button"
+          >
+            Log out
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+  `;
+}
+
+/* =============================================================
    LAYOUT
    ============================================================= */
 
-function renderLayout(content) {
+function renderLayout(
+  content,
+  route
+) {
   const profile =
-    state.profile || {};
+    state.profile ||
+    {};
+
+  const currentType =
+    route?.type ||
+    "home";
 
   return `
     <div class="app-shell">
 
       <aside class="sidebar">
 
-        <a
-          href="/"
-          onclick="event.preventDefault(); navigate('/')"
+        <button
           class="logo"
+          data-nav="/"
+          style="
+            border:0;
+            background:transparent;
+            color:inherit;
+            padding:0;
+          "
+          type="button"
         >
           NICHE
-        </a>
+        </button>
 
         <div class="logo-subtitle">
           Everything starts with a topic.
@@ -2504,56 +5174,138 @@ function renderLayout(content) {
         <nav class="nav">
 
           <button
-            class="nav-button"
-            onclick="navigate('/')"
+            class="nav-button ${
+              currentType === "home"
+                ? "active"
+                : ""
+            }"
+            data-nav="/"
+            type="button"
           >
-            <span class="nav-icon">⌂</span>
-            <span class="nav-label">Home</span>
+            <span class="nav-icon">
+              ⌂
+            </span>
+
+            <span class="nav-label">
+              Home
+            </span>
           </button>
 
           <button
-            class="nav-button"
-            onclick="focusSearch()"
+            class="nav-button ${
+              currentType === "explore"
+                ? "active"
+                : ""
+            }"
+            data-nav="/explore"
+            type="button"
           >
-            <span class="nav-icon">⌕</span>
-            <span class="nav-label">Explore</span>
+            <span class="nav-icon">
+              ⌕
+            </span>
+
+            <span class="nav-label">
+              Explore
+            </span>
+          </button>
+
+          <button
+            class="nav-button ${
+              currentType === "profile" &&
+              state.currentProfile?.id ===
+                state.user?.id
+                ? "active"
+                : ""
+            }"
+            data-nav="/profile/${encodeURIComponent(
+              profile.username ||
+              ""
+            )}"
+            type="button"
+          >
+            <span class="nav-icon">
+              ☺
+            </span>
+
+            <span class="nav-label">
+              Profile
+            </span>
+          </button>
+
+          <button
+            class="nav-button ${
+              currentType === "settings"
+                ? "active"
+                : ""
+            }"
+            data-nav="/settings"
+            type="button"
+          >
+            <span class="nav-icon">
+              ⚙
+            </span>
+
+            <span class="nav-label">
+              Settings
+            </span>
           </button>
 
         </nav>
 
         <div class="profile-mini">
 
-          <div class="profile-row">
+          <button
+            data-nav="/profile/${encodeURIComponent(
+              profile.username ||
+              ""
+            )}"
+            style="
+              border:0;
+              background:transparent;
+              color:inherit;
+              padding:0;
+              width:100%;
+              text-align:left;
+            "
+            type="button"
+          >
 
-            <div class="avatar">
-              ${escapeHTML(
-                profile.avatar_emoji ||
-                "🙂"
-              )}
-            </div>
+            <div class="profile-row">
 
-            <div>
-              <div class="profile-name">
+              <div class="avatar">
                 ${escapeHTML(
-                  profile.display_name ||
-                  profile.username ||
-                  "User"
+                  profile.avatar_emoji ||
+                  "🙂"
                 )}
               </div>
 
-              <div class="profile-username">
-                @${escapeHTML(
-                  profile.username ||
-                  ""
-                )}
+              <div>
+
+                <div class="profile-name">
+                  ${escapeHTML(
+                    profile.display_name ||
+                    profile.username ||
+                    "User"
+                  )}
+                </div>
+
+                <div class="profile-username">
+                  @${escapeHTML(
+                    profile.username ||
+                    ""
+                  )}
+                </div>
+
               </div>
+
             </div>
 
-          </div>
+          </button>
 
           <button
             class="logout-button"
-            onclick="logout()"
+            id="sidebar-logout"
+            type="button"
           >
             Log out
           </button>
@@ -2566,20 +5318,27 @@ function renderLayout(content) {
 
         <header class="topbar">
 
-          <a
+          <button
             class="mobile-logo"
-            href="/"
-            onclick="event.preventDefault(); navigate('/')"
+            data-nav="/"
+            type="button"
+            style="
+              border:0;
+              background:transparent;
+              color:inherit;
+              padding:0;
+            "
           >
             NICHE
-          </a>
+          </button>
 
           <input
             id="search"
             class="search"
-            placeholder="Search niches..."
-            value="${escapeHTML(state.search)}"
-            onkeydown="handleSearchKey(event)"
+            placeholder="Search niches, people and posts..."
+            value="${escapeAttribute(
+              state.search
+            )}"
           >
 
         </header>
@@ -2615,9 +5374,60 @@ function renderLayout(content) {
           <div class="info-text">
             Every post belongs to a niche.
             Add a hashtag such as
-            <b>#football</b> and NICHE
-            automatically creates the topic.
+            <b>#football</b> and the topic
+            becomes discoverable.
           </div>
+
+        </div>
+
+        <div class="info-card theme-card">
+
+          <div class="info-title">
+            Appearance
+          </div>
+
+          <select
+            id="sidebar-theme"
+            class="theme-select"
+          >
+
+            <option
+              value="system"
+              ${
+                state.theme ===
+                "system"
+                  ? "selected"
+                  : ""
+              }
+            >
+              System
+            </option>
+
+            <option
+              value="light"
+              ${
+                state.theme ===
+                "light"
+                  ? "selected"
+                  : ""
+              }
+            >
+              Light
+            </option>
+
+            <option
+              value="dark"
+              ${
+                state.theme ===
+                "dark"
+                  ? "selected"
+                  : ""
+              }
+            >
+              Dark
+            </option>
+
+          </select>
 
         </div>
 
@@ -2628,40 +5438,644 @@ function renderLayout(content) {
 }
 
 /* =============================================================
-   SEARCH
+   EVENT HANDLERS
    ============================================================= */
 
-function focusSearch() {
+function setupGlobalEvents() {
+  const app =
+    document.getElementById(
+      "app"
+    );
+
+  if (!app) return;
+
+  app.onclick =
+    async event => {
+
+      const nav =
+        event.target.closest(
+          "[data-nav]"
+        );
+
+      if (nav) {
+        event.preventDefault();
+
+        await navigate(
+          nav.dataset.nav
+        );
+
+        return;
+      }
+
+      const route =
+        event.target.closest(
+          "[data-route]"
+        );
+
+      if (route) {
+        event.preventDefault();
+
+        if (
+          route.dataset.route ===
+          "niche"
+        ) {
+          await navigate(
+            `/niche/${encodeURIComponent(
+              route.dataset.topic
+            )}`
+          );
+
+          return;
+        }
+
+        if (
+          route.dataset.route ===
+          "profile"
+        ) {
+          await navigate(
+            `/profile/${encodeURIComponent(
+              route.dataset.username
+            )}`
+          );
+
+          return;
+        }
+      }
+
+      const action =
+        event.target.closest(
+          "[data-action]"
+        );
+
+      if (action) {
+        const type =
+          action.dataset.action;
+
+        const postId =
+          action.dataset.postId;
+
+        if (
+          type ===
+          "comments"
+        ) {
+          await toggleComments(
+            postId
+          );
+
+          return;
+        }
+
+        if (
+          type ===
+          "like"
+        ) {
+          await toggleLike(
+            postId
+          );
+
+          return;
+        }
+
+        if (
+          type ===
+          "repost"
+        ) {
+          await toggleRepost(
+            postId
+          );
+
+          return;
+        }
+
+        if (
+          type ===
+          "share"
+        ) {
+          await sharePost(
+            postId
+          );
+
+          return;
+        }
+
+        if (
+          type ===
+          "delete"
+        ) {
+          await deletePost(
+            postId
+          );
+
+          return;
+        }
+      }
+
+      const deleteCommentButton =
+        event.target.closest(
+          "[data-delete-comment]"
+        );
+
+      if (
+        deleteCommentButton
+      ) {
+        await deleteComment(
+          deleteCommentButton
+            .dataset
+            .deleteComment,
+
+          deleteCommentButton
+            .dataset
+            .postId
+        );
+
+        return;
+      }
+    };
+
+  app.onsubmit =
+    async event => {
+
+      const form =
+        event.target.closest(
+          "[data-comment-form]"
+        );
+
+      if (!form) return;
+
+      event.preventDefault();
+
+      const postId =
+        form.dataset
+          .commentForm;
+
+      await submitComment(
+        postId
+      );
+    };
+
+  const composer =
+    document.getElementById(
+      "composer-text"
+    );
+
+  if (composer) {
+    composer.addEventListener(
+      "input",
+      updateHashtagPreview
+    );
+
+    composer.addEventListener(
+      "keydown",
+      event => {
+        if (
+          (event.ctrlKey ||
+            event.metaKey) &&
+          event.key ===
+            "Enter"
+        ) {
+          event.preventDefault();
+
+          createPost();
+        }
+      }
+    );
+  }
+
+  document
+    .getElementById(
+      "create-post-button"
+    )
+    ?.addEventListener(
+      "click",
+      createPost
+    );
+
+  document
+    .getElementById(
+      "niche-follow-button"
+    )
+    ?.addEventListener(
+      "click",
+      toggleFollow
+    );
+
+  document
+    .getElementById(
+      "edit-profile-button"
+    )
+    ?.addEventListener(
+      "click",
+      () => {
+        state.editingProfile =
+          true;
+
+        renderProfileEditor();
+      }
+    );
+
   const search =
     document.getElementById(
       "search"
     );
 
   if (search) {
-    search.focus();
+    search.addEventListener(
+      "keydown",
+      async event => {
+        if (
+          event.key !==
+          "Enter"
+        ) {
+          return;
+        }
+
+        const value =
+          search.value.trim();
+
+        if (!value) {
+          await navigate(
+            "/explore"
+          );
+
+          return;
+        }
+
+        state.search =
+          value;
+
+        await navigate(
+          "/explore"
+        );
+
+        await searchAll(
+          value
+        );
+      }
+    );
   }
+
+  document
+    .getElementById(
+      "sidebar-theme"
+    )
+    ?.addEventListener(
+      "change",
+      event =>
+        setTheme(
+          event.target.value
+        )
+    );
+
+  document
+    .getElementById(
+      "settings-theme"
+    )
+    ?.addEventListener(
+      "change",
+      event =>
+        setTheme(
+          event.target.value
+        )
+    );
+
+  document
+    .getElementById(
+      "sidebar-logout"
+    )
+    ?.addEventListener(
+      "click",
+      logout
+    );
+
+  document
+    .getElementById(
+      "settings-logout"
+    )
+    ?.addEventListener(
+      "click",
+      logout
+    );
 }
 
-function handleSearchKey(event) {
-  if (event.key !== "Enter") {
-    return;
-  }
+/* =============================================================
+   PROFILE EDITOR
+   ============================================================= */
 
-  const topic =
-    event.target.value
-      .trim()
-      .replace(/^#+/, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]/g, "");
+function renderProfileEditor() {
+  const profile =
+    state.profile ||
+    {};
 
-  if (!topic) return;
+  document.getElementById(
+    "app"
+  ).innerHTML = `
+    <div class="modal-overlay">
 
-  state.search =
-    `#${topic}`;
+      <div class="setup">
 
-  navigate(
-    `/niche/${encodeURIComponent(topic)}`
-  );
+        <button
+          class="back-button"
+          id="cancel-profile-edit"
+          type="button"
+        >
+          ← Cancel
+        </button>
+
+        <div class="setup-title">
+          Edit profile
+        </div>
+
+        <div class="setup-subtitle">
+          Update your public NICHE profile.
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Username
+          </label>
+
+          <div class="username-wrapper">
+
+            <span class="username-prefix">
+              @
+            </span>
+
+            <input
+              id="edit-username"
+              class="username-input"
+              maxlength="24"
+              value="${escapeAttribute(
+                profile.username ||
+                ""
+              )}"
+            >
+
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Display name
+          </label>
+
+          <input
+            id="edit-display-name"
+            class="form-input"
+            maxlength="40"
+            value="${escapeAttribute(
+              profile.display_name ||
+              ""
+            )}"
+          >
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Avatar
+          </label>
+
+          <div
+            class="emoji-grid"
+            id="edit-emoji-grid"
+          >
+
+            ${EMOJIS
+              .map(
+                emoji => `
+                  <button
+                    type="button"
+                    class="emoji-button ${
+                      emoji ===
+                      (profile.avatar_emoji ||
+                        "🙂")
+                        ? "selected"
+                        : ""
+                    }"
+                    data-edit-emoji="${escapeAttribute(
+                      emoji
+                    )}"
+                  >
+                    ${emoji}
+                  </button>
+                `
+              )
+              .join("")}
+
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Bio
+          </label>
+
+          <textarea
+            id="edit-bio"
+            class="form-textarea"
+            rows="4"
+            maxlength="160"
+          >${escapeHTML(
+            profile.bio ||
+            ""
+          )}</textarea>
+
+        </div>
+
+        <div id="edit-profile-error"></div>
+
+        <button
+          class="setup-submit"
+          id="save-profile-edit"
+          type="button"
+        >
+          Save changes
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+  let selectedEmoji =
+    profile.avatar_emoji ||
+    "🙂";
+
+  document
+    .getElementById(
+      "edit-emoji-grid"
+    )
+    ?.addEventListener(
+      "click",
+      event => {
+        const button =
+          event.target.closest(
+            "[data-edit-emoji]"
+          );
+
+        if (!button) {
+          return;
+        }
+
+        selectedEmoji =
+          button.dataset
+            .editEmoji;
+
+        document
+          .querySelectorAll(
+            "[data-edit-emoji]"
+          )
+          .forEach(
+            item =>
+              item.classList.toggle(
+                "selected",
+                item.dataset
+                  .editEmoji ===
+                  selectedEmoji
+              )
+          );
+      }
+    );
+
+  document
+    .getElementById(
+      "cancel-profile-edit"
+    )
+    ?.addEventListener(
+      "click",
+      () => {
+        state.editingProfile =
+          false;
+
+        render();
+      }
+    );
+
+  document
+    .getElementById(
+      "save-profile-edit"
+    )
+    ?.addEventListener(
+      "click",
+      async () => {
+
+        const username =
+          normalizeUsername(
+            document.getElementById(
+              "edit-username"
+            ).value
+          );
+
+        const displayName =
+          document
+            .getElementById(
+              "edit-display-name"
+            )
+            .value
+            .trim();
+
+        const bio =
+          document
+            .getElementById(
+              "edit-bio"
+            )
+            .value
+            .trim();
+
+        const errorElement =
+          document.getElementById(
+            "edit-profile-error"
+          );
+
+        if (
+          !/^[a-zA-Z0-9_]{3,24}$/
+            .test(username)
+        ) {
+          errorElement.innerHTML = `
+            <div class="error">
+              Username must contain 3–24 letters,
+              numbers, or underscores.
+            </div>
+          `;
+
+          return;
+        }
+
+        const {
+          data: existing
+        } =
+          await supabaseClient
+            .from("profiles")
+            .select("id")
+            .eq(
+              "username",
+              username
+            )
+            .neq(
+              "id",
+              state.user.id
+            )
+            .maybeSingle();
+
+        if (existing) {
+          errorElement.innerHTML = `
+            <div class="error">
+              That username is already taken.
+            </div>
+          `;
+
+          return;
+        }
+
+        const {
+          error
+        } =
+          await supabaseClient
+            .from("profiles")
+            .update({
+              username,
+              display_name:
+                displayName ||
+                username,
+              avatar_emoji:
+                selectedEmoji,
+              bio
+            })
+            .eq(
+              "id",
+              state.user.id
+            );
+
+        if (error) {
+          errorElement.innerHTML = `
+            <div class="error">
+              ${escapeHTML(
+                error.message
+              )}
+            </div>
+          `;
+
+          return;
+        }
+
+        state.editingProfile =
+          false;
+
+        await loadProfile();
+
+        showToast(
+          "Profile updated."
+        );
+
+        await render();
+      }
+    );
 }
 
 /* =============================================================
@@ -2669,7 +6083,40 @@ function handleSearchKey(event) {
    ============================================================= */
 
 async function logout() {
-  await supabaseClient.auth.signOut();
+  const {
+    error
+  } =
+    await supabaseClient.auth
+      .signOut();
+
+  if (error) {
+    showToast(
+      error.message
+    );
+
+    return;
+  }
+
+  state.session =
+    null;
+
+  state.user =
+    null;
+
+  state.profile =
+    null;
+
+  state.currentNiche =
+    null;
+
+  state.currentProfile =
+    null;
+
+  showToast(
+    "Logged out."
+  );
+
+  render();
 }
 
 /* =============================================================
@@ -2680,15 +6127,21 @@ async function refreshFeed() {
   const route =
     getRoute();
 
-  if (route.type === "niche") {
+  if (
+    route.type ===
+    "niche"
+  ) {
     await loadNiche(
       route.topic
     );
 
     await loadFollowState();
   } else {
-    state.currentNiche = null;
-    state.following = false;
+    state.currentNiche =
+      null;
+
+    state.following =
+      false;
   }
 
   await loadPosts();
@@ -2700,58 +6153,117 @@ async function refreshFeed() {
    REALTIME
    ============================================================= */
 
+let realtimeChannel =
+  null;
+
 function setupRealtime() {
-  if (!supabaseClient) {
+  if (
+    !supabaseClient
+  ) {
     return;
   }
 
-  supabaseClient
-    .channel("niche-global")
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "posts"
-      },
-      async () => {
-        await refreshFeed();
-      }
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "likes"
-      },
-      async () => {
-        await refreshFeed();
-      }
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "reposts"
-      },
-      async () => {
-        await refreshFeed();
-      }
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "niche_followers"
-      },
-      async () => {
-        await refreshFeed();
-      }
-    )
-    .subscribe();
+  if (
+    realtimeChannel
+  ) {
+    try {
+      supabaseClient
+        .removeChannel(
+          realtimeChannel
+        );
+    } catch {
+      // Ignore.
+    }
+  }
+
+  realtimeChannel =
+    supabaseClient
+      .channel(
+        "niche-global-v2"
+      )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "posts"
+        },
+        async () => {
+          await refreshFeed();
+        }
+      )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "likes"
+        },
+        async () => {
+          await refreshFeed();
+        }
+      )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "reposts"
+        },
+        async () => {
+          await refreshFeed();
+        }
+      )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "comments"
+        },
+        async payload => {
+
+          if (
+            payload.eventType ===
+            "INSERT"
+          ) {
+            const postId =
+              payload.new
+                ?.post_id;
+
+            if (
+              postId &&
+              state.commentOpen[
+                postId
+              ]
+            ) {
+              await loadComments(
+                postId
+              );
+            }
+          }
+
+          await refreshFeed();
+        }
+      )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "niche_followers"
+        },
+        async () => {
+          await refreshFeed();
+        }
+      )
+
+      .subscribe();
 }
 
 /* =============================================================
@@ -2761,23 +6273,39 @@ function setupRealtime() {
 async function render() {
   if (!configured) {
     configurationScreen();
+
     return;
   }
 
   if (!state.session) {
     renderAuth();
+
     return;
   }
 
-  if (needsProfileSetup()) {
+  if (
+    needsProfileSetup()
+  ) {
     renderProfileSetup();
+
+    return;
+  }
+
+  if (
+    state.editingProfile
+  ) {
+    renderProfileEditor();
+
     return;
   }
 
   const route =
     getRoute();
 
-  if (route.type === "niche") {
+  if (
+    route.type ===
+    "niche"
+  ) {
     state.search =
       `#${route.topic}`;
 
@@ -2793,15 +6321,128 @@ async function render() {
       "app"
     ).innerHTML =
       renderLayout(
-        renderNichePage()
+        renderNichePage(),
+        route
       );
+
+    setupGlobalEvents();
 
     return;
   }
 
-  state.currentNiche = null;
-  state.following = false;
-  state.search = "";
+  if (
+    route.type ===
+    "profile"
+  ) {
+    state.search =
+      "";
+
+    await loadPublicProfile(
+      route.username
+    );
+
+    await loadProfilePosts();
+
+    document.getElementById(
+      "app"
+    ).innerHTML =
+      renderLayout(
+        await renderProfilePage(),
+        route
+      );
+
+    setupGlobalEvents();
+
+    return;
+  }
+
+  if (
+    route.type ===
+    "explore"
+  ) {
+    document.getElementById(
+      "app"
+    ).innerHTML =
+      renderLayout(
+        renderExplore(),
+        route
+      );
+
+    setupGlobalEvents();
+
+    return;
+  }
+
+  if (
+    route.type ===
+    "settings"
+  ) {
+    document.getElementById(
+      "app"
+    ).innerHTML =
+      renderLayout(
+        renderSettings(),
+        route
+      );
+
+    setupGlobalEvents();
+
+    return;
+  }
+
+  if (
+    route.type ===
+    "notfound"
+  ) {
+    document.getElementById(
+      "app"
+    ).innerHTML =
+      renderLayout(
+        `
+          <div class="empty">
+
+            <div class="empty-icon">
+              404
+            </div>
+
+            <div class="empty-title">
+              Page not found
+            </div>
+
+            <div class="empty-text">
+              The page you're looking for doesn't exist.
+            </div>
+
+            <button
+              class="primary-button"
+              style="margin-top:20px"
+              data-nav="/"
+              type="button"
+            >
+              Go home
+            </button>
+
+          </div>
+        `,
+        route
+      );
+
+    setupGlobalEvents();
+
+    return;
+  }
+
+  state.currentNiche =
+    null;
+
+  state.currentProfile =
+    null;
+
+  state.following =
+    false;
+
+  state.search =
+    "";
 
   await loadPosts();
 
@@ -2809,8 +6450,11 @@ async function render() {
     "app"
   ).innerHTML =
     renderLayout(
-      renderHome()
+      renderHome(),
+      route
     );
+
+  setupGlobalEvents();
 }
 
 /* =============================================================
@@ -2820,19 +6464,30 @@ async function render() {
 async function initialize() {
   if (!configured) {
     configurationScreen();
+
     return;
   }
 
   const {
-    data
-  } = await supabaseClient.auth
-    .getSession();
+    data,
+    error
+  } =
+    await supabaseClient.auth
+      .getSession();
+
+  if (error) {
+    console.error(
+      "Session:",
+      error
+    );
+  }
 
   state.session =
-    data.session;
+    data?.session ||
+    null;
 
   state.user =
-    data.session?.user ||
+    data?.session?.user ||
     null;
 
   if (state.user) {
@@ -2845,19 +6500,26 @@ async function initialize() {
 
   supabaseClient.auth
     .onAuthStateChange(
-      async (_event, session) => {
+      async (
+        event,
+        session
+      ) => {
 
         state.session =
-          session;
+          session ||
+          null;
 
         state.user =
           session?.user ||
           null;
 
-        if (state.user) {
+        if (
+          state.user
+        ) {
           await loadProfile();
         } else {
-          state.profile = null;
+          state.profile =
+            null;
         }
 
         await render();
