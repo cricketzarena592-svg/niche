@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff">
+  <title>NICHE — Everything starts with a topic</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #f6f6f6;
+      --surface-3: #eeeeee;
+      --text: #111111;
+      --muted: #737373;
+      --border: #e5e5e5;
+      --accent: #111111;
+      --danger: #ef4444;
+      --success: #16a34a;
+      --blue: #2563eb;
+      --shadow: 0 10px 40px rgba(0,0,0,.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    ::selection {
+      background: #111;
+      color: #fff;
+    }
+
+    /* =========================================================
+       APP
+       ========================================================= */
+
+    #app {
+      min-height: 100vh;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 650px) 280px;
+      justify-content: center;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--border);
+      padding: 28px 20px;
+      min-height: 100vh;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .rightbar {
+      padding: 28px 20px;
+      min-height: 100vh;
+    }
+
+    .main {
+      min-width: 0;
+      border-right: 1px solid var(--border);
+    }
+
+    /* =========================================================
+       LOGO
+       ========================================================= */
+
+    .logo {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -.07em;
+    }
+
+    .logo-subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    /* =========================================================
+       NAV
+       ========================================================= */
+
+    .nav {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 14px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      font-weight: 600;
+      transition: .15s;
+    }
+
+    .nav-button:hover {
+      background: var(--surface-2);
+    }
+
+    .nav-icon {
+      width: 22px;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    /* =========================================================
+       TOPBAR
+       ========================================================= */
+
+    .topbar {
+      height: 66px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.9);
+      backdrop-filter: blur(15px);
+    }
+
+    .mobile-logo {
+      display: none;
+    }
+
+    .search {
+      flex: 1;
+      border: 0;
+      outline: 0;
+      background: var(--surface-2);
+      border-radius: 999px;
+      padding: 11px 16px;
+      min-width: 0;
+    }
+
+    .search:focus {
+      background: var(--surface-3);
+    }
+
+    /* =========================================================
+       PROFILE
+       ========================================================= */
+
+    .profile-mini {
+      margin-top: 45px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .profile-row {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 23px;
+      flex-shrink: 0;
+    }
+
+    .avatar.large {
+      width: 64px;
+      height: 64px;
+      font-size: 34px;
+    }
+
+    .profile-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .profile-username {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .logout-button {
+      border: 0;
+      background: none;
+      padding: 0;
+      margin-top: 15px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .logout-button:hover {
+      color: var(--text);
+    }
+
+    /* =========================================================
+       CREATE POST
+       ========================================================= */
+
+    .composer {
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .composer textarea {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      resize: none;
+      min-height: 100px;
+      font-size: 17px;
+      line-height: 1.6;
+      background: transparent;
+    }
+
+    .composer textarea::placeholder {
+      color: #a3a3a3;
+    }
+
+    .composer-footer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hashtag-preview {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .tag-pill {
+      background: var(--surface-2);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .post-button {
+      border: 0;
+      background: #111;
+      color: white;
+      border-radius: 999px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .post-button:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+
+    /* =========================================================
+       POST
+       ========================================================= */
+
+    .post {
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+
+    .post:hover {
+      background: #fdfdfd;
+    }
+
+    .post-inner {
+      display: flex;
+      gap: 12px;
+    }
+
+    .post-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .post-display-name {
+      font-size: 14px;
+      font-weight: 750;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .post-username,
+    .post-time {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .post-dot {
+      color: #bdbdbd;
+    }
+
+    .post-body {
+      margin-top: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+      font-size: 15px;
+    }
+
+    .post-body a {
+      color: var(--blue);
+      font-weight: 600;
+    }
+
+    .post-tag {
+      display: inline-flex;
+      margin-top: 11px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .post-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 430px;
+      margin-top: 14px;
+      color: var(--muted);
+    }
+
+    .action-button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      font-size: 13px;
+    }
+
+    .action-button:hover {
+      color: var(--text);
+    }
+
+    .action-button.liked {
+      color: #ef4444;
+    }
+
+    .action-button.reposted {
+      color: #16a34a;
+    }
+
+    .action-icon {
+      font-size: 18px;
+    }
+
+    .delete-action:hover {
+      color: var(--danger);
+    }
+
+    /* =========================================================
+       COMMENTS
+       ========================================================= */
+
+    .comments {
+      margin-top: 15px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .comment-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .comment-input {
+      min-width: 0;
+      flex: 1;
+      border: 1px solid var(--border);
+      outline: 0;
+      border-radius: 999px;
+      padding: 9px 13px;
+    }
+
+    .comment-input:focus {
+      border-color: #111;
+    }
+
+    .comment-button {
+      border: 0;
+      background: #111;
+      color: #fff;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* =========================================================
+       NICHE HEADER
+       ========================================================= */
+
+    .niche-header {
+      padding: 26px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .niche-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: flex-start;
+    }
+
+    .niche-hash {
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .niche-name {
+      margin: 2px 0 0;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .niche-slug {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .follow-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 17px;
+      background: #111;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .follow-button.following {
+      color: #111;
+      background: #fff;
+      border: 1px solid var(--border);
+    }
+
+    .niche-stats {
+      display: flex;
+      gap: 25px;
+      margin-top: 23px;
+      font-size: 13px;
+    }
+
+    .niche-stat strong {
+      font-size: 15px;
+    }
+
+    .niche-stat span {
+      color: var(--muted);
+    }
+
+    /* =========================================================
+       RIGHT SIDE
+       ========================================================= */
+
+    .info-card {
+      background: var(--surface-2);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .info-title {
+      font-weight: 800;
+      font-size: 15px;
+    }
+
+    .info-text {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* =========================================================
+       EMPTY / LOADING
+       ========================================================= */
+
+    .empty {
+      padding: 70px 25px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 46px;
+    }
+
+    .empty-title {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .empty-text {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .loading {
+      padding: 60px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    /* =========================================================
+       AUTH
+       ========================================================= */
+
+    .auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 25px;
+      background: #fff;
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .auth-logo {
+      text-align: center;
+      font-size: 48px;
+      font-weight: 950;
+      letter-spacing: -.08em;
+    }
+
+    .auth-tagline {
+      margin: 10px 0 30px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .auth-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 14px;
+      outline: 0;
+    }
+
+    .auth-input:focus {
+      border-color: #111;
+    }
+
+    .auth-submit {
+      border: 0;
+      border-radius: 14px;
+      background: #111;
+      color: #fff;
+      padding: 13px;
+      font-weight: 700;
+    }
+
+    .auth-switch {
+      width: 100%;
+      margin-top: 18px;
+      border: 0;
+      background: none;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .auth-message {
+      margin-top: 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* =========================================================
+       PROFILE SETUP
+       ========================================================= */
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(255,255,255,.96);
+      overflow-y: auto;
+    }
+
+    .setup {
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+      padding: 50px 20px;
+    }
+
+    .setup-avatar {
+      font-size: 42px;
+    }
+
+    .setup-title {
+      margin-top: 10px;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .setup-subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-top: 22px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      outline: 0;
+      padding: 12px 14px;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      border-color: #111;
+    }
+
+    .form-textarea {
+      resize: vertical;
+    }
+
+    .username-wrapper {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .username-prefix {
+      padding: 12px 13px;
+      background: var(--surface-2);
+      color: var(--muted);
+    }
+
+    .username-input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      padding: 12px;
+    }
+
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 7px;
+    }
+
+    .emoji-button {
+      aspect-ratio: 1;
+      border: 0;
+      border-radius: 11px;
+      background: var(--surface-2);
+      font-size: 22px;
+      transition: .15s;
+    }
+
+    .emoji-button:hover {
+      background: var(--surface-3);
+    }
+
+    .emoji-button.selected {
+      background: #111;
+    }
+
+    .setup-submit {
+      width: 100%;
+      margin-top: 24px;
+      border: 0;
+      border-radius: 14px;
+      background: #111;
+      color: #fff;
+      padding: 13px;
+      font-weight: 750;
+    }
+
+    .error {
+      margin-top: 12px;
+      padding: 10px 13px;
+      border-radius: 12px;
+      background: #fef2f2;
+      color: #dc2626;
+      font-size: 13px;
+    }
+
+    /* =========================================================
+       TOAST
+       ========================================================= */
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 25px;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      background: #111;
+      color: #fff;
+      padding: 11px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      transition: .2s;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* =========================================================
+       MOBILE
+       ========================================================= */
+
+    @media (max-width: 1000px) {
+      .app-shell {
+        grid-template-columns: 80px minmax(0, 650px);
+      }
+
+      .sidebar {
+        padding: 25px 12px;
+      }
+
+      .sidebar .logo,
+      .sidebar .logo-subtitle,
+      .sidebar .nav-label,
+      .sidebar .profile-mini {
+        display: none;
+      }
+
+      .nav-button {
+        justify-content: center;
+      }
+
+      .nav-icon {
+        font-size: 21px;
+      }
+
+      .rightbar {
+        display: none;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .app-shell {
+        display: block;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        border-right: 0;
+      }
+
+      .mobile-logo {
+        display: block;
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -.06em;
+      }
+
+      .topbar {
+        height: 58px;
+      }
+
+      .composer {
+        padding: 15px;
+      }
+
+      .post {
+        padding: 15px;
+      }
+
+      .niche-header {
+        padding: 22px 15px;
+      }
+
+      .niche-name {
+        font-size: 27px;
+      }
+
+      .post-actions {
+        max-width: 100%;
+      }
+
+      .action-button {
+        gap: 3px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .post-username,
+      .post-time,
+      .post-dot {
+        display: none;
+      }
+
+      .emoji-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* =============================================================
+   NICHE — SINGLE FILE APPLICATION
+   ============================================================= */
+
+/*
+ * =============================================================
+ * 1. SUPABASE CONFIGURATION
+ * =============================================================
+ *
+ * Replace these two values with your Supabase project details.
+ */
+
+const SUPABASE_URL = "https://phdwefylrpcdlfjwpdge.supabase.co";
+const SUPABASE_KEY = "sb_publishable_yfzOWHkT7kg-gpgX_3v3aQ__vC-cRFE";
+
+/*
+ * Do NOT put a Supabase service_role key here.
+ * This file is public on GitHub Pages.
+ */
+
+const configured =
+  SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
+  SUPABASE_KEY !== "YOUR_SUPABASE_PUBLISHABLE_KEY";
+
+let supabaseClient = null;
+
+if (configured) {
+  supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+}
+
+/* =============================================================
+   STATE
+   ============================================================= */
+
+const state = {
+  session: null,
+  user: null,
+  profile: null,
+  posts: [],
+  currentNiche: null,
+  following: false,
+  loading: false,
+  authMode: "login",
+  commentOpen: {},
+  commentText: {},
+  search: ""
+};
+
+/* =============================================================
+   CONSTANTS
+   ============================================================= */
+
+const EMOJIS = [
+  "🙂","😎","🤓","😄","😃","😌","🤠","🧑‍💻",
+  "👾","🚀","🌎","🌙","⭐","🔥","⚡","🎮",
+  "🏏","⚽","🏀","🎵","🎨","📚","💻","🐱",
+  "🐶","🦊","🐼","🦁","🐸","🐧","🍀","🌻"
+];
+
+/* =============================================================
+   UTILITIES
+   ============================================================= */
+
+function escapeHTML(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function extractHashtags(text) {
+  const matches =
+    text.match(/#[a-zA-Z0-9_-]+/g) || [];
+
+  return [
+    ...new Set(
+      matches
+        .map(tag =>
+          tag
+            .replace(/^#+/, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]/g, "")
+            .slice(0, 50)
+        )
+        .filter(Boolean)
+    )
+  ];
+}
+
+function formatTime(dateString) {
+  const date =
+    new Date(dateString);
+
+  const now = new Date();
+
+  const seconds =
+    Math.floor(
+      (now - date) / 1000
+    );
+
+  if (seconds < 60) {
+    return "now";
+  }
+
+  const minutes =
+    Math.floor(seconds / 60);
+
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  const hours =
+    Math.floor(minutes / 60);
+
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+
+  const days =
+    Math.floor(hours / 24);
+
+  if (days < 7) {
+    return `${days}d`;
+  }
+
+  return date.toLocaleDateString();
+}
+
+function showToast(message) {
+  const toast =
+    document.getElementById("toast");
+
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  clearTimeout(
+    showToast.timeout
+  );
+
+  showToast.timeout =
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2500);
+}
+
+function getRoute() {
+  const path =
+    window.location.pathname;
+
+  const match =
+    path.match(/^\/niche\/([^/]+)/i);
+
+  if (match) {
+    return {
+      type: "niche",
+      topic: decodeURIComponent(
+        match[1]
+      ).replace(/^#/, "").toLowerCase()
+    };
+  }
+
+  return {
+    type: "home"
+  };
+}
+
+function navigate(path) {
+  history.pushState({}, "", path);
+  render();
+}
+
+window.addEventListener(
+  "popstate",
+  render
+);
+
+/* =============================================================
+   SUPABASE CHECK
+   ============================================================= */
+
+function configurationScreen() {
+  document.getElementById("app").innerHTML = `
+    <div class="auth-screen">
+      <div class="auth-box">
+
+        <div class="auth-logo">
+          NICHE
+        </div>
+
+        <div class="auth-tagline">
+          Supabase configuration required
+        </div>
+
+        <div class="info-card">
+          <div class="info-title">
+            Almost ready
+          </div>
+
+          <div class="info-text">
+            Open this index.html file and replace
+            <b>YOUR_SUPABASE_URL</b> and
+            <b>YOUR_SUPABASE_PUBLISHABLE_KEY</b>
+            near the top of the JavaScript section.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+/* =============================================================
+   AUTH
+   ============================================================= */
+
+async function signIn() {
+  const email =
+    document.getElementById(
+      "auth-email"
+    ).value.trim();
+
+  const password =
+    document.getElementById(
+      "auth-password"
+    ).value;
+
+  if (!email || !password) {
+    showToast(
+      "Enter your email and password."
+    );
+    return;
+  }
+
+  setAuthLoading(true);
+
+  const {
+    error
+  } = await supabaseClient.auth
+    .signInWithPassword({
+      email,
+      password
+    });
+
+  setAuthLoading(false);
+
+  if (error) {
+    showToast(error.message);
+  }
+}
+
+async function signUp() {
+  const email =
+    document.getElementById(
+      "auth-email"
+    ).value.trim();
+
+  const password =
+    document.getElementById(
+      "auth-password"
+    ).value;
+
+  if (!email || !password) {
+    showToast(
+      "Enter your email and password."
+    );
+    return;
+  }
+
+  if (password.length < 6) {
+    showToast(
+      "Password must contain at least 6 characters."
+    );
+    return;
+  }
+
+  setAuthLoading(true);
+
+  const {
+    error
+  } = await supabaseClient.auth
+    .signUp({
+      email,
+      password
+    });
+
+  setAuthLoading(false);
+
+  if (error) {
+    showToast(error.message);
+  } else {
+    showToast(
+      "Account created. Check your email if confirmation is enabled."
+    );
+  }
+}
+
+function setAuthLoading(value) {
+  const button =
+    document.getElementById(
+      "auth-submit"
+    );
+
+  if (!button) return;
+
+  button.disabled = value;
+
+  button.textContent =
+    value
+      ? "Please wait..."
+      : state.authMode === "login"
+        ? "Log in"
+        : "Create account";
+}
+
+function renderAuth() {
+  document.getElementById("app").innerHTML = `
+    <div class="auth-screen">
+      <div class="auth-box">
+
+        <div class="auth-logo">
+          NICHE
+        </div>
+
+        <div class="auth-tagline">
+          Everything starts with a topic.
+        </div>
+
+        <form
+          class="auth-form"
+          onsubmit="event.preventDefault(); submitAuth();"
+        >
+
+          <input
+            id="auth-email"
+            class="auth-input"
+            type="email"
+            autocomplete="email"
+            placeholder="Email"
+            required
+          >
+
+          <input
+            id="auth-password"
+            class="auth-input"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Password"
+            minlength="6"
+            required
+          >
+
+          <button
+            id="auth-submit"
+            class="auth-submit"
+            type="submit"
+          >
+            ${
+              state.authMode === "login"
+                ? "Log in"
+                : "Create account"
+            }
+          </button>
+
+        </form>
+
+        <button
+          class="auth-switch"
+          onclick="toggleAuthMode()"
+        >
+          ${
+            state.authMode === "login"
+              ? "Create a new account"
+              : "Already have an account? Log in"
+          }
+        </button>
+
+      </div>
+    </div>
+  `;
+}
+
+function submitAuth() {
+  if (state.authMode === "login") {
+    signIn();
+  } else {
+    signUp();
+  }
+}
+
+function toggleAuthMode() {
+  state.authMode =
+    state.authMode === "login"
+      ? "signup"
+      : "login";
+
+  renderAuth();
+}
+
+/* =============================================================
+   PROFILE
+   ============================================================= */
+
+async function loadProfile() {
+  if (!state.user) return;
+
+  const {
+    data,
+    error
+  } = await supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("id", state.user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  state.profile = data;
+}
+
+function needsProfileSetup() {
+  return (
+    !state.profile ||
+    !state.profile.username
+  );
+}
+
+function renderProfileSetup() {
+  const emojiButtons =
+    EMOJIS.map(
+      emoji => `
+        <button
+          type="button"
+          class="emoji-button ${
+            emoji ===
+            (state.profile?.avatar_emoji || "🙂")
+              ? "selected"
+              : ""
+          }"
+          onclick="selectEmoji('${emoji}')"
+        >
+          ${emoji}
+        </button>
+      `
+    ).join("");
+
+  document.getElementById("app").innerHTML = `
+    <div class="modal-overlay">
+      <div class="setup">
+
+        <div class="setup-avatar" id="setup-avatar">
+          ${escapeHTML(
+            state.profile?.avatar_emoji || "🙂"
+          )}
+        </div>
+
+        <div class="setup-title">
+          Set up your profile
+        </div>
+
+        <div class="setup-subtitle">
+          Choose how people will see you on NICHE.
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Username
+          </label>
+
+          <div class="username-wrapper">
+            <span class="username-prefix">@</span>
+
+            <input
+              id="setup-username"
+              class="username-input"
+              maxlength="24"
+              pattern="[A-Za-z0-9_]+"
+              placeholder="yourname"
+              value="${escapeHTML(
+                state.profile?.username || ""
+              )}"
+            >
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Display name
+          </label>
+
+          <input
+            id="setup-display-name"
+            class="form-input"
+            maxlength="40"
+            placeholder="Your name"
+            value="${escapeHTML(
+              state.profile?.display_name || ""
+            )}"
+          >
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Avatar
+          </label>
+
+          <div class="emoji-grid">
+            ${emojiButtons}
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Bio
+          </label>
+
+          <textarea
+            id="setup-bio"
+            class="form-textarea"
+            rows="3"
+            maxlength="160"
+            placeholder="A little about you..."
+          >${escapeHTML(
+            state.profile?.bio || ""
+          )}</textarea>
+
+        </div>
+
+        <div id="setup-error"></div>
+
+        <button
+          class="setup-submit"
+          onclick="saveProfile()"
+        >
+          Continue to NICHE
+        </button>
+
+      </div>
+    </div>
+  `;
+}
+
+function selectEmoji(emoji) {
+  if (!state.profile) {
+    state.profile = {};
+  }
+
+  state.profile.avatar_emoji =
+    emoji;
+
+  renderProfileSetup();
+}
+
+async function saveProfile() {
+  const username =
+    document
+      .getElementById(
+        "setup-username"
+      )
+      .value
+      .trim()
+      .toLowerCase();
+
+  const displayName =
+    document
+      .getElementById(
+        "setup-display-name"
+      )
+      .value
+      .trim();
+
+  const bio =
+    document
+      .getElementById(
+        "setup-bio"
+      )
+      .value
+      .trim();
+
+  const avatarEmoji =
+    state.profile?.avatar_emoji ||
+    "🙂";
+
+  const errorElement =
+    document.getElementById(
+      "setup-error"
+    );
+
+  if (
+    !/^[a-zA-Z0-9_]{3,24}$/.test(
+      username
+    )
+  ) {
+    errorElement.innerHTML = `
+      <div class="error">
+        Username must contain 3–24 letters,
+        numbers, or underscores.
+      </div>
+    `;
+
+    return;
+  }
+
+  const {
+    error
+  } = await supabaseClient
+    .from("profiles")
+    .update({
+      username,
+      display_name:
+        displayName || username,
+      avatar_emoji: avatarEmoji,
+      bio
+    })
+    .eq("id", state.user.id);
+
+  if (error) {
+    errorElement.innerHTML = `
+      <div class="error">
+        ${escapeHTML(error.message)}
+      </div>
+    `;
+
+    return;
+  }
+
+  await loadProfile();
+  render();
+}
+
+/* =============================================================
+   POSTS
+   ============================================================= */
+
+async function loadPosts() {
+  state.loading = true;
+
+  let query =
+    supabaseClient
+      .from("posts")
+      .select(`
+        *,
+        author:profiles!posts_author_id_fkey(
+          id,
+          username,
+          display_name,
+          avatar_emoji
+        ),
+        likes(user_id),
+        reposts(user_id)
+      `)
+      .order("created_at", {
+        ascending: false
+      })
+      .limit(50);
+
+  if (state.currentNiche) {
+    query =
+      query.eq(
+        "niche_id",
+        state.currentNiche.id
+      );
+  }
+
+  const {
+    data,
+    error
+  } = await query;
+
+  if (error) {
+    console.error(error);
+    state.posts = [];
+  } else {
+    state.posts = data || [];
+  }
+
+  state.loading = false;
+}
+
+async function createPost() {
+  const textarea =
+    document.getElementById(
+      "composer-text"
+    );
+
+  if (!textarea) return;
+
+  const body =
+    textarea.value.trim();
+
+  if (!body) return;
+
+  const hashtags =
+    extractHashtags(body);
+
+  if (hashtags.length === 0) {
+    showToast(
+      "Add a hashtag such as #football."
+    );
+    return;
+  }
+
+  const hashtag =
+    hashtags[0];
+
+  const button =
+    document.getElementById(
+      "create-post-button"
+    );
+
+  button.disabled = true;
+  button.textContent = "Posting...";
+
+  const {
+    error
+  } = await supabaseClient
+    .from("posts")
+    .insert({
+      author_id: state.user.id,
+      body,
+      hashtag
+    });
+
+  if (error) {
+    showToast(error.message);
+  } else {
+    textarea.value = "";
+    updateHashtagPreview();
+    showToast("Posted!");
+    await refreshFeed();
+  }
+
+  button.disabled = false;
+  button.textContent = "Post";
+}
+
+function updateHashtagPreview() {
+  const textarea =
+    document.getElementById(
+      "composer-text"
+    );
+
+  const preview =
+    document.getElementById(
+      "hashtag-preview"
+    );
+
+  const button =
+    document.getElementById(
+      "create-post-button"
+    );
+
+  if (!textarea || !preview) return;
+
+  const tags =
+    extractHashtags(
+      textarea.value
+    );
+
+  preview.innerHTML =
+    tags.length
+      ? tags
+          .map(
+            tag =>
+              `<span class="tag-pill">#${escapeHTML(tag)}</span>`
+          )
+          .join("")
+      : `<span style="color:#a3a3a3;font-size:12px">Add #topic</span>`;
+
+  if (button) {
+    button.disabled =
+      !textarea.value.trim() ||
+      tags.length === 0;
+  }
+}
+
+/* =============================================================
+   LIKE
+   ============================================================= */
+
+function isLiked(post) {
+  return (
+    post.likes?.some(
+      like =>
+        like.user_id ===
+        state.user.id
+    ) || false
+  );
+}
+
+async function toggleLike(postId) {
+  const post =
+    state.posts.find(
+      item => item.id === postId
+    );
+
+  if (!post) return;
+
+  const liked =
+    isLiked(post);
+
+  if (liked) {
+    const {
+      error
+    } = await supabaseClient
+      .from("likes")
+      .delete()
+      .eq("post_id", postId)
+      .eq("user_id", state.user.id);
+
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+  } else {
+    const {
+      error
+    } = await supabaseClient
+      .from("likes")
+      .insert({
+        post_id: postId,
+        user_id: state.user.id
+      });
+
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+  }
+
+  await refreshFeed();
+}
+
+/* =============================================================
+   REPOST
+   ============================================================= */
+
+function isReposted(post) {
+  return (
+    post.reposts?.some(
+      repost =>
+        repost.user_id ===
+        state.user.id
+    ) || false
+  );
+}
+
+async function toggleRepost(postId) {
+  const post =
+    state.posts.find(
+      item => item.id === postId
+    );
+
+  if (!post) return;
+
+  const reposted =
+    isReposted(post);
+
+  if (reposted) {
+    const {
+      error
+    } = await supabaseClient
+      .from("reposts")
+      .delete()
+      .eq("post_id", postId)
+      .eq("user_id", state.user.id);
+
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+  } else {
+    const {
+      error
+    } = await supabaseClient
+      .from("reposts")
+      .insert({
+        post_id: postId,
+        user_id: state.user.id
+      });
+
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+  }
+
+  await refreshFeed();
+}
+
+/* =============================================================
+   COMMENTS
+   ============================================================= */
+
+function toggleComments(postId) {
+  state.commentOpen[postId] =
+    !state.commentOpen[postId];
+
+  render();
+}
+
+async function submitComment(postId) {
+  const input =
+    document.getElementById(
+      `comment-${postId}`
+    );
+
+  if (!input) return;
+
+  const body =
+    input.value.trim();
+
+  if (!body) return;
+
+  const {
+    error
+  } = await supabaseClient
+    .from("comments")
+    .insert({
+      post_id: postId,
+      author_id: state.user.id,
+      body
+    });
+
+  if (error) {
+    showToast(error.message);
+    return;
+  }
+
+  state.commentOpen[postId] = true;
+
+  showToast("Comment added.");
+
+  await refreshFeed();
+}
+
+/* =============================================================
+   DELETE
+   ============================================================= */
+
+async function deletePost(postId) {
+  if (
+    !confirm(
+      "Delete this post?"
+    )
+  ) {
+    return;
+  }
+
+  const {
+    error
+  } = await supabaseClient
+    .from("posts")
+    .delete()
+    .eq("id", postId)
+    .eq(
+      "author_id",
+      state.user.id
+    );
+
+  if (error) {
+    showToast(error.message);
+    return;
+  }
+
+  showToast("Post deleted.");
+
+  await refreshFeed();
+}
+
+/* =============================================================
+   SHARE
+   ============================================================= */
+
+async function sharePost(post) {
+  const url =
+    `${window.location.origin}` +
+    `${window.location.pathname}` +
+    `?post=${post.id}`;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: "NICHE",
+        text: post.body,
+        url
+      });
+    } else {
+      await navigator.clipboard.writeText(
+        url
+      );
+
+      showToast(
+        "Post link copied."
+      );
+    }
+  } catch {
+    // User cancelled sharing.
+  }
+}
+
+/* =============================================================
+   NICHE
+   ============================================================= */
+
+async function loadNiche(topic) {
+  const cleanTopic =
+    topic
+      .toLowerCase()
+      .replace(/^#/, "");
+
+  const {
+    data,
+    error
+  } = await supabaseClient
+    .from("niches")
+    .select("*")
+    .eq("slug", cleanTopic)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    state.currentNiche = null;
+    return;
+  }
+
+  state.currentNiche = data;
+}
+
+async function toggleFollow() {
+  if (!state.currentNiche) return;
+
+  if (state.following) {
+    const {
+      error
+    } = await supabaseClient
+      .from("niche_followers")
+      .delete()
+      .eq(
+        "niche_id",
+        state.currentNiche.id
+      )
+      .eq(
+        "user_id",
+        state.user.id
+      );
+
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+  } else {
+    const {
+      error
+    } = await supabaseClient
+      .from("niche_followers")
+      .insert({
+        niche_id:
+          state.currentNiche.id,
+        user_id:
+          state.user.id
+      });
+
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+  }
+
+  await loadNiche(
+    state.currentNiche.slug
+  );
+
+  await loadFollowState();
+  render();
+}
+
+async function loadFollowState() {
+  if (
+    !state.currentNiche ||
+    !state.user
+  ) {
+    state.following = false;
+    return;
+  }
+
+  const {
+    data
+  } = await supabaseClient
+    .from("niche_followers")
+    .select("user_id")
+    .eq(
+      "niche_id",
+      state.currentNiche.id
+    )
+    .eq(
+      "user_id",
+      state.user.id
+    )
+    .maybeSingle();
+
+  state.following =
+    Boolean(data);
+}
+
+/* =============================================================
+   RENDER POST
+   ============================================================= */
+
+function renderPost(post) {
+  const liked =
+    isLiked(post);
+
+  const reposted =
+    isReposted(post);
+
+  const commentOpen =
+    Boolean(
+      state.commentOpen[post.id]
+    );
+
+  const author =
+    post.author || {};
+
+  const displayName =
+    author.display_name ||
+    author.username ||
+    "User";
+
+  const username =
+    author.username
+      ? `@${author.username}`
+      : "";
+
+  const bodyHTML =
+    escapeHTML(post.body)
+      .replace(
+        /(#[a-zA-Z0-9_-]+)/g,
+        `<a href="/niche/$1"
+            onclick="event.preventDefault(); navigate('/niche/${encodeURIComponent("$1".slice(1).toLowerCase())}')"
+          >$1</a>`
+      )
+      .replace(/\n/g, "<br>");
+
+  return `
+    <article class="post">
+
+      <div class="post-inner">
+
+        <div class="avatar">
+          ${escapeHTML(
+            author.avatar_emoji ||
+            "🙂"
+          )}
+        </div>
+
+        <div class="post-content">
+
+          <div class="post-header">
+
+            <span class="post-display-name">
+              ${escapeHTML(displayName)}
+            </span>
+
+            ${
+              username
+                ? `
+                  <span class="post-username">
+                    ${escapeHTML(username)}
+                  </span>
+                `
+                : ""
+            }
+
+            <span class="post-dot">·</span>
+
+            <span class="post-time">
+              ${escapeHTML(
+                formatTime(
+                  post.created_at
+                )
+              )}
+            </span>
+
+          </div>
+
+          <div class="post-body">
+            ${bodyHTML}
+          </div>
+
+          <a
+            class="post-tag"
+            href="/niche/${encodeURIComponent(post.hashtag)}"
+            onclick="event.preventDefault(); navigate('/niche/${encodeURIComponent(post.hashtag)}')"
+          >
+            #${escapeHTML(post.hashtag)}
+          </a>
+
+          <div class="post-actions">
+
+            <button
+              class="action-button"
+              onclick="toggleComments('${post.id}')"
+            >
+              <span class="action-icon">💬</span>
+              <span>${post.comment_count || 0}</span>
+            </button>
+
+            <button
+              class="action-button ${
+                reposted
+                  ? "reposted"
+                  : ""
+              }"
+              onclick="toggleRepost('${post.id}')"
+            >
+              <span class="action-icon">↻</span>
+              <span>${post.repost_count || 0}</span>
+            </button>
+
+            <button
+              class="action-button ${
+                liked
+                  ? "liked"
+                  : ""
+              }"
+              onclick="toggleLike('${post.id}')"
+            >
+              <span class="action-icon">
+                ${liked ? "♥" : "♡"}
+              </span>
+              <span>${post.like_count || 0}</span>
+            </button>
+
+            <button
+              class="action-button"
+              onclick="sharePost(${JSON.stringify(post).replace(/"/g, "&quot;")})"
+            >
+              <span class="action-icon">↗</span>
+            </button>
+
+            ${
+              state.user.id ===
+              post.author_id
+                ? `
+                  <button
+                    class="action-button delete-action"
+                    onclick="deletePost('${post.id}')"
+                  >
+                    <span class="action-icon">×</span>
+                  </button>
+                `
+                : ""
+            }
+
+          </div>
+
+          ${
+            commentOpen
+              ? `
+                <div class="comments">
+
+                  <form
+                    class="comment-form"
+                    onsubmit="event.preventDefault(); submitComment('${post.id}')"
+                  >
+
+                    <input
+                      id="comment-${post.id}"
+                      class="comment-input"
+                      maxlength="500"
+                      placeholder="Write a comment..."
+                    >
+
+                    <button
+                      class="comment-button"
+                    >
+                      Send
+                    </button>
+
+                  </form>
+
+                </div>
+              `
+              : ""
+          }
+
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+/* =============================================================
+   CREATE POST HTML
+   ============================================================= */
+
+function renderComposer() {
+  return `
+    <section class="composer">
+
+      <textarea
+        id="composer-text"
+        maxlength="500"
+        placeholder="What's happening in your niche?"
+        oninput="updateHashtagPreview()"
+      ></textarea>
+
+      <div class="composer-footer">
+
+        <div
+          id="hashtag-preview"
+          class="hashtag-preview"
+        >
+          <span
+            style="color:#a3a3a3;font-size:12px"
+          >
+            Add #topic
+          </span>
+        </div>
+
+        <button
+          id="create-post-button"
+          class="post-button"
+          disabled
+          onclick="createPost()"
+        >
+          Post
+        </button>
+
+      </div>
+
+    </section>
+  `;
+}
+
+/* =============================================================
+   HOME
+   ============================================================= */
+
+function renderHome() {
+  return `
+    ${renderComposer()}
+
+    ${
+      state.loading
+        ? `
+          <div class="loading">
+            Loading feed...
+          </div>
+        `
+        : state.posts.length === 0
+          ? `
+            <div class="empty">
+
+              <div class="empty-icon">
+                🌱
+              </div>
+
+              <div class="empty-title">
+                Your feed is empty
+              </div>
+
+              <div class="empty-text">
+                Create the first post on NICHE.
+              </div>
+
+            </div>
+          `
+          : state.posts
+              .map(renderPost)
+              .join("")
+    }
+  `;
+}
+
+/* =============================================================
+   NICHE PAGE
+   ============================================================= */
+
+function renderNichePage() {
+  if (!state.currentNiche) {
+    return `
+      <div class="empty">
+
+        <div class="empty-icon">
+          🔎
+        </div>
+
+        <div class="empty-title">
+          Niche not found
+        </div>
+
+        <div class="empty-text">
+          No posts have created this niche yet.
+        </div>
+
+        <button
+          class="post-button"
+          style="margin-top:20px"
+          onclick="navigate('/')"
+        >
+          Back home
+        </button>
+
+      </div>
+    `;
+  }
+
+  const niche =
+    state.currentNiche;
+
+  return `
+    <header class="niche-header">
+
+      <div class="niche-title-row">
+
+        <div>
+
+          <div class="niche-hash">
+            #
+          </div>
+
+          <h1 class="niche-name">
+            ${escapeHTML(niche.name)}
+          </h1>
+
+          <div class="niche-slug">
+            #${escapeHTML(niche.slug)}
+          </div>
+
+        </div>
+
+        <button
+          class="follow-button ${
+            state.following
+              ? "following"
+              : ""
+          }"
+          onclick="toggleFollow()"
+        >
+          ${
+            state.following
+              ? "Following"
+              : "Follow"
+          }
+        </button>
+
+      </div>
+
+      <div class="niche-stats">
+
+        <div class="niche-stat">
+          <strong>
+            ${niche.post_count || 0}
+          </strong>
+          <span>posts</span>
+        </div>
+
+        <div class="niche-stat">
+          <strong>
+            ${niche.follower_count || 0}
+          </strong>
+          <span>followers</span>
+        </div>
+
+      </div>
+
+    </header>
+
+    ${
+      state.loading
+        ? `
+          <div class="loading">
+            Loading niche...
+          </div>
+        `
+        : state.posts.length === 0
+          ? `
+            <div class="empty">
+
+              <div class="empty-icon">
+                🌱
+              </div>
+
+              <div class="empty-title">
+                No posts yet
+              </div>
+
+              <div class="empty-text">
+                Be the first person to post here.
+              </div>
+
+            </div>
+          `
+          : state.posts
+              .map(renderPost)
+              .join("")
+    }
+  `;
+}
+
+/* =============================================================
+   LAYOUT
+   ============================================================= */
+
+function renderLayout(content) {
+  const profile =
+    state.profile || {};
+
+  return `
+    <div class="app-shell">
+
+      <aside class="sidebar">
+
+        <a
+          href="/"
+          onclick="event.preventDefault(); navigate('/')"
+          class="logo"
+        >
+          NICHE
+        </a>
+
+        <div class="logo-subtitle">
+          Everything starts with a topic.
+        </div>
+
+        <nav class="nav">
+
+          <button
+            class="nav-button"
+            onclick="navigate('/')"
+          >
+            <span class="nav-icon">⌂</span>
+            <span class="nav-label">Home</span>
+          </button>
+
+          <button
+            class="nav-button"
+            onclick="focusSearch()"
+          >
+            <span class="nav-icon">⌕</span>
+            <span class="nav-label">Explore</span>
+          </button>
+
+        </nav>
+
+        <div class="profile-mini">
+
+          <div class="profile-row">
+
+            <div class="avatar">
+              ${escapeHTML(
+                profile.avatar_emoji ||
+                "🙂"
+              )}
+            </div>
+
+            <div>
+              <div class="profile-name">
+                ${escapeHTML(
+                  profile.display_name ||
+                  profile.username ||
+                  "User"
+                )}
+              </div>
+
+              <div class="profile-username">
+                @${escapeHTML(
+                  profile.username ||
+                  ""
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          <button
+            class="logout-button"
+            onclick="logout()"
+          >
+            Log out
+          </button>
+
+        </div>
+
+      </aside>
+
+      <main class="main">
+
+        <header class="topbar">
+
+          <a
+            class="mobile-logo"
+            href="/"
+            onclick="event.preventDefault(); navigate('/')"
+          >
+            NICHE
+          </a>
+
+          <input
+            id="search"
+            class="search"
+            placeholder="Search niches..."
+            value="${escapeHTML(state.search)}"
+            onkeydown="handleSearchKey(event)"
+          >
+
+        </header>
+
+        ${content}
+
+      </main>
+
+      <aside class="rightbar">
+
+        <div class="info-card">
+
+          <div class="info-title">
+            Welcome to NICHE
+          </div>
+
+          <div class="info-text">
+            Follow topics. Join conversations.
+            Share what matters to you.
+          </div>
+
+        </div>
+
+        <div
+          class="info-card"
+          style="margin-top:15px"
+        >
+
+          <div class="info-title">
+            How it works
+          </div>
+
+          <div class="info-text">
+            Every post belongs to a niche.
+            Add a hashtag such as
+            <b>#football</b> and NICHE
+            automatically creates the topic.
+          </div>
+
+        </div>
+
+      </aside>
+
+    </div>
+  `;
+}
+
+/* =============================================================
+   SEARCH
+   ============================================================= */
+
+function focusSearch() {
+  const search =
+    document.getElementById(
+      "search"
+    );
+
+  if (search) {
+    search.focus();
+  }
+}
+
+function handleSearchKey(event) {
+  if (event.key !== "Enter") {
+    return;
+  }
+
+  const topic =
+    event.target.value
+      .trim()
+      .replace(/^#+/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "");
+
+  if (!topic) return;
+
+  state.search =
+    `#${topic}`;
+
+  navigate(
+    `/niche/${encodeURIComponent(topic)}`
+  );
+}
+
+/* =============================================================
+   LOGOUT
+   ============================================================= */
+
+async function logout() {
+  await supabaseClient.auth.signOut();
+}
+
+/* =============================================================
+   REFRESH
+   ============================================================= */
+
+async function refreshFeed() {
+  const route =
+    getRoute();
+
+  if (route.type === "niche") {
+    await loadNiche(
+      route.topic
+    );
+
+    await loadFollowState();
+  } else {
+    state.currentNiche = null;
+    state.following = false;
+  }
+
+  await loadPosts();
+
+  render();
+}
+
+/* =============================================================
+   REALTIME
+   ============================================================= */
+
+function setupRealtime() {
+  if (!supabaseClient) {
+    return;
+  }
+
+  supabaseClient
+    .channel("niche-global")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "posts"
+      },
+      async () => {
+        await refreshFeed();
+      }
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "likes"
+      },
+      async () => {
+        await refreshFeed();
+      }
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "reposts"
+      },
+      async () => {
+        await refreshFeed();
+      }
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "niche_followers"
+      },
+      async () => {
+        await refreshFeed();
+      }
+    )
+    .subscribe();
+}
+
+/* =============================================================
+   MAIN RENDER
+   ============================================================= */
+
+async function render() {
+  if (!configured) {
+    configurationScreen();
+    return;
+  }
+
+  if (!state.session) {
+    renderAuth();
+    return;
+  }
+
+  if (needsProfileSetup()) {
+    renderProfileSetup();
+    return;
+  }
+
+  const route =
+    getRoute();
+
+  if (route.type === "niche") {
+    state.search =
+      `#${route.topic}`;
+
+    await loadNiche(
+      route.topic
+    );
+
+    await loadFollowState();
+
+    await loadPosts();
+
+    document.getElementById(
+      "app"
+    ).innerHTML =
+      renderLayout(
+        renderNichePage()
+      );
+
+    return;
+  }
+
+  state.currentNiche = null;
+  state.following = false;
+  state.search = "";
+
+  await loadPosts();
+
+  document.getElementById(
+    "app"
+  ).innerHTML =
+    renderLayout(
+      renderHome()
+    );
+}
+
+/* =============================================================
+   INITIALIZATION
+   ============================================================= */
+
+async function initialize() {
+  if (!configured) {
+    configurationScreen();
+    return;
+  }
+
+  const {
+    data
+  } = await supabaseClient.auth
+    .getSession();
+
+  state.session =
+    data.session;
+
+  state.user =
+    data.session?.user ||
+    null;
+
+  if (state.user) {
+    await loadProfile();
+  }
+
+  await render();
+
+  setupRealtime();
+
+  supabaseClient.auth
+    .onAuthStateChange(
+      async (_event, session) => {
+
+        state.session =
+          session;
+
+        state.user =
+          session?.user ||
+          null;
+
+        if (state.user) {
+          await loadProfile();
+        } else {
+          state.profile = null;
+        }
+
+        await render();
+      }
+    );
+}
+
+/* =============================================================
+   START
+   ============================================================= */
+
+initialize();
+
+</script>
+
+</body>
+</html>
