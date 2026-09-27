@@ -165,6 +165,7 @@ async function loadNotifications(){
   }catch(e){console.error("Notification load failed",e);S.notificationsError="Notifications could not be loaded right now.";S.notificationsLoaded=true}
   finally{S.notificationsLoading=false;notificationPanel();updateNotificationButtons()}
 }
+function notificationText(n){const name=esc(n.actor?.display_name||n.actor?.username||"Someone");if(n.kind==="like")return `<b>${name}</b> liked your post.`;if(n.kind==="comment")return `<b>${name}</b> commented on your post${n.body?`: <span>${esc(n.body).slice(0,120)}</span>`:""}.`;if(n.kind==="repost")return `<b>${name}</b> reposted your post.`;return `<b>${name}</b> interacted with your post.`}
 function notificationReadKey(){return"niche-notifications-read-"+(S.user?.id||"")}
 function notificationReadAt(){return Number(localStorage.getItem(notificationReadKey())||0)}
 function unreadCount(){let t=notificationReadAt();return S.notifications.filter(x=>new Date(x.time).getTime()>t).length}
