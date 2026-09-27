@@ -120,7 +120,46 @@ async function loadPublicProfile(u){let{data}=await sb.from("profiles").select("
 async function profilePosts(id){let{data}=await sb.from("posts").select(`*,author:profiles!posts_author_id_fkey(id,username,display_name,avatar_emoji,bio),likes(user_id),reposts(user_id)`).eq("author_id",id).order("created_at",{ascending:false}).limit(50);return data||[]}
 function home(){return`${composer()}${S.loading?`<div class="loading">Loading feed...</div>`:S.posts.length?S.posts.map(postHTML).join(""):`<div class="empty"><div class="icon">🌱</div><h2>Your feed is empty</h2><p>Create the first post and give a topic somewhere to start.</p></div>`}`}
 function nichePage(){if(!S.niche)return`<div class="empty"><div class="icon">🔎</div><h2>Niche not found</h2><p>No posts or registered niche match this topic.</p><button class="primary" style="margin-top:18px" onclick="nav('/')">Go home</button></div>`;let n=S.niche;return`<header class="header"><button class="back" onclick="nav('/')">← Home</button><div class="title-row"><div><h1 class="title">#${esc(n.name||n.slug)}</h1><div class="sub">Topic · #${esc(n.slug)}</div>${n.description?`<div class="desc">${esc(n.description)}</div>`:""}<div class="stats"><span><b>${esc(n.post_count??S.posts.length)}</b> posts</span><span><b>${esc(n.follower_count??0)}</b> followers</span></div></div>${n.id?`<button class="secondary" onclick="follow()">${S.following?"Following":"Follow"}</button>`:""}</div></header>${S.loading?`<div class="loading">Loading niche...</div>`:S.posts.length?S.posts.map(postHTML).join(""):`<div class="empty"><div class="icon">🌱</div><h2>No posts yet</h2><p>Be the first person to post here.</p></div>`}`}
-function profileFollowButton(p){   if(!p || p.id===S.user.id) return "";    const f=isFollowingUser(p.id);    return `<button class="${f?"secondary":"primary"}"     onclick="toggleUserFollow('${esc(p.id)}')">     ${f?"Following":"Follow"}   </button>`; }
+function profileFollowButton(p){   if(!p || p.id===S.user.id) return "";    const f=isFollowingUser(p.id);    return `<button class="${f?"secondary":"primary"}"     async function toggleUserFollow(id){
+  if(!id || id===S.user.id) return;
+
+  const following=isFollowingUser(id);
+
+  if(following){
+    const {error}=await sb
+      .from("user_follows")
+      .delete()
+      .eq("follower_id",S.user.id)
+      .eq("following_id",id);
+
+    if(error){
+      console.error("Unfollow error:",error);
+      toast("Unfollow failed: "+error.message);
+      return;
+    }
+
+    S.followingUserIds.delete(id);
+    toast("Unfollowed");
+  }else{
+    const {error}=await sb
+      .from("user_follows")
+      .insert({
+        follower_id:S.user.id,
+        following_id:id
+      });
+
+    if(error){
+      console.error("Follow error:",error);
+      toast("Follow failed: "+error.message);
+      return;
+    }
+
+    S.followingUserIds.add(id);
+    toast("Following");
+  }
+
+  await render();
+}')">     ${f?"Following":"Follow"}   </button>`; }
 function profilePage(){let p=S.publicProfile;if(!p)return`<div class="empty"><div class="icon">👤</div><h2>Profile not found</h2><p>That username does not exist.</p><button class="primary" style="margin-top:18px" onclick="nav('/')">Go home</button></div>`;let own=p.id===S.user?.id,priv=!!p.activity_private&&!own;return`<header class="header"><button class="back" onclick="nav('/')">← Home</button><div class="profile-head"><div class="avatar big">${esc(p.avatar_emoji||"🙂")}</div><div class="profile-info"><div class="profile-name">${esc(p.display_name||p.username)}</div><div class="profile-handle">@${esc(p.username)}</div>${p.bio?`<div class="bio">${esc(p.bio)}</div>`:""}<div class="stats"><span><b>${S.posts.length}</b> posts</span></div><div class="profile-actions">${own?`<button class="secondary" onclick="nav('/profile/edit')">Customize profile</button>`:profileFollowButton(p)}</div>${priv?`<div class="activity-line">🔒 Activity is private</div>`:""}</div></div></header>${S.posts.length?S.posts.map(postHTML).join(""):`<div class="empty"><div class="icon">✦</div><h2>No posts yet</h2><p>This profile has not posted anything yet.</p></div>`}`}
 async function exploreSearch(v){S.search=v;let q=v.trim().replace(/^#/,'').replace(/^@/,'').toLowerCase();if(!q){S.results=[];render();return}let[n,p]=await Promise.all([sb.from("niches").select("*").ilike("slug",`%${q}%`).limit(20),sb.from("profiles").select("id,username,display_name,avatar_emoji,bio").ilike("username",`%${q}%`).limit(20)]);S.results=[...(n.data||[]).map(x=>({t:"n",x})),...(p.data||[]).map(x=>({t:"p",x}))];render()}
 function explore(){return`<section class="explore"><h1>Explore</h1><p style="color:var(--muted);font-size:12px">Search for niches or people.</p><input class="search" style="border:1px solid var(--border);background:var(--surface)" placeholder="Search #football or @username" value="${esc(S.search)}" onkeydown="if(event.key==='Enter')exploreSearch(this.value)"></section>${S.search?`<div class="results">${S.results.length?S.results.map(r=>r.t==='n'?`<a class="result" href="${hrefN(r.x.slug)}" onclick="event.preventDefault();nav('/niche/${encodeURIComponent(r.x.slug)}')"><b>#${esc(r.x.name||r.x.slug)}</b><small>Niche · ${esc(r.x.post_count||0)} posts</small></a>`:`<a class="result" href="${hrefP(r.x.username)}" onclick="event.preventDefault();nav('/profile/${encodeURIComponent(r.x.username)}')"><b>${esc(r.x.display_name||r.x.username)}</b><small>@${esc(r.x.username)}</small></a>`).join(""):`<div class="empty"><div class="icon">🔎</div><h2>No results</h2><p>Try another topic or username.</p></div>`}</div>`:`<div class="empty"><div class="icon">⌕</div><h2>Find your next niche</h2><p>Search above for topics and people.</p></div>`}`}
