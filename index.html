@@ -2591,32 +2591,46 @@ async function share(p){
 }
 
 function bodyHTML(text){
-  let out=esc(text||"");
+  if(!text) return "";
 
-  out=out
-    .replace(/\*\*(.+?)\*\*/gs,"<strong>$1</strong>")
-    .replace(/~~(.+?)~~/gs,"<s>$1</s>")
-    .replace(/__([^_\n]+?)__/g,"<u>$1</u>")
-    .replace(
-      /(?<!\*)\*([^*\n]+?)\*(?!\*)/g,
-      "<em>$1</em>"
-    )
-    .replace(
-      /`([^`\n]+?)`/g,
-      "<code>$1</code>"
-    );
+  let out=esc(text);
+
+  out=out.replace(
+    /\*\*(.+?)\*\*/gs,
+    "<strong>$1</strong>"
+  );
+
+  out=out.replace(
+    /~~(.+?)~~/gs,
+    "<s>$1</s>"
+  );
+
+  out=out.replace(
+    /__([^_\n]+?)__/g,
+    "<u>$1</u>"
+  );
+
+  out=out.replace(
+    /(?<!\*)\*([^*\n]+?)\*(?!\*)/g,
+    "<em>$1</em>"
+  );
+
+  out=out.replace(
+    /`([^`\n]+?)`/g,
+    "<code>$1</code>"
+  );
 
   out=out.replace(
     /#([a-zA-Z0-9_-]+)/g,
-    (match,x)=>{
-      const t=topic(x);
+    (match,tag)=>{
+      const t=topic(tag);
       const href=hrefN(t);
 
       return `<a class="hashtag" href="${href}" onclick="event.preventDefault();nav('/niche/${encodeURIComponent(t)}')">#${esc(t)}</a>`;
     }
   );
 
-  return out.replace(/\n/g,"<br>");
+  return out.replace(/\r?\n/g,"<br>");
 }
 
 function postHTML(p){
