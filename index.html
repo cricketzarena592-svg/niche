@@ -175,7 +175,71 @@ async function loadFollowingNiches(){
   S.followingNiches=niches||[];
 }
 
-async function loadFollowingPeople(userId){let{data,error}=await sb.from("user_follows").select("following_id,profiles!user_follows_following_id_fkey(id,username,display_name,avatar_emoji,bio)").eq("follower_id",userId).limit(100);if(error){console.warn("Following people unavailable",error);return[]}if(userId===S.user.id)S.followingUserIds=new Set((data||[]).map(x=>x.following_id));return(data||[]).map(x=>x.profiles||x.profile).filter(Boolean)}
+async function loadFollowingPeople(userId){
+  const {data,error}=await sb
+    .from("user_follows")
+    .select("following_id")
+    .eq("follower_id",userId)
+    .limit(100);
+
+  if(error){
+    console.error("Following people unavailable:",error);
+    return [];
+  }
+
+  const ids=(data||[]).map(x=>x.following_id).filter(Boolean);
+
+  if(userId===S.user.id){
+    S.followingUserIds=new Set(ids);
+  }
+
+  if(!ids.length){
+    return [];
+  }
+
+  const {data:profiles,error:profileError}=await sb
+    .from("profiles")
+    .select("id,username,display_name,avatar_emoji,bio")
+    .in("id",ids);
+
+  if(profileError){
+    console.error("Following profiles unavailable:",profileError);
+    return [];
+  }
+
+  return profiles||[];
+}
+async function getUserFollowCounts(userId){
+  if(!userId){
+    return {followers:0,following:0};
+  }
+
+  const [{count:followers,error:followersError},
+         {count:following,error:followingError}]=await Promise.all([
+    sb
+      .from("user_follows")
+      .select("*",{count:"exact",head:true})
+      .eq("following_id",userId),
+
+    sb
+      .from("user_follows")
+      .select("*",{count:"exact",head:true})
+      .eq("follower_id",userId)
+  ]);
+
+  if(followersError){
+    console.error("Followers count error:",followersError);
+  }
+
+  if(followingError){
+    console.error("Following count error:",followingError);
+  }
+
+  return {
+    followers:followers||0,
+    following:following||0
+  };
+}
 function isFollowingUser(id){return !!id&&S.followingUserIds.has(id)}
 async function toggleUserFollow(id){if(!id||id===S.user.id)return;let f=isFollowingUser(id);let q=f?sb.from("user_follows").delete().eq("follower_id",S.user.id).eq("following_id",id):sb.from("user_follows").insert({follower_id:S.user.id,following_id:id});let{error}=await q;if(error){toast("Follow failed: "+error.message);return}if(f)S.followingUserIds.delete(id);else S.followingUserIds.add(id);toast(f?"Unfollowed":"Following");render()}
 async function setActivityPrivacy(privateMode){let{error}=await sb.from("profiles").update({activity_private:privateMode}).eq("id",S.user.id);if(error){toast("Activity privacy needs the database update in the SQL file.");return}S.activityPrivate=privateMode;S.profile.activity_private=privateMode;toast(privateMode?"Activity privacy on":"Activity privacy off");render()}
