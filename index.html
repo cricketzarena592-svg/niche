@@ -2591,7 +2591,7 @@ async function share(p){
 }
 
 function bodyHTML(text){
-  let out=esc(text);
+  let out=esc(text||"");
 
   out=out
     .replace(/\*\*(.+?)\*\*/gs,"<strong>$1</strong>")
@@ -2608,21 +2608,11 @@ function bodyHTML(text){
 
   out=out.replace(
     /#([a-zA-Z0-9_-]+)/g,
-    (m,x)=>{
-      let t=topic(x);
+    (match,x)=>{
+      const t=topic(x);
+      const href=hrefN(t);
 
-      return`
-        <a
-          class="hashtag"
-          href="${hrefN(t)}"
-          onclick="
-            event.preventDefault();
-            nav('/niche/${encodeURIComponent(t)}')
-          "
-        >
-          #${esc(t)}
-        </a>
-      `;
+      return `<a class="hashtag" href="${href}" onclick="event.preventDefault();nav('/niche/${encodeURIComponent(t)}')">#${esc(t)}</a>`;
     }
   );
 
