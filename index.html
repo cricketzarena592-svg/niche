@@ -671,7 +671,8 @@ button:disabled{
   font-size:15px;
   line-height:1.6;
   white-space:pre-wrap;
-  word-break:break-word
+  word-break:break-word;
+  text-indent:0
 }
 
 .hashtag{
@@ -777,7 +778,8 @@ button:disabled{
   font-size:13px;
   line-height:1.45;
   white-space:pre-wrap;
-  word-break:break-word
+  word-break:break-word;
+  text-indent:0
 }
 
 .comment-empty{
@@ -868,7 +870,8 @@ button:disabled{
   font-size:14px;
   line-height:1.5;
   white-space:pre-wrap;
-  word-break:break-word
+  word-break:break-word;
+  text-indent:0
 }
 
 .explore{
@@ -2432,9 +2435,7 @@ function commentsMarkup(id){
                     </span>
                   </div>
 
-                  <div class="comment-body">
-                    ${esc(c.body)}
-                  </div>
+                  <div class="comment-body">${esc(c.body)}</div>
 
                 </div>
               </div>
@@ -2626,7 +2627,7 @@ function bodyHTML(text){
       const t=topic(tag);
       const href=hrefN(t);
 
-      return `<a class="hashtag" href="${href}" onclick="event.preventDefault();nav('/niche/${encodeURIComponent(t)}')">#${esc(t)}</a>`;
+      return `<a class="hashtag" href="${hrefN(t)}" onclick="event.preventDefault();nav('/niche/${encodeURIComponent(t)}')">#${esc(t)}</a>`;
     }
   );
 
@@ -2708,9 +2709,7 @@ function postHTML(p){
 
           </div>
 
-          <div class="body">
-            ${bodyHTML(p.body)}
-          </div>
+          <div class="body">${bodyHTML(p.body)}</div>
 
           ${
             p.hashtag
@@ -3351,9 +3350,7 @@ function profilePage(){
           ${
             p.bio
             ? `
-              <div class="bio">
-                ${esc(p.bio)}
-              </div>
+              <div class="bio">${esc(p.bio)}</div>
             `
             :""
           }
