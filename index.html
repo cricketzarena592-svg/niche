@@ -1372,7 +1372,77 @@ button:disabled{
     grid-template-columns:repeat(6,1fr)
   }
 }
-</style>
+
+    /* =========================================================
+       LANDSCAPE PHONES / TABLETS
+       Keep the mobile bottom navigation in landscape mode.
+       ========================================================= */
+    @media (orientation: landscape) and (max-height: 700px) {
+      .app-shell {
+        display: block !important;
+      }
+
+      .sidebar {
+        display: none !important;
+      }
+
+      .rightbar {
+        display: none !important;
+      }
+
+      .main {
+        width: 100%;
+        border-right: 0;
+      }
+
+      .mobile-logo {
+        display: block !important;
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -.06em;
+      }
+
+      .topbar {
+        height: 58px;
+      }
+
+      .bottom-nav {
+        display: flex !important;
+      }
+    }
+
+    /* Larger tablets in landscape still use the mobile navigation. */
+    @media (orientation: landscape) and (min-height: 701px) and (max-height: 900px) and (max-width: 1366px) {
+      .app-shell {
+        display: block !important;
+      }
+
+      .sidebar {
+        display: none !important;
+      }
+
+      .rightbar {
+        display: none !important;
+      }
+
+      .main {
+        width: 100%;
+        border-right: 0;
+      }
+
+      .mobile-logo {
+        display: block !important;
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -.06em;
+      }
+
+      .bottom-nav {
+        display: flex !important;
+      }
+    }
+
+  </style>
 </head>
 
 <body>
