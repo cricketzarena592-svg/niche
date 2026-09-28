@@ -1374,91 +1374,85 @@ button:disabled{
 }
 
     /* =========================================================
-   TOUCH DEVICES — LANDSCAPE
-   Keep bottom navigation on phones and tablets,
-   including larger devices such as Pixel 9 and iPad.
-   ========================================================= */
+       TOUCH DEVICES — LANDSCAPE
+       Keep bottom navigation on phones and tablets, including
+       larger devices such as Pixel 9 and iPad.
+       ========================================================= */
+    @media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+      .app-shell {
+        display: block !important;
+      }
 
-@media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+      .sidebar,
+      .rightbar {
+        display: none !important;
+      }
 
-  .app-shell {
-    display: block !important;
-  }
+      .main {
+        width: 100%;
+        max-width: none;
+        border-right: 0;
+      }
 
-  .sidebar,
-  .rightbar {
-    display: none !important;
-  }
+      .mobile-logo {
+        display: block !important;
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -.06em;
+      }
 
-  .main {
-    width: 100%;
-    max-width: none;
-    border-right: 0;
-  }
+      .topbar {
+        height: 58px;
+      }
 
-  .mobile-logo {
-    display: block !important;
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: -.06em;
-  }
+      .bottom-nav {
+        display: flex !important;
+      }
 
-  .topbar {
-    height: 58px;
-  }
+      /* Prevent the feed from becoming an oversized desktop column. */
+      .post,
+      .composer,
+      .niche-header {
+        width: 100%;
+      }
 
-  .bottom-nav {
-    display: flex !important;
-  }
+      /* Leave room for the fixed bottom navigation. */
+      .main {
+        padding-bottom: 70px;
+      }
+    }
 
-  .post,
-  .composer,
-  .niche-header {
-    width: 100%;
-  }
+    /* Some tablets report a fine/unknown pointer even while touch is
+       available. This catches common iPad/tablet viewport sizes. */
+    @media (orientation: landscape) and (max-width: 1366px) and (min-height: 500px) {
+      .app-shell {
+        display: block !important;
+      }
 
-  .main {
-    padding-bottom: 70px;
-  }
-}
+      .sidebar,
+      .rightbar {
+        display: none !important;
+      }
 
+      .main {
+        width: 100%;
+        max-width: none;
+        border-right: 0;
+        padding-bottom: 70px;
+      }
 
-/* =========================================================
-   LARGE TABLETS — LANDSCAPE
-   Covers devices that don't report a coarse pointer correctly.
-   ========================================================= */
+      .mobile-logo {
+        display: block !important;
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -.06em;
+      }
 
-@media (orientation: landscape)
-       and (max-width: 1366px)
-       and (min-height: 500px) {
+      .bottom-nav {
+        display: flex !important;
+      }
+    }
 
-  .app-shell {
-    display: block !important;
-  }
-
-  .sidebar,
-  .rightbar {
-    display: none !important;
-  }
-
-  .main {
-    width: 100%;
-    max-width: none;
-    border-right: 0;
-    padding-bottom: 70px;
-  }
-
-  .mobile-logo {
-    display: block !important;
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: -.06em;
-  }
-
-  .bottom-nav {
-    display: flex !important;
-  }
-}
 </style>
 </head>
 
