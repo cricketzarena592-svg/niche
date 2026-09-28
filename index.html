@@ -1374,24 +1374,23 @@ button:disabled{
 }
 
     /* =========================================================
-       LANDSCAPE PHONES / TABLETS
-       Keep the mobile bottom navigation in landscape mode.
+       TOUCH DEVICES — LANDSCAPE
+       Keep bottom navigation on phones and tablets, including
+       larger devices such as Pixel 9 and iPad.
        ========================================================= */
-    @media (orientation: landscape) and (max-height: 700px) {
+    @media (orientation: landscape) and (hover: none) and (pointer: coarse) {
       .app-shell {
         display: block !important;
       }
 
-      .sidebar {
-        display: none !important;
-      }
-
+      .sidebar,
       .rightbar {
         display: none !important;
       }
 
       .main {
         width: 100%;
+        max-width: none;
         border-right: 0;
       }
 
@@ -1409,25 +1408,37 @@ button:disabled{
       .bottom-nav {
         display: flex !important;
       }
+
+      /* Prevent the feed from becoming an oversized desktop column. */
+      .post,
+      .composer,
+      .niche-header {
+        width: 100%;
+      }
+
+      /* Leave room for the fixed bottom navigation. */
+      .main {
+        padding-bottom: 70px;
+      }
     }
 
-    /* Larger tablets in landscape still use the mobile navigation. */
-    @media (orientation: landscape) and (min-height: 701px) and (max-height: 900px) and (max-width: 1366px) {
+    /* Some tablets report a fine/unknown pointer even while touch is
+       available. This catches common iPad/tablet viewport sizes. */
+    @media (orientation: landscape) and (max-width: 1366px) and (min-height: 500px) {
       .app-shell {
         display: block !important;
       }
 
-      .sidebar {
-        display: none !important;
-      }
-
+      .sidebar,
       .rightbar {
         display: none !important;
       }
 
       .main {
         width: 100%;
+        max-width: none;
         border-right: 0;
+        padding-bottom: 70px;
       }
 
       .mobile-logo {
@@ -1442,7 +1453,7 @@ button:disabled{
       }
     }
 
-  </style>
+</style>
 </head>
 
 <body>
