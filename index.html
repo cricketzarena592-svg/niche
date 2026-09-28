@@ -6435,6 +6435,1566 @@ async function init(){
   document.head.appendChild(style);
 
 })();
+/* =========================================================
+   NICHE POST WIDGETS
+   Countdown + Event + Poll
+
+   Paste immediately BEFORE the final init();
+   ========================================================= */
+
+(function(){
+
+  const WIDGET_KEY="niche-widget-draft";
+
+  let currentWidget=null;
+
+  /* -------------------------------------------------------
+     Helpers
+     ------------------------------------------------------- */
+
+  function widgetEsc(v){
+    return esc(String(v??""));
+  }
+
+  function widgetDateValue(v){
+    if(!v)return "";
+
+    const d=new Date(v);
+
+    if(Number.isNaN(d.getTime()))return "";
+
+    return d.toISOString();
+  }
+
+  function formatCountdown(ms){
+
+    if(ms<=0){
+      return "00d 00h 00m 00s";
+    }
+
+    let total=Math.floor(ms/1000);
+
+    const days=Math.floor(total/86400);
+
+    total%=86400;
+
+    const hours=Math.floor(total/3600);
+
+    total%=3600;
+
+    const minutes=Math.floor(total/60);
+
+    const seconds=total%60;
+
+    return (
+      String(days).padStart(2,"0")+"d "+
+      String(hours).padStart(2,"0")+"h "+
+      String(minutes).padStart(2,"0")+"m "+
+      String(seconds).padStart(2,"0")+"s"
+    );
+  }
+
+  function widgetTimeText(v){
+
+    if(!v)return "";
+
+    const d=new Date(v);
+
+    if(Number.isNaN(d.getTime()))return "";
+
+    return d.toLocaleString(
+      undefined,
+      {
+        dateStyle:"medium",
+        timeStyle:"short"
+      }
+    );
+  }
+
+  function closeWidgetModal(){
+
+    document
+      .getElementById("niche-widget-modal")
+      ?.remove();
+
+    currentWidget=null;
+  }
+
+  /* -------------------------------------------------------
+     Widget preview
+     ------------------------------------------------------- */
+
+  function widgetPreviewHTML(){
+
+    if(!currentWidget)return "";
+
+    if(currentWidget.type==="countdown"){
+
+      return `
+        <div class="niche-widget-preview">
+
+          <div class="niche-widget-label">
+            ⏳ COUNTDOWN
+          </div>
+
+          <div class="niche-countdown-preview">
+            ${formatCountdown(
+              new Date(currentWidget.target).getTime()
+              -Date.now()
+            )}
+          </div>
+
+          <div class="niche-widget-title">
+            ${widgetEsc(currentWidget.title)}
+          </div>
+
+        </div>
+      `;
+    }
+
+    if(currentWidget.type==="event"){
+
+      return `
+        <div class="niche-widget-preview">
+
+          <div class="niche-widget-label">
+            📅 EVENT
+          </div>
+
+          <div class="niche-widget-title">
+            ${widgetEsc(currentWidget.title)}
+          </div>
+
+          <div class="niche-widget-detail">
+            ${widgetEsc(
+              widgetTimeText(currentWidget.start)
+            )}
+          </div>
+
+          ${
+            currentWidget.location
+            ? `
+              <div class="niche-widget-detail">
+                📍 ${widgetEsc(currentWidget.location)}
+              </div>
+            `
+            :""
+          }
+
+          ${
+            currentWidget.description
+            ? `
+              <div class="niche-widget-detail">
+                ${widgetEsc(currentWidget.description)}
+              </div>
+            `
+            :""
+          }
+
+        </div>
+      `;
+    }
+
+    if(currentWidget.type==="poll"){
+
+      return `
+        <div class="niche-widget-preview">
+
+          <div class="niche-widget-label">
+            📊 POLL
+          </div>
+
+          <div class="niche-widget-title">
+            ${widgetEsc(currentWidget.question)}
+          </div>
+
+          ${
+            currentWidget.options
+              .filter(Boolean)
+              .map((x,i)=>`
+                <div class="niche-poll-preview-option">
+                  ${i+1}. ${widgetEsc(x)}
+                </div>
+              `)
+              .join("")
+          }
+
+        </div>
+      `;
+    }
+
+    return "";
+  }
+
+  /* -------------------------------------------------------
+     Widget modal
+     ------------------------------------------------------- */
+
+  function openWidgetModal(){
+
+    closeWidgetModal();
+
+    currentWidget={
+      type:"countdown",
+      title:"",
+      target:"",
+      start:"",
+      location:"",
+      description:"",
+      question:"",
+      options:["","","",""]
+    };
+
+    const root=document.createElement("div");
+
+    root.id="niche-widget-modal";
+
+    root.innerHTML=`
+
+      <div class="modal-backdrop niche-widget-backdrop">
+
+        <div class="modal niche-widget-modal">
+
+          <h2>Add widget</h2>
+
+          <p>
+            Add an interactive widget to your post.
+          </p>
+
+          <div class="niche-widget-tabs">
+
+            <button
+              type="button"
+              class="niche-widget-tab active"
+              data-widget-type="countdown"
+            >
+              ⏳ Countdown
+            </button>
+
+            <button
+              type="button"
+              class="niche-widget-tab"
+              data-widget-type="event"
+            >
+              📅 Event
+            </button>
+
+            <button
+              type="button"
+              class="niche-widget-tab"
+              data-widget-type="poll"
+            >
+              📊 Poll
+            </button>
+
+          </div>
+
+          <div id="niche-widget-form"></div>
+
+          <div id="niche-widget-preview"></div>
+
+          <div class="modal-actions">
+
+            <button
+              type="button"
+              class="secondary"
+              id="niche-widget-cancel"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              class="primary"
+              id="niche-widget-save"
+            >
+              Add widget
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(root);
+
+    const tabs=
+      root.querySelectorAll(".niche-widget-tab");
+
+    tabs.forEach(tab=>{
+
+      tab.addEventListener(
+        "click",
+        ()=>{
+
+          tabs.forEach(x=>
+            x.classList.remove("active")
+          );
+
+          tab.classList.add("active");
+
+          currentWidget={
+            type:tab.dataset.widgetType,
+            title:"",
+            target:"",
+            start:"",
+            location:"",
+            description:"",
+            question:"",
+            options:["","","",""]
+          };
+
+          renderWidgetForm();
+        }
+      );
+
+    });
+
+    root.querySelector(
+      "#niche-widget-cancel"
+    )?.addEventListener(
+      "click",
+      closeWidgetModal
+    );
+
+    root.querySelector(
+      "#niche-widget-save"
+    )?.addEventListener(
+      "click",
+      saveWidget
+    );
+
+    renderWidgetForm();
+  }
+
+  /* -------------------------------------------------------
+     Widget forms
+     ------------------------------------------------------- */
+
+  function renderWidgetForm(){
+
+    const form=
+      document.getElementById(
+        "niche-widget-form"
+      );
+
+    const preview=
+      document.getElementById(
+        "niche-widget-preview"
+      );
+
+    if(!form)return;
+
+    if(currentWidget.type==="countdown"){
+
+      form.innerHTML=`
+
+        <label class="label">
+          Countdown title
+        </label>
+
+        <input
+          id="widget-title"
+          class="input"
+          maxlength="80"
+          placeholder="Event starts!"
+          value="${widgetEsc(currentWidget.title)}"
+        >
+
+        <label class="label niche-widget-field">
+          Date and time
+        </label>
+
+        <input
+          id="widget-target"
+          class="input"
+          type="datetime-local"
+          value="${widgetEsc(
+            currentWidget.target
+          )}"
+        >
+
+      `;
+    }
+
+    if(currentWidget.type==="event"){
+
+      form.innerHTML=`
+
+        <label class="label">
+          Event name
+        </label>
+
+        <input
+          id="widget-title"
+          class="input"
+          maxlength="80"
+          placeholder="NICHE Community Event"
+        >
+
+        <label class="label niche-widget-field">
+          Date and time
+        </label>
+
+        <input
+          id="widget-start"
+          class="input"
+          type="datetime-local"
+        >
+
+        <label class="label niche-widget-field">
+          Location
+        </label>
+
+        <input
+          id="widget-location"
+          class="input"
+          maxlength="100"
+          placeholder="Online or a location"
+        >
+
+        <label class="label niche-widget-field">
+          Description
+        </label>
+
+        <textarea
+          id="widget-description"
+          class="textarea"
+          maxlength="180"
+          placeholder="Optional event details..."
+        ></textarea>
+
+      `;
+    }
+
+    if(currentWidget.type==="poll"){
+
+      form.innerHTML=`
+
+        <label class="label">
+          Question
+        </label>
+
+        <input
+          id="widget-question"
+          class="input"
+          maxlength="160"
+          placeholder="What should we add next?"
+        >
+
+        <label class="label niche-widget-field">
+          Choices
+        </label>
+
+        <div class="niche-poll-fields">
+
+          ${[0,1,2,3].map(i=>`
+
+            <input
+              id="widget-option-${i}"
+              class="input"
+              maxlength="80"
+              placeholder="Choice ${i+1}"
+            >
+
+          `).join("")}
+
+        </div>
+
+      `;
+    }
+
+    attachWidgetInputs();
+
+    if(preview){
+      preview.innerHTML=
+        widgetPreviewHTML();
+    }
+  }
+
+  function attachWidgetInputs(){
+
+    const ids=[
+      "widget-title",
+      "widget-target",
+      "widget-start",
+      "widget-location",
+      "widget-description",
+      "widget-question",
+      "widget-option-0",
+      "widget-option-1",
+      "widget-option-2",
+      "widget-option-3"
+    ];
+
+    ids.forEach(id=>{
+
+      const el=document.getElementById(id);
+
+      if(!el)return;
+
+      el.addEventListener(
+        "input",
+        updateWidgetFromForm
+      );
+
+      el.addEventListener(
+        "change",
+        updateWidgetFromForm
+      );
+
+    });
+  }
+
+  function updateWidgetFromForm(){
+
+    if(!currentWidget)return;
+
+    const value=id=>
+      document.getElementById(id)?.value||"";
+
+    if(currentWidget.type==="countdown"){
+
+      currentWidget.title=
+        value("widget-title");
+
+      currentWidget.target=
+        value("widget-target");
+    }
+
+    if(currentWidget.type==="event"){
+
+      currentWidget.title=
+        value("widget-title");
+
+      currentWidget.start=
+        value("widget-start");
+
+      currentWidget.location=
+        value("widget-location");
+
+      currentWidget.description=
+        value("widget-description");
+    }
+
+    if(currentWidget.type==="poll"){
+
+      currentWidget.question=
+        value("widget-question");
+
+      currentWidget.options=[
+        0,1,2,3
+      ].map(
+        i=>value("widget-option-"+i)
+      );
+    }
+
+    const preview=
+      document.getElementById(
+        "niche-widget-preview"
+      );
+
+    if(preview){
+      preview.innerHTML=
+        widgetPreviewHTML();
+    }
+  }
+
+  /* -------------------------------------------------------
+     Save widget selection
+     ------------------------------------------------------- */
+
+  function saveWidget(){
+
+    updateWidgetFromForm();
+
+    if(!currentWidget)return;
+
+    if(currentWidget.type==="countdown"){
+
+      if(!currentWidget.title.trim()){
+        return toast(
+          "Enter a countdown title."
+        );
+      }
+
+      if(!currentWidget.target){
+        return toast(
+          "Choose a date and time."
+        );
+      }
+
+      const target=
+        new Date(
+          currentWidget.target
+        ).getTime();
+
+      if(
+        !Number.isFinite(target)||
+        target<=Date.now()
+      ){
+        return toast(
+          "Choose a future date and time."
+        );
+      }
+    }
+
+    if(currentWidget.type==="event"){
+
+      if(!currentWidget.title.trim()){
+        return toast(
+          "Enter an event name."
+        );
+      }
+
+      if(!currentWidget.start){
+        return toast(
+          "Choose the event date and time."
+        );
+      }
+
+      const start=
+        new Date(
+          currentWidget.start
+        ).getTime();
+
+      if(
+        !Number.isFinite(start)||
+        start<=Date.now()
+      ){
+        return toast(
+          "Choose a future event date and time."
+        );
+      }
+    }
+
+    if(currentWidget.type==="poll"){
+
+      currentWidget.options=
+        currentWidget.options
+        .map(x=>x.trim())
+        .filter(Boolean);
+
+      if(!currentWidget.question.trim()){
+        return toast(
+          "Enter a poll question."
+        );
+      }
+
+      if(currentWidget.options.length<2){
+        return toast(
+          "Add at least 2 choices."
+        );
+      }
+    }
+
+    window.__nicheSelectedWidget=
+      JSON.parse(
+        JSON.stringify(currentWidget)
+      );
+
+    closeWidgetModal();
+
+    updateWidgetComposerButton();
+
+    toast("Widget added to your post.");
+  }
+
+  function removeWidget(){
+
+    window.__nicheSelectedWidget=null;
+
+    updateWidgetComposerButton();
+
+    toast("Widget removed.");
+  }
+
+  /* -------------------------------------------------------
+     Composer integration
+     ------------------------------------------------------- */
+
+  const originalComposer=
+    window.composer;
+
+  window.composer=function(){
+
+    let html=originalComposer();
+
+    const marker=
+      `<div id="moderation"></div>`;
+
+    const widgetButton=`
+
+      <div
+        class="niche-composer-widget-row"
+      >
+
+        <button
+          type="button"
+          class="secondary niche-add-widget"
+          onclick="window.__nicheOpenWidget()"
+        >
+          ＋ Add widget
+        </button>
+
+        <span
+          id="niche-widget-status"
+          class="niche-widget-status"
+        ></span>
+
+      </div>
+    `;
+
+    if(html.includes(marker)){
+      html=html.replace(
+        marker,
+        marker+widgetButton
+      );
+    }
+
+    return html;
+  };
+
+  function updateWidgetComposerButton(){
+
+    const status=
+      document.getElementById(
+        "niche-widget-status"
+      );
+
+    if(!status)return;
+
+    const w=
+      window.__nicheSelectedWidget;
+
+    if(!w){
+
+      status.innerHTML="";
+
+      return;
+    }
+
+    let label="";
+
+    if(w.type==="countdown"){
+      label="⏳ Countdown added";
+    }else if(w.type==="event"){
+      label="📅 Event added";
+    }else if(w.type==="poll"){
+      label="📊 Poll added";
+    }
+
+    status.innerHTML=`
+
+      <span>
+        ${label}
+      </span>
+
+      <button
+        type="button"
+        class="linkbtn"
+        onclick="window.__nicheRemoveWidget()"
+      >
+        Remove
+      </button>
+
+    `;
+  }
+
+  /* -------------------------------------------------------
+     Protect createPost
+     ------------------------------------------------------- */
+
+  const originalCreatePost=
+    window.createPost;
+
+  window.createPost=
+    async function(){
+
+      const widget=
+        window.__nicheSelectedWidget;
+
+      if(!widget){
+
+        await originalCreatePost();
+
+        return;
+      }
+
+      const t=
+        document.getElementById(
+          "composer"
+        );
+
+      const b=
+        t?.value.trim();
+
+      if(!b)return;
+
+      const bad=
+        moderationMatch(b);
+
+      if(bad){
+
+        return toast(
+          "Please remove inappropriate language before posting."
+        );
+      }
+
+      const hs=tags(b);
+
+      if(!hs.length){
+
+        return toast(
+          "Add a hashtag such as #football."
+        );
+      }
+
+      const btn=
+        document.getElementById(
+          "postbtn"
+        );
+
+      if(btn)btn.disabled=true;
+
+      let widgetData=
+        JSON.parse(
+          JSON.stringify(widget)
+        );
+
+      if(widgetData.type==="countdown"){
+
+        widgetData.target=
+          widgetDateValue(
+            widgetData.target
+          );
+      }
+
+      if(widgetData.type==="event"){
+
+        widgetData.start=
+          widgetDateValue(
+            widgetData.start
+          );
+      }
+
+      let{error}=await sb
+        .from("posts")
+        .insert({
+
+          author_id:S.user.id,
+
+          body:b,
+
+          hashtag:hs[0],
+
+          widget_data:widgetData
+
+        });
+
+      if(error){
+
+        console.error(
+          "Widget post failed:",
+          error
+        );
+
+        toast(error.message);
+
+      }else{
+
+        t.value="";
+
+        window.__nicheSelectedWidget=null;
+
+        toast("Posted!");
+
+        await refresh();
+      }
+
+      if(btn)btn.disabled=false;
+
+      preview();
+    };
+
+  /* -------------------------------------------------------
+     Widget rendering
+     ------------------------------------------------------- */
+
+  function countdownHTML(w){
+
+    const target=
+      new Date(
+        w.target
+      ).getTime();
+
+    const id=
+      "niche-countdown-"+Math.random()
+        .toString(36)
+        .slice(2);
+
+    setTimeout(()=>{
+
+      const el=
+        document.getElementById(id);
+
+      if(!el)return;
+
+      const update=()=>{
+
+        const left=
+          target-Date.now();
+
+        el.textContent=
+          formatCountdown(left);
+
+        if(left<=0){
+
+          el.textContent=
+            "00d 00h 00m 00s";
+
+          return;
+        }
+
+        setTimeout(update,1000);
+      };
+
+      update();
+
+    },0);
+
+    return `
+
+      <div class="niche-widget niche-countdown">
+
+        <div class="niche-widget-label">
+          ⏳ COUNTDOWN
+        </div>
+
+        <div
+          id="${id}"
+          class="niche-countdown-value"
+        >
+          ${formatCountdown(
+            target-Date.now()
+          )}
+        </div>
+
+        <div class="niche-widget-title">
+          ${widgetEsc(w.title)}
+        </div>
+
+        <div class="niche-widget-time">
+          ${widgetEsc(
+            widgetTimeText(w.target)
+          )}
+        </div>
+
+      </div>
+    `;
+  }
+
+  function eventHTML(w){
+
+    return `
+
+      <div class="niche-widget niche-event">
+
+        <div class="niche-widget-label">
+          📅 EVENT
+        </div>
+
+        <div class="niche-widget-title">
+          ${widgetEsc(w.title)}
+        </div>
+
+        <div class="niche-widget-time">
+          ${widgetEsc(
+            widgetTimeText(w.start)
+          )}
+        </div>
+
+        ${
+          w.location
+          ? `
+            <div class="niche-widget-detail">
+              📍 ${widgetEsc(w.location)}
+            </div>
+          `
+          :""
+        }
+
+        ${
+          w.description
+          ? `
+            <div class="niche-widget-detail">
+              ${widgetEsc(w.description)}
+            </div>
+          `
+          :""
+        }
+
+      </div>
+    `;
+  }
+
+  function pollHTML(p,w){
+
+    const postId=
+      String(p.id);
+
+    const options=
+      Array.isArray(w.options)
+      ?w.options.slice(0,4)
+      :[];
+
+    return `
+
+      <div
+        class="niche-widget niche-poll"
+        id="niche-poll-${widgetEsc(postId)}"
+      >
+
+        <div class="niche-widget-label">
+          📊 POLL
+        </div>
+
+        <div class="niche-widget-title">
+          ${widgetEsc(w.question)}
+        </div>
+
+        <div
+          class="niche-poll-options"
+          id="niche-poll-options-${widgetEsc(postId)}"
+        >
+
+          ${options.map((option,i)=>`
+
+            <button
+              type="button"
+              class="niche-poll-option"
+              onclick="
+                window.__nicheVotePoll(
+                  '${widgetEsc(postId)}',
+                  ${i}
+                )
+              "
+            >
+
+              <span>
+                ${widgetEsc(option)}
+              </span>
+
+              <span
+                id="niche-poll-count-${widgetEsc(postId)}-${i}"
+                class="niche-poll-count"
+              >
+                0
+              </span>
+
+            </button>
+
+          `).join("")}
+
+        </div>
+
+        <div
+          id="niche-poll-total-${widgetEsc(postId)}"
+          class="niche-widget-time"
+        >
+          Loading votes…
+        </div>
+
+      </div>
+    `;
+  }
+
+  function widgetHTML(p){
+
+    const w=p?.widget_data;
+
+    if(!w||!w.type)return "";
+
+    if(w.type==="countdown"){
+      return countdownHTML(w);
+    }
+
+    if(w.type==="event"){
+      return eventHTML(w);
+    }
+
+    if(w.type==="poll"){
+      return pollHTML(p,w);
+    }
+
+    return "";
+  }
+
+  /* -------------------------------------------------------
+     Wrap postHTML
+     ------------------------------------------------------- */
+
+  const originalPostHTML=
+    window.postHTML;
+
+  window.postHTML=function(p){
+
+    let html=
+      originalPostHTML(p);
+
+    const widget=
+      widgetHTML(p);
+
+    if(!widget)return html;
+
+    const marker=
+      `<div class="actions">`;
+
+    if(html.includes(marker)){
+
+      html=html.replace(
+        marker,
+        widget+marker
+      );
+
+    }
+
+    return html;
+  };
+
+  /* -------------------------------------------------------
+     Poll loading
+     ------------------------------------------------------- */
+
+  async function loadPollVotes(postId){
+
+    const{data,error}=await sb
+      .from("poll_votes")
+      .select("choice")
+      .eq("post_id",postId);
+
+    if(error){
+
+      console.error(
+        "Poll votes unavailable:",
+        error
+      );
+
+      return [];
+    }
+
+    return data||[];
+  }
+
+  async function renderPollResults(postId){
+
+    const post=
+      S.posts.find(
+        x=>String(x.id)===String(postId)
+      );
+
+    if(!post?.widget_data)return;
+
+    const w=
+      post.widget_data;
+
+    if(w.type!=="poll")return;
+
+    const votes=
+      await loadPollVotes(postId);
+
+    const counts=
+      [0,0,0,0];
+
+    votes.forEach(v=>{
+
+      const i=
+        Number(v.choice);
+
+      if(
+        Number.isInteger(i)&&
+        i>=0&&
+        i<4
+      ){
+        counts[i]++;
+      }
+
+    });
+
+    counts.forEach((count,i)=>{
+
+      const el=
+        document.getElementById(
+          "niche-poll-count-"+
+          postId+
+          "-"+
+          i
+        );
+
+      if(el){
+        el.textContent=count;
+      }
+
+    });
+
+    const total=
+      counts.reduce(
+        (a,b)=>a+b,
+        0
+      );
+
+    const totalEl=
+      document.getElementById(
+        "niche-poll-total-"+postId
+      );
+
+    if(totalEl){
+
+      totalEl.textContent=
+        total+
+        (total===1?" vote":" votes");
+    }
+  }
+
+  async function votePoll(postId,choice){
+
+    if(!S.user?.id)return;
+
+    const post=
+      S.posts.find(
+        x=>String(x.id)===String(postId)
+      );
+
+    if(!post?.widget_data){
+      return;
+    }
+
+    const options=
+      post.widget_data.options||[];
+
+    if(
+      !Number.isInteger(choice)||
+      choice<0||
+      choice>=options.length
+    ){
+      return;
+    }
+
+    const buttons=
+      document.querySelectorAll(
+        "#niche-poll-"+postId+
+        " .niche-poll-option"
+      );
+
+    buttons.forEach(
+      b=>b.disabled=true
+    );
+
+    const{error}=await sb
+      .from("poll_votes")
+      .insert({
+
+        post_id:postId,
+
+        user_id:S.user.id,
+
+        choice
+
+      });
+
+    if(error){
+
+      buttons.forEach(
+        b=>b.disabled=false
+      );
+
+      if(
+        String(error.message||"")
+          .toLowerCase()
+          .includes("duplicate")
+      ){
+
+        toast(
+          "You already voted in this poll."
+        );
+
+      }else{
+
+        toast(
+          error.message
+        );
+      }
+
+      await renderPollResults(postId);
+
+      return;
+    }
+
+    toast("Vote recorded.");
+
+    await renderPollResults(postId);
+  }
+
+  /* -------------------------------------------------------
+     Load poll results after rendering
+     ------------------------------------------------------- */
+
+  const originalRender=
+    window.render;
+
+  window.render=
+    async function(){
+
+      await originalRender();
+
+      setTimeout(
+        ()=>{
+          const posts=
+            S.posts||[];
+
+          posts.forEach(p=>{
+
+            if(
+              p.widget_data?.type==="poll"
+            ){
+
+              renderPollResults(p.id);
+
+            }
+
+          });
+
+          updateWidgetComposerButton();
+
+        },
+        0
+      );
+    };
+
+  /* -------------------------------------------------------
+     Expose controls
+     ------------------------------------------------------- */
+
+  window.__nicheOpenWidget=
+    openWidgetModal;
+
+  window.__nicheRemoveWidget=
+    removeWidget;
+
+  window.__nicheVotePoll=
+    votePoll;
+
+  /* -------------------------------------------------------
+     Styling
+     ------------------------------------------------------- */
+
+  const style=
+    document.createElement("style");
+
+  style.textContent=`
+
+    .niche-composer-widget-row{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      flex-wrap:wrap;
+      margin:9px 0;
+    }
+
+    .niche-add-widget{
+      padding:7px 12px;
+      font-size:11px;
+    }
+
+    .niche-widget-status{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .niche-widget-status span{
+      color:var(--text);
+      font-weight:700;
+    }
+
+    .niche-widget-modal{
+      width:min(460px,calc(100vw - 28px));
+      max-height:calc(100vh - 40px);
+      overflow:auto;
+    }
+
+    .niche-widget-tabs{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      margin:15px 0;
+    }
+
+    .niche-widget-tab{
+      border:1px solid var(--border);
+      background:var(--surface2);
+      color:var(--muted);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:11px;
+      font-weight:800;
+    }
+
+    .niche-widget-tab.active{
+      background:var(--text);
+      color:var(--bg);
+      border-color:var(--text);
+    }
+
+    .niche-widget-field{
+      display:block;
+      margin-top:12px;
+    }
+
+    .niche-widget-modal .input,
+    .niche-widget-modal .textarea{
+      width:100%;
+    }
+
+    .niche-poll-fields{
+      display:grid;
+      gap:8px;
+    }
+
+    .niche-widget-preview{
+      margin-top:15px;
+      padding:15px;
+      border:1px solid var(--border);
+      border-radius:15px;
+      background:var(--surface2);
+    }
+
+    .niche-widget-label{
+      color:var(--muted);
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.08em;
+    }
+
+    .niche-widget-title{
+      margin-top:7px;
+      font-size:15px;
+      font-weight:850;
+      line-height:1.4;
+      word-break:break-word;
+    }
+
+    .niche-countdown-preview{
+      margin-top:10px;
+      font-size:24px;
+      font-weight:900;
+      letter-spacing:.02em;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .niche-widget{
+      margin-top:13px;
+      padding:15px;
+      border:1px solid var(--border);
+      border-radius:15px;
+      background:var(--surface2);
+    }
+
+    .niche-countdown-value{
+      margin-top:9px;
+      font-size:25px;
+      font-weight:900;
+      letter-spacing:.02em;
+      font-variant-numeric:tabular-nums;
+      overflow-wrap:anywhere;
+    }
+
+    .niche-widget-time{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:10px;
+      line-height:1.45;
+    }
+
+    .niche-widget-detail{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      word-break:break-word;
+    }
+
+    .niche-poll-options{
+      display:grid;
+      gap:7px;
+      margin-top:12px;
+    }
+
+    .niche-poll-option{
+      width:100%;
+      min-height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      text-align:left;
+      border:1px solid var(--border);
+      background:var(--surface);
+      color:var(--text);
+      border-radius:11px;
+      padding:9px 11px;
+      font-size:12px;
+    }
+
+    .niche-poll-option:hover{
+      background:var(--surface3);
+    }
+
+    .niche-poll-option:disabled{
+      cursor:not-allowed;
+    }
+
+    .niche-poll-count{
+      color:var(--muted);
+      font-size:10px;
+      font-weight:800;
+      flex-shrink:0;
+    }
+
+    .niche-poll-preview-option{
+      margin-top:7px;
+      padding:8px 10px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      font-size:11px;
+    }
+
+    @media(max-width:700px){
+
+      .niche-countdown-value{
+        font-size:20px;
+      }
+
+      .niche-widget-tabs{
+        display:grid;
+        grid-template-columns:1fr;
+      }
+
+      .niche-widget-tab{
+        width:100%;
+      }
+
+    }
+
+  `;
+
+  document.head.appendChild(style);
+
+})();
 init();
 </script>
 
