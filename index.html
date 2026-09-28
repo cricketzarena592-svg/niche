@@ -1141,6 +1141,33 @@ button:disabled{
   margin-top:18px
 }
 
+.verify-dialog-icon{
+  width:52px;
+  height:52px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 12px;
+  border-radius:50%;
+  background:var(--surface2);
+  font-size:25px
+}
+
+.verify-dialog-email{
+  margin:14px 0;
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface2);
+  font-size:13px;
+  font-weight:700;
+  word-break:break-word;
+  text-align:center
+}
+
+.verify-dialog .modal{
+  text-align:center
+}
+
 .activity-row{
   display:flex;
   align-items:center;
@@ -1389,7 +1416,9 @@ const S={
   followCounts:{},
   activityPrivate:false,
   modal:null,
-  editingProfile:false
+  editingProfile:false,
+  setupDraft:null,
+  verificationDialog:null
 };
 
 const EMOJIS=[
@@ -1634,14 +1663,18 @@ async function signup(){
   S.busy=true;
   renderAuth();
 
-  let{error}=await sb.auth.signUp({
+  /*
+   * Do NOT append a hash route here. Supabase may use the URL hash
+   * for the verification session, and a router hash such as #/ can
+   * consume/corrupt those authentication parameters.
+   */
+  let redirect=location.origin+location.pathname;
+
+  let{data,error}=await sb.auth.signUp({
     email:e,
     password:p,
     options:{
-      emailRedirectTo:
-        location.origin+
-        location.pathname+
-        "#/"
+      emailRedirectTo:redirect
     }
   });
 
@@ -1649,11 +1682,68 @@ async function signup(){
 
   if(error){
     toast(error.message);
+    renderAuth();
+    return;
+  }
+
+  /* If email confirmation is enabled, Supabase normally returns no session.
+     Show a real dialog instead of a tiny toast so the instruction is obvious. */
+  if(!data?.session){
+    openVerificationDialog(e);
   }else{
-    toast("Account created. Check your email for verification.");
+    toast("Account created successfully.");
   }
 
   renderAuth();
+}
+
+function openVerificationDialog(email){
+  S.verificationDialog={email};
+  renderVerificationDialog();
+}
+
+function closeVerificationDialog(){
+  S.verificationDialog=null;
+  renderVerificationDialog();
+}
+
+function renderVerificationDialog(){
+  let root=document.getElementById("modal-root");
+  if(!root)return;
+
+  /* Keep the existing confirmation modal working independently. */
+  if(S.verificationDialog){
+    root.innerHTML=`
+      <div
+        class="modal-backdrop verify-dialog"
+        onclick="if(event.target===this) closeVerificationDialog()"
+      >
+        <div class="modal">
+          <div class="verify-dialog-icon">✉</div>
+          <h2>Check your email</h2>
+          <p>
+            We sent a verification link to your inbox.
+            Open that link to verify your account.
+            NICHE will sign you in automatically.
+          </p>
+          <div class="verify-dialog-email">
+            ${esc(S.verificationDialog.email)}
+          </div>
+          <p style="margin-bottom:0">
+            If you do not see it, check your spam or junk folder.
+          </p>
+          <div class="modal-actions" style="justify-content:center">
+            <button class="primary" onclick="closeVerificationDialog()">
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  renderModal();
 }
 
 function renderAuth(){
@@ -1752,8 +1842,33 @@ function renderAuth(){
   `;
 }
 
+function setupDraft(){
+  if(!S.setupDraft){
+    S.setupDraft={
+      username:S.profile?.username||"",
+      displayName:S.profile?.display_name||"",
+      bio:S.profile?.bio||"",
+      avatar:S.profile?.avatar_emoji||"🙂"
+    };
+  }
+
+  return S.setupDraft;
+}
+
+function syncSetupDraft(){
+  let d=setupDraft();
+  let u=document.getElementById("uname");
+  let n=document.getElementById("dname");
+  let b=document.getElementById("bio");
+
+  if(u)d.username=u.value;
+  if(n)d.displayName=n.value;
+  if(b)d.bio=b.value;
+}
+
 function renderSetup(){
-  let cur=S.profile?.avatar_emoji||"🙂";
+  let d=setupDraft();
+  let cur=d.avatar||"🙂";
 
   document.getElementById("app").innerHTML=`
     <div class="setup">
@@ -1773,12 +1888,12 @@ function renderSetup(){
 
         <div class="username">
           <span>@</span>
-
           <input
             id="uname"
             maxlength="24"
             placeholder="yourname"
-            value="${esc(S.profile?.username||"")}"
+            value="${esc(d.username)}"
+            oninput="S.setupDraft.username=this.value"
           >
         </div>
       </div>
@@ -1791,7 +1906,8 @@ function renderSetup(){
           class="input"
           maxlength="40"
           placeholder="Your name"
-          value="${esc(S.profile?.display_name||"")}"
+          value="${esc(d.displayName)}"
+          oninput="S.setupDraft.displayName=this.value"
         >
       </div>
 
@@ -1803,10 +1919,7 @@ function renderSetup(){
             <button
               type="button"
               class="emoji ${x===cur?"selected":""}"
-              onclick="
-                S.profile.avatar_emoji='${x}';
-                renderSetup()
-              "
+              onclick="selectSetupEmoji('${x}')"
             >
               ${x}
             </button>
@@ -1822,7 +1935,8 @@ function renderSetup(){
           class="textarea"
           maxlength="160"
           placeholder="A little about you..."
-        >${esc(S.profile?.bio||"")}</textarea>
+          oninput="S.setupDraft.bio=this.value"
+        >${esc(d.bio)}</textarea>
       </div>
 
       <div id="setuperr"></div>
@@ -1839,14 +1953,21 @@ function renderSetup(){
   `;
 }
 
+function selectSetupEmoji(emoji){
+  /* Inputs are already stored in S.setupDraft on every keystroke.
+     Sync once more before changing the avatar, then rerender. */
+  syncSetupDraft();
+  S.setupDraft.avatar=emoji;
+  renderSetup();
+}
+
 async function saveProfile(){
-  let u=document.getElementById("uname")?.value
-    .trim()
-    .toLowerCase();
+  syncSetupDraft();
 
-  let d=document.getElementById("dname")?.value.trim();
-
-  let b=document.getElementById("bio")?.value.trim();
+  let d=setupDraft();
+  let u=(d.username||"").trim().toLowerCase();
+  let displayName=(d.displayName||"").trim();
+  let bio=(d.bio||"").trim();
 
   if(!/^[a-zA-Z0-9_]{3,24}$/.test(u||"")){
     document.getElementById("setuperr").innerHTML=`
@@ -1861,9 +1982,9 @@ async function saveProfile(){
     .from("profiles")
     .update({
       username:u,
-      display_name:d||u,
-      avatar_emoji:S.profile?.avatar_emoji||"🙂",
-      bio:b
+      display_name:displayName||u,
+      avatar_emoji:d.avatar||"🙂",
+      bio
     })
     .eq("id",S.user.id);
 
@@ -1876,6 +1997,7 @@ async function saveProfile(){
     return;
   }
 
+  S.setupDraft=null;
   await loadProfile();
   render();
 }
@@ -5416,6 +5538,29 @@ async function render(){
 }
 
 /* =========================================================
+   AUTH CALLBACK / INIT
+   ========================================================= */
+
+async function prepareAuthCallback(){
+  /* Supabase can return a PKCE code in the query string. Exchange it before
+     the first render so the app never briefly falls back to the login screen. */
+  let params=new URLSearchParams(location.search);
+  let code=params.get("code");
+
+  if(code){
+    let{error}=await sb.auth.exchangeCodeForSession(code);
+
+    if(error){
+      console.error("NICHE auth callback:",error);
+    }else{
+      params.delete("code");
+      let clean=params.toString();
+      history.replaceState({},"",location.pathname+(clean?"?"+clean:""));
+    }
+  }
+}
+
+/* =========================================================
    INIT
    ========================================================= */
 
@@ -5425,6 +5570,8 @@ async function init(){
 
   renderModal();
   notificationPanel();
+
+  await prepareAuthCallback();
 
   let{data}=await sb.auth.getSession();
 
@@ -5457,9 +5604,22 @@ async function init(){
       }
 
       if(S.user){
+        S.verificationDialog=null;
         await loadProfile();
+
+        /* Start a fresh setup draft only when there is no draft already.
+           This keeps typed profile fields intact if auth state changes. */
+        if(!S.profile?.username && !S.setupDraft){
+          S.setupDraft={
+            username:"",
+            displayName:S.profile?.display_name||"",
+            bio:S.profile?.bio||"",
+            avatar:S.profile?.avatar_emoji||"🙂"
+          };
+        }
       }else{
         S.profile=null;
+        S.setupDraft=null;
       }
 
       await render();
