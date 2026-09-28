@@ -1505,15 +1505,8 @@ const S={
   modal:null,
   editingProfile:false,
   setupDraft:null,
-  verificationDialog:null,
-  pinEnabled:false
+  verificationDialog:null
 };
-function loadPinState(){
-  S.pinEnabled=
-    localStorage.getItem("niche-pin-enabled")==="1";
-}
-
-loadPinState();
 
 const EMOJIS=[
   "🙂","😎","🤓","😄","😃","😌","🤠","🧑‍💻",
@@ -2282,19 +2275,12 @@ function insertFormat(type){
   }
 }
 
-async function createPost(pinVerified=false){
+async function createPost(){
   let t=document.getElementById("composer");
   let b=t?.value.trim();
 
   if(!b)return;
 
-  if(S.pinEnabled&&!pinVerified){
-    openPinVerify(
-      ()=>createPost(true)
-    );
-    return;
-  }
-
   let bad=moderationMatch(b);
 
   if(bad){
@@ -2311,239 +2297,6 @@ async function createPost(pinVerified=false){
     );
   }
 
-  let btn=document.getElementById("postbtn");
-
-  if(btn)btn.disabled=true;
-
-  let{error}=await sb
-    .from("posts")
-    .insert({
-      author_id:S.user.id,
-      body:b,
-      hashtag:hs[0]
-    });
-
-  if(error){
-    toast(error.message);
-  }else{
-    t.value="";
-    toast("Posted!");
-    await refresh();
-  }
-
-  if(btn)btn.disabled=false;
-
-  preview();
-}
-
-  let bad=moderationMatch(b);
-
-  if(bad){
-    return toast(
-      "Please remove inappropriate language before posting."
-    );
-  }
-
-  let hs=tags(b);
-
-  if(!hs.length){
-    return toast(
-      "Add a hashtag such as #football."
-    );
-  }
-async function hashPin(pin){
-  const data=new TextEncoder().encode(pin);
-
-  const hash=await crypto.subtle.digest(
-    "SHA-256",
-    data
-  );
-
-  return Array.from(
-    new Uint8Array(hash)
-  )
-    .map(b=>b.toString(16).padStart(2,"0"))
-    .join("");
-}
-
-async function setupPin(){
-  const pin=document.getElementById("setup-pin")?.value||"";
-  const confirm=document.getElementById("setup-pin-confirm")?.value||"";
-
-  if(!/^\d{4,8}$/.test(pin)){
-    return toast("PIN must contain 4–8 digits.");
-  }
-
-  if(pin!==confirm){
-    return toast("PINs do not match.");
-  }
-
-  const hash=await hashPin(pin);
-
-  localStorage.setItem(
-    "niche-pin-hash",
-    hash
-  );
-async function disablePin(){
-  openPinVerify(
-    async()=>{
-      localStorage.removeItem("niche-pin-hash");
-      localStorage.removeItem("niche-pin-enabled");
-
-      S.pinEnabled=false;
-
-      toast("PIN protection disabled.");
-      render();
-    }
-  );
-}
-  localStorage.setItem(
-    "niche-pin-enabled",
-    "1"
-  );
-
-  S.pinEnabled=true;
-
-  closeModal();
-  toast("PIN protection enabled.");
-  render();
-}
-
-async function verifyPin(){
-  const pin=document.getElementById("verify-pin")?.value||"";
-
-  if(!/^\d{4,8}$/.test(pin)){
-    toast("Enter your PIN.");
-    return false;
-  }
-
-  const saved=
-    localStorage.getItem("niche-pin-hash");
-
-  if(!saved){
-    S.pinEnabled=false;
-    return true;
-  }
-
-  const hash=await hashPin(pin);
-
-  if(hash!==saved){
-    toast("Incorrect PIN.");
-    return false;
-  }
-
-  return true;
-}
-
-function openPinSetup(){
-  openModal(
-    "Set up PIN",
-    `
-      <p>
-        Create a 4–8 digit PIN.
-        This PIN will be required before
-        posting or commenting.
-      </p>
-
-      <input
-        id="setup-pin"
-        class="input"
-        type="password"
-        inputmode="numeric"
-        maxlength="8"
-        placeholder="Enter PIN"
-        autocomplete="new-password"
-      >
-
-      <input
-        id="setup-pin-confirm"
-        class="input"
-        type="password"
-        inputmode="numeric"
-        maxlength="8"
-        placeholder="Confirm PIN"
-        autocomplete="new-password"
-        style="margin-top:8px"
-      >
-
-      <div class="modal-actions">
-        <button
-          class="secondary"
-          onclick="closeModal()"
-        >
-          Cancel
-        </button>
-
-        <button
-          class="primary"
-          onclick="setupPin()"
-        >
-          Set PIN
-        </button>
-      </div>
-    `
-  );
-}
-
-function openPinVerify(action){
-  openModal(
-    "PIN required",
-    `
-      <p>
-        Enter your PIN to continue.
-      </p>
-
-      <input
-        id="verify-pin"
-        class="input"
-        type="password"
-        inputmode="numeric"
-        maxlength="8"
-        placeholder="Enter PIN"
-        autocomplete="off"
-        onkeydown="
-          if(event.key==='Enter'){
-            event.preventDefault();
-            confirmPinAction()
-          }
-        "
-      >
-
-      <div class="modal-actions">
-        <button
-          class="secondary"
-          onclick="closeModal()"
-        >
-          Cancel
-        </button>
-
-        <button
-          class="primary"
-          onclick="confirmPinAction()"
-        >
-          Continue
-        </button>
-      </div>
-    `
-  );
-
-  S.pinAction=action;
-}
-
-async function confirmPinAction(){
-  const ok=await verifyPin();
-
-  if(!ok)return;
-
-  const action=S.pinAction;
-
-  S.pinAction=null;
-  closeModal();
-
-  if(typeof action==="function"){
-    await action();
-  }
-}
   let btn=document.getElementById("postbtn");
 
   if(btn)btn.disabled=true;
@@ -2944,55 +2697,12 @@ function updateCommentCount(id){
   el.textContent=count;
 }
 
-async function sendComment(id,pinVerified=false){
+async function sendComment(id){
   let i=document.getElementById("ci-"+id);
   let b=i?.value.trim();
   let btn=document.getElementById("cs-"+id);
 
   if(!b)return;
-
-  if(S.pinEnabled&&!pinVerified){
-    openPinVerify(
-      ()=>sendComment(id,true)
-    );
-    return;
-  }
-
-  if(moderationMatch(b)){
-    return toast(
-      "Please remove inappropriate language before commenting."
-    );
-  }
-
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="Sending…";
-  }
-
-  let{error}=await sb
-    .from("comments")
-    .insert({
-      post_id:id,
-      author_id:S.user.id,
-      body:b
-    });
-
-  if(error){
-    if(btn){
-      btn.disabled=false;
-      btn.textContent="Send";
-    }
-
-    toast(error.message);
-    return;
-  }
-
-  if(i)i.value="";
-
-  toast("Comment added");
-
-  await loadComments(id);
-}
 
   if(moderationMatch(b)){
     return toast(
@@ -4973,49 +4683,6 @@ function settings(){
         >
           Reset password
         </button>
-        <div class="activity-row" style="margin-top:16px">
-
-  <div>
-    <b style="font-size:13px">
-      Posting PIN
-    </b>
-
-    <div
-      style="
-        color:var(--muted);
-        font-size:11px;
-        margin-top:3px
-      "
-    >
-      ${
-        S.pinEnabled
-        ?"PIN required before posting or commenting."
-        :"No PIN is required."
-      }
-    </div>
-  </div>
-
-  ${
-    S.pinEnabled
-    ? `
-      <button
-        class="secondary"
-        onclick="disablePin()"
-      >
-        Disable
-      </button>
-    `
-    : `
-      <button
-        class="primary"
-        onclick="openPinSetup()"
-      >
-        Set up PIN
-      </button>
-    `
-  }
-
-</div>
 
       </section>
 
