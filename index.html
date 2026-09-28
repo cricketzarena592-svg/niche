@@ -5749,7 +5749,692 @@ async function init(){
 
     .subscribe();
 }
+/* =========================================================
+   NICHE POSTING / COMMENTING PIN
+   Paste this block immediately BEFORE the final init();
+   ========================================================= */
 
+(function(){
+
+  const PIN_ENABLED_KEY="niche-posting-pin-enabled";
+  const PIN_HASH_KEY="niche-posting-pin-hash";
+
+  function pinKey(base){
+    return base+"-"+(S.user?.id||"guest");
+  }
+
+  function pinEnabled(){
+    return localStorage.getItem(
+      pinKey(PIN_ENABLED_KEY)
+    )==="1";
+  }
+
+  function setPinEnabled(v){
+    localStorage.setItem(
+      pinKey(PIN_ENABLED_KEY),
+      v?"1":"0"
+    );
+  }
+
+  function getPinHash(){
+    return localStorage.getItem(
+      pinKey(PIN_HASH_KEY)
+    )||"";
+  }
+
+  async function hashPin(pin){
+    const data=new TextEncoder().encode(pin);
+
+    const hash=await crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
+
+    return Array.from(
+      new Uint8Array(hash)
+    )
+    .map(
+      x=>x.toString(16).padStart(2,"0")
+    )
+    .join("");
+  }
+
+  function pinIsConfigured(){
+    return !!getPinHash();
+  }
+
+  function closePinDialog(){
+    document.getElementById(
+      "niche-pin-dialog"
+    )?.remove();
+  }
+
+  function pinDialogHTML(title,message,buttons){
+    const old=document.getElementById(
+      "niche-pin-dialog"
+    );
+
+    if(old)old.remove();
+
+    const root=document.createElement("div");
+
+    root.id="niche-pin-dialog";
+
+    root.innerHTML=`
+      <div class="modal-backdrop niche-pin-backdrop">
+
+        <div class="modal niche-pin-modal">
+
+          <h2>${esc(title)}</h2>
+
+          <p>${esc(message)}</p>
+
+          <input
+            id="niche-pin-input"
+            class="input"
+            type="password"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="8"
+            autocomplete="off"
+            placeholder="Enter PIN"
+          >
+
+          <div
+            id="niche-pin-error"
+            style="
+              color:var(--red);
+              font-size:11px;
+              margin-top:8px;
+              min-height:15px
+            "
+          ></div>
+
+          <div class="modal-actions">
+            ${buttons}
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(root);
+
+    const input=document.getElementById(
+      "niche-pin-input"
+    );
+
+    setTimeout(
+      ()=>input?.focus(),
+      50
+    );
+
+    input?.addEventListener(
+      "keydown",
+      e=>{
+        if(e.key==="Enter"){
+          e.preventDefault();
+
+          document
+            .getElementById("niche-pin-confirm")
+            ?.click();
+        }
+
+        if(e.key==="Escape"){
+          closePinDialog();
+        }
+      }
+    );
+  }
+
+  async function verifyPinDialog(){
+    const input=document.getElementById(
+      "niche-pin-input"
+    );
+
+    const error=document.getElementById(
+      "niche-pin-error"
+    );
+
+    const pin=input?.value||"";
+
+    if(!/^\d{4,8}$/.test(pin)){
+      if(error){
+        error.textContent=
+          "PIN must contain 4–8 digits.";
+      }
+
+      input?.focus();
+
+      return false;
+    }
+
+    const saved=getPinHash();
+
+    if(!saved){
+      closePinDialog();
+      return true;
+    }
+
+    const hash=await hashPin(pin);
+
+    if(hash!==saved){
+
+      if(error){
+        error.textContent=
+          "Incorrect PIN.";
+      }
+
+      input.value="";
+      input.focus();
+
+      return false;
+    }
+
+    closePinDialog();
+
+    return true;
+  }
+
+  async function askForPin(action){
+
+    if(!pinEnabled()||!pinIsConfigured()){
+      await action();
+      return;
+    }
+
+    pinDialogHTML(
+      "PIN required",
+      "Enter your PIN to continue.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="primary"
+          type="button"
+        >
+          Continue
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    document
+      .getElementById("niche-pin-confirm")
+      ?.addEventListener(
+        "click",
+        async()=>{
+          const ok=
+            await verifyPinDialog();
+
+          if(ok){
+            await action();
+          }
+        }
+      );
+  }
+
+  async function createPin(){
+
+    const input=document.getElementById(
+      "niche-pin-input"
+    );
+
+    const error=document.getElementById(
+      "niche-pin-error"
+    );
+
+    const pin=input?.value||"";
+
+    if(!/^\d{4,8}$/.test(pin)){
+
+      if(error){
+        error.textContent=
+          "PIN must contain 4–8 digits.";
+      }
+
+      return;
+    }
+
+    closePinDialog();
+
+    pinDialogHTML(
+      "Confirm PIN",
+      "Enter the same PIN again.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="primary"
+          type="button"
+        >
+          Confirm
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    const confirmButton=
+      document.getElementById(
+        "niche-pin-confirm"
+      );
+
+    confirmButton?.addEventListener(
+      "click",
+      async()=>{
+
+        const confirmInput=
+          document.getElementById(
+            "niche-pin-input"
+          );
+
+        const confirmPin=
+          confirmInput?.value||"";
+
+        if(confirmPin!==pin){
+
+          const error=
+            document.getElementById(
+              "niche-pin-error"
+            );
+
+          if(error){
+            error.textContent=
+              "PINs do not match.";
+          }
+
+          confirmInput.value="";
+          confirmInput.focus();
+
+          return;
+        }
+
+        const hash=
+          await hashPin(pin);
+
+        localStorage.setItem(
+          pinKey(PIN_HASH_KEY),
+          hash
+        );
+
+        setPinEnabled(true);
+
+        closePinDialog();
+
+        toast(
+          "Posting PIN enabled."
+        );
+
+        render();
+      }
+    );
+  }
+
+  function setupPin(){
+
+    pinDialogHTML(
+      "Set up Posting PIN",
+      "Create a 4–8 digit PIN. It will be required before posting or commenting.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="primary"
+          type="button"
+        >
+          Continue
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    document
+      .getElementById("niche-pin-confirm")
+      ?.addEventListener(
+        "click",
+        createPin
+      );
+  }
+
+  async function changePin(){
+
+    if(!pinIsConfigured()){
+      setupPin();
+      return;
+    }
+
+    pinDialogHTML(
+      "Current PIN",
+      "Enter your current PIN before changing it.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="primary"
+          type="button"
+        >
+          Continue
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    document
+      .getElementById("niche-pin-confirm")
+      ?.addEventListener(
+        "click",
+        async()=>{
+
+          const ok=
+            await verifyPinDialog();
+
+          if(ok){
+            setupPin();
+          }
+        }
+      );
+  }
+
+  async function disablePin(){
+
+    if(!pinIsConfigured()){
+      setPinEnabled(false);
+      render();
+      return;
+    }
+
+    pinDialogHTML(
+      "Disable Posting PIN",
+      "Enter your current PIN to disable PIN protection.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="danger"
+          type="button"
+        >
+          Disable
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    document
+      .getElementById("niche-pin-confirm")
+      ?.addEventListener(
+        "click",
+        async()=>{
+
+          const ok=
+            await verifyPinDialog();
+
+          if(!ok)return;
+
+          localStorage.removeItem(
+            pinKey(PIN_HASH_KEY)
+          );
+
+          setPinEnabled(false);
+
+          toast(
+            "Posting PIN disabled."
+          );
+
+          render();
+        }
+      );
+  }
+
+  /*
+   * Add the PIN section to the existing Security
+   * section without replacing the existing settings.
+   */
+
+  const originalSettings=settings;
+
+  settings=function(){
+
+    let html=originalSettings();
+
+    const pinSection=`
+      <section class="setting-section">
+
+        <h1>Posting PIN</h1>
+
+        <p>
+          Require a PIN before sending posts or comments.
+          The PIN is stored only on this browser.
+        </p>
+
+        <div class="activity-row">
+
+          <div>
+
+            <b style="font-size:13px">
+              ${
+                pinEnabled()
+                ?"PIN protection on"
+                :"PIN protection off"
+              }
+            </b>
+
+            <div
+              style="
+                color:var(--muted);
+                font-size:11px;
+                margin-top:3px
+              "
+            >
+              ${
+                pinEnabled()
+                ?"A PIN is required before posting or commenting."
+                :"Posts and comments do not require a PIN."
+              }
+            </div>
+
+          </div>
+
+          <button
+            class="switch-control ${
+              pinEnabled()?"on":""
+            }"
+            onclick="
+              ${
+                pinEnabled()
+                ?"window.__nicheDisablePin()"
+                :"window.__nicheSetupPin()"
+              }
+            "
+          >
+            <span class="switch-knob"></span>
+          </button>
+
+        </div>
+
+        ${
+          pinEnabled()
+          ? `
+            <div style="margin-top:12px">
+
+              <button
+                class="secondary"
+                onclick="window.__nicheChangePin()"
+              >
+                Change PIN
+              </button>
+
+            </div>
+          `
+          :""
+        }
+
+      </section>
+    `;
+
+    const marker=
+      `<section class="setting-section">
+
+        <h1>Account</h1>`;
+
+    if(html.includes(marker)){
+      html=html.replace(
+        marker,
+        pinSection+marker
+      );
+    }else{
+      html=html.replace(
+        "</div>\n  `;",
+        pinSection+"</div>\n  `;"
+      );
+    }
+
+    return html;
+  };
+
+  window.__nicheSetupPin=setupPin;
+  window.__nicheChangePin=changePin;
+  window.__nicheDisablePin=disablePin;
+
+  /*
+   * Protect the existing createPost() function.
+   *
+   * The original function is left completely untouched.
+   */
+
+  const originalCreatePost=
+    window.createPost;
+
+  window.createPost=
+    async function(){
+
+      if(
+        pinEnabled()&&
+        pinIsConfigured()
+      ){
+
+        await askForPin(
+          async()=>{
+            await originalCreatePost();
+          }
+        );
+
+        return;
+      }
+
+      await originalCreatePost();
+    };
+
+  /*
+   * Protect the existing sendComment() function.
+   */
+
+  const originalSendComment=
+    window.sendComment;
+
+  window.sendComment=
+    async function(id){
+
+      if(
+        pinEnabled()&&
+        pinIsConfigured()
+      ){
+
+        await askForPin(
+          async()=>{
+            await originalSendComment(id);
+          }
+        );
+
+        return;
+      }
+
+      await originalSendComment(id);
+    };
+
+  /*
+   * Small amount of styling for the PIN dialog.
+   */
+
+  const style=document.createElement("style");
+
+  style.textContent=`
+
+    .niche-pin-backdrop{
+      z-index:1000;
+    }
+
+    .niche-pin-modal{
+      width:min(390px,calc(100vw - 30px));
+    }
+
+    .niche-pin-modal .input{
+      width:100%;
+      margin-top:10px;
+      text-align:center;
+      letter-spacing:.3em;
+      font-size:20px;
+    }
+
+    .niche-pin-modal .modal-actions{
+      margin-top:14px;
+    }
+
+  `;
+
+  document.head.appendChild(style);
+
+})();
 init();
 </script>
 
