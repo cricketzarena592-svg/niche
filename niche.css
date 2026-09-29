@@ -550,6 +550,25 @@ a{
   color:var(--text)
 }
 
+.social-page-plate{
+  margin:12px;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  box-shadow:0 12px 32px rgba(0,0,0,.12);
+  backdrop-filter:blur(22px) saturate(135%);
+  -webkit-backdrop-filter:blur(22px) saturate(135%)
+}
+
+html[data-glass="on"] .social-page-plate .header,
+html[data-glass="on"] .social-page-plate .explore{
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none
+}
+
 .social-empty h2{
   margin:0;
   font-size:18px
@@ -1862,7 +1881,7 @@ html.device-desktop .shell{
 }
 
 html.device-desktop .side{
-  display:block
+  display:flex
 }
 
 html.device-desktop .right{

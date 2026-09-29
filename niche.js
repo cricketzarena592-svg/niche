@@ -4328,24 +4328,26 @@ function setMyStuffTab(tab){
 
 function myStuffPage(){
   return`
-    <section class="header">
-      <h1 class="title">My Stuff</h1>
-    </section>
-    <div class="social-tabs" role="tablist" aria-label="My Stuff">
-      <button
-        class="${S.myStuffTab==="explore"?"active":""}"
-        role="tab"
-        aria-selected="${S.myStuffTab==="explore"}"
-        onclick="setMyStuffTab('explore')"
-      >Explore</button>
-      <button
-        class="${S.myStuffTab==="following"?"active":""}"
-        role="tab"
-        aria-selected="${S.myStuffTab==="following"}"
-        onclick="setMyStuffTab('following')"
-      >Following</button>
+    <div class="social-page-plate my-stuff-page">
+      <section class="header">
+        <h1 class="title">My Stuff</h1>
+      </section>
+      <div class="social-tabs" role="tablist" aria-label="My Stuff">
+        <button
+          class="${S.myStuffTab==="explore"?"active":""}"
+          role="tab"
+          aria-selected="${S.myStuffTab==="explore"}"
+          onclick="setMyStuffTab('explore')"
+        >Explore</button>
+        <button
+          class="${S.myStuffTab==="following"?"active":""}"
+          role="tab"
+          aria-selected="${S.myStuffTab==="following"}"
+          onclick="setMyStuffTab('following')"
+        >Following</button>
+      </div>
+      ${S.myStuffTab==="explore"?explore():`<div class="following-page-body">${followingCard()}</div>`}
     </div>
-    ${S.myStuffTab==="explore"?explore():`<div class="following-page-body">${followingCard()}</div>`}
   `;
 }
 
@@ -4476,64 +4478,66 @@ function chatThreadHTML(){
 
 function chatPage(tab=S.chatTab){
   return`
-    <section class="header">
-      <h1 class="title">Chat</h1>
-    </section>
+    <div class="social-page-plate chat-page">
+      <section class="header">
+        <h1 class="title">Chat</h1>
+      </section>
 
-    <div class="social-tabs" role="tablist" aria-label="Chat">
-      <button
-        class="${tab==="messages"?"active":""}"
-        role="tab"
-        aria-selected="${tab==="messages"}"
-        onclick="setChatTab('messages')"
-      >Messages</button>
-      <button
-        class="${tab==="requests"?"active":""}"
-        role="tab"
-        aria-selected="${tab==="requests"}"
-        onclick="setChatTab('requests')"
-      >Requests${S.chatRequests.some(request=>request.recipient_id===S.user?.id)?` · ${S.chatRequests.filter(request=>request.recipient_id===S.user?.id).length}`:""}</button>
-      <button
-        class="${tab==="groups"?"active":""}"
-        role="tab"
-        aria-selected="${tab==="groups"}"
-        onclick="setChatTab('groups')"
-      >Groups</button>
+      <div class="social-tabs" role="tablist" aria-label="Chat">
+        <button
+          class="${tab==="messages"?"active":""}"
+          role="tab"
+          aria-selected="${tab==="messages"}"
+          onclick="setChatTab('messages')"
+        >Messages</button>
+        <button
+          class="${tab==="requests"?"active":""}"
+          role="tab"
+          aria-selected="${tab==="requests"}"
+          onclick="setChatTab('requests')"
+        >Requests${S.chatRequests.some(request=>request.recipient_id===S.user?.id)?` · ${S.chatRequests.filter(request=>request.recipient_id===S.user?.id).length}`:""}</button>
+        <button
+          class="${tab==="groups"?"active":""}"
+          role="tab"
+          aria-selected="${tab==="groups"}"
+          onclick="setChatTab('groups')"
+        >Groups</button>
+      </div>
+
+      ${tab==="groups"?`
+        <section class="social-empty">
+          <h2>No groups yet</h2>
+          <p>Group conversations will appear here.</p>
+        </section>
+      `:tab==="requests"?chatRequestsHTML():S.activeChatId?chatThreadHTML():`
+        <section class="chat-conversations-section">
+          <h2>Messages</h2>
+          ${chatConversationsHTML()}
+        </section>
+
+        <section class="social-empty">
+          <h2>Your note</h2>
+          <p>Share a short note with people who are online.</p>
+          <div class="note-editor">
+            <input
+              maxlength="60"
+              aria-label="Your note"
+              placeholder="Write a note..."
+              value="${esc(S.note)}"
+              oninput="saveNote(this.value)"
+            >
+            <span class="note-count">${S.note.length}/60</span>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-heading">
+            <h2>Online now</h2>
+          </div>
+          <div id="online-people">${onlinePeopleHTML()}</div>
+        </section>
+      `}
     </div>
-
-    ${tab==="groups"?`
-      <section class="social-empty">
-        <h2>No groups yet</h2>
-        <p>Group conversations will appear here.</p>
-      </section>
-    `:tab==="requests"?chatRequestsHTML():S.activeChatId?chatThreadHTML():`
-      <section class="chat-conversations-section">
-        <h2>Messages</h2>
-        ${chatConversationsHTML()}
-      </section>
-
-      <section class="social-empty">
-        <h2>Your note</h2>
-        <p>Share a short note with people who are online.</p>
-        <div class="note-editor">
-          <input
-            maxlength="60"
-            aria-label="Your note"
-            placeholder="Write a note..."
-            value="${esc(S.note)}"
-            oninput="saveNote(this.value)"
-          >
-          <span class="note-count">${S.note.length}/60</span>
-        </div>
-      </section>
-
-      <section>
-        <div class="section-heading">
-          <h2>Online now</h2>
-        </div>
-        <div id="online-people">${onlinePeopleHTML()}</div>
-      </section>
-    `}
   `;
 }
 
@@ -4592,9 +4596,9 @@ function layout(content){
             Home
           </button>
 
-          <button onclick="nav('/explore')">
-            <i>⌕</i>
-            Explore
+          <button onclick="nav('/my-stuff')">
+            <i>▤</i>
+            My Stuff
           </button>
 
           <button
@@ -4606,19 +4610,9 @@ function layout(content){
             Profile
           </button>
 
-          <button onclick="nav('/following')">
-            <i>♧</i>
-            Following
-          </button>
-
           <button onclick="nav('/chat')">
             <i>✉</i>
             Chat
-          </button>
-
-          <button onclick="nav('/groups')">
-            <i>◉</i>
-            Groups
           </button>
 
           <button onclick="nav('/settings')">
