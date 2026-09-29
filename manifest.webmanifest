@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "NICHE — Everything starts with a topic",
+  "short_name": "NICHE",
+  "description": "Everything starts with a topic.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#09090a",
+  "theme_color": "#0b0b0c",
+  "icons": [
+    {
+      "src": "niche-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

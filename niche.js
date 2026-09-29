@@ -4383,6 +4383,73 @@ async function render(){
    AUTH CALLBACK / INIT
    ========================================================= */
 
+let deferredInstallPrompt=null;
+let installPromptDismissed=false;
+
+function renderInstallPrompt(message="Install NICHE for a focused, app-like experience."){
+  let root=document.getElementById("install-prompt-root");
+  if(!root||installPromptDismissed)return;
+
+  root.innerHTML=`
+    <div class="modal-backdrop install-dialog">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="install-dialog-title">
+        <div class="install-dialog-mark" aria-hidden="true">N</div>
+        <h2 id="install-dialog-title">Take NICHE with you</h2>
+        <p>${esc(message)}</p>
+        <p>On browsers without an install button here, use the browser menu and choose “Install app” or “Add to Home Screen”.</p>
+        <div class="modal-actions">
+          <button class="secondary" type="button" onclick="continueInBrowser()">Continue in browser</button>
+          <button class="primary" type="button" onclick="installNicheApp()">Install web app</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function continueInBrowser(){
+  installPromptDismissed=true;
+  document.getElementById("install-prompt-root").innerHTML="";
+}
+
+async function installNicheApp(){
+  if(!deferredInstallPrompt){
+    toast("Open your browser menu and choose Install app or Add to Home Screen.");
+    return;
+  }
+
+  let prompt=deferredInstallPrompt;
+  deferredInstallPrompt=null;
+  await prompt.prompt();
+  await prompt.userChoice;
+  continueInBrowser();
+}
+
+function setupWebAppInstall(){
+  window.addEventListener("beforeinstallprompt",event=>{
+    event.preventDefault();
+    deferredInstallPrompt=event;
+    if(!installPromptDismissed){
+      renderInstallPrompt();
+    }
+  });
+
+  window.addEventListener("appinstalled",()=>{
+    deferredInstallPrompt=null;
+    continueInBrowser();
+  });
+
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./service-worker.js").catch(error=>{
+      console.error("NICHE service worker:",error);
+    });
+  }
+
+  let isStandalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  if(!isStandalone){
+    renderInstallPrompt();
+  }
+}
+
 async function prepareAuthCallback(){
   /* Supabase can return a PKCE code in the query string. Exchange it before
      the first render so the app never briefly falls back to the login screen. */
@@ -4408,6 +4475,7 @@ async function prepareAuthCallback(){
 
 async function init(){
 
+  setupWebAppInstall();
   applyTheme();
 
   renderModal();

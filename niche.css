@@ -1357,6 +1357,47 @@ button:disabled{
   margin-top:18px
 }
 
+.install-dialog{
+  z-index:210
+}
+
+.install-dialog .modal{
+  width:min(390px,100%);
+  border-radius:16px
+}
+
+.install-dialog-mark{
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  margin-bottom:16px;
+  border-radius:12px;
+  background:var(--surface2);
+  color:var(--blue);
+  font-size:23px;
+  font-weight:900
+}
+
+.install-dialog .modal p{
+  margin:10px 0 0
+}
+
+.install-dialog .modal-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr
+}
+
+.install-dialog .modal-actions button{
+  min-height:42px
+}
+
+@media(max-width:430px){
+  .install-dialog .modal-actions{
+    grid-template-columns:1fr
+  }
+}
+
 
 /* =========================================================
    EMAIL VERIFICATION
