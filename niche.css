@@ -1855,8 +1855,12 @@ html[data-glass="on"] .main{
 }
 
 html[data-glass="on"] .side{
+  height:calc(100vh - 24px);
+  top:12px;
+  margin:12px 10px 12px 8px;
   background:rgba(239,248,255,.78);
-  border-right:1px solid rgba(255,255,255,.84);
+  border:1px solid rgba(255,255,255,.84);
+  border-radius:22px;
   box-shadow:8px 0 32px rgba(22,55,78,.12);
   backdrop-filter:blur(30px) saturate(145%);
   -webkit-backdrop-filter:blur(30px) saturate(145%)
