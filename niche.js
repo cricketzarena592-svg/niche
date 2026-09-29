@@ -2897,6 +2897,61 @@ function editProfilePage(){
       </section>
 
       <section class="setting-section">
+
+        <h1>Interface style</h1>
+
+        <p>
+          Choose how NICHE looks and feels.
+        </p>
+
+        <div class="interface-styles">
+
+          <button
+            class="interface-style ${
+              S.interfaceStyle==="basic"?"active":""
+            }"
+            onclick="setInterfaceStyle('basic')"
+          >
+            <div>
+              <b>Basic</b>
+              <small>Current NICHE interface</small>
+            </div>
+
+            <span>
+              ${
+                S.interfaceStyle==="basic"
+                ?"✓"
+                :""
+              }
+            </span>
+          </button>
+
+          <button
+            class="interface-style ${
+              S.interfaceStyle==="glass"?"active":""
+            }"
+            onclick="setInterfaceStyle('glass')"
+          >
+            <div>
+              <b>Glass</b>
+              <small>Frutiger Aero / glass UI</small>
+            </div>
+
+            <span>
+              ${
+                S.interfaceStyle==="glass"
+                ?"✓"
+                :""
+              }
+            </span>
+          </button>
+
+        </div>
+
+      </section>
+
+      <section class="setting-section">
+
         <h1>Activity privacy</h1>
 
     </div>
