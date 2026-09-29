@@ -6481,4 +6481,242 @@ async function init(){
   );
 
 })();
+
+const RADIO_SERVER_LIST="https://all.api.radio-browser.info/json/servers";
+let radioMirrors=[];
+let radioStations=[];
+let radioStationIndex=0;
+
+function setRadioStatus(message){
+  const status=document.getElementById("radio-status");
+  if(status)status.textContent=message;
+}
+
+function setRadioStation(station){
+  const name=document.getElementById("radio-station");
+  const tags=document.getElementById("radio-tags");
+
+  if(name)name.textContent=station.name||"Unknown station";
+  if(tags)tags.textContent=station.tags||station.country||"Radio station";
+}
+
+function setRadioPlaying(playing){
+  const button=document.getElementById("radio-play");
+  if(!button)return;
+
+  button.innerHTML=`<span aria-hidden="true">${playing?"Ⅱ":"▶"}</span>`;
+  button.setAttribute("aria-label",playing?"Pause station":"Play station");
+}
+
+async function discoverRadioMirrors(){
+  if(radioMirrors.length)return radioMirrors;
+
+  const response=await fetch(RADIO_SERVER_LIST,{cache:"no-store"});
+  if(!response.ok)throw new Error("Could not discover Radio-Browser servers");
+
+  const servers=await response.json();
+  radioMirrors=[...new Set(
+    servers
+      .map(server=>server.name)
+      .filter(name=>/^[a-z0-9.-]+\.api\.radio-browser\.info$/i.test(name))
+  )];
+
+  if(!radioMirrors.length)throw new Error("No Radio-Browser mirrors found");
+  return radioMirrors;
+}
+
+async function radioApi(path){
+  const mirrors=await discoverRadioMirrors();
+  const first=Math.floor(Math.random()*mirrors.length);
+  let lastError;
+
+  for(let offset=0;offset<mirrors.length;offset++){
+    const mirror=mirrors[(first+offset)%mirrors.length];
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),10000);
+
+    try{
+      const response=await fetch(
+        `https://${mirror}${path}`,
+        {signal:controller.signal,headers:{Accept:"application/json"}}
+      );
+      if(!response.ok){
+        const error=new Error(`Radio-Browser returned ${response.status}`);
+        error.status=response.status;
+        throw error;
+      }
+      return await response.json();
+    }catch(error){
+      lastError=error;
+      if(error.status===404)break;
+    }finally{
+      clearTimeout(timeout);
+    }
+  }
+
+  throw lastError||new Error("All Radio-Browser mirrors failed");
+}
+
+function getRadioLocation(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation){
+      reject(new Error("Geolocation is unavailable"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      resolve,
+      reject,
+      {enableHighAccuracy:false,timeout:9000,maximumAge:600000}
+    );
+  });
+}
+
+function playableStations(stations){
+  return (stations||[]).filter(station=>station.url_resolved);
+}
+
+function radioDistance(latitude,longitude,station){
+  const stationLatitude=Number(station.geo_lat);
+  const stationLongitude=Number(station.geo_long);
+  if(!Number.isFinite(stationLatitude)||!Number.isFinite(stationLongitude))return Infinity;
+
+  const radians=value=>value*Math.PI/180;
+  const latitudeDelta=radians(stationLatitude-latitude);
+  const longitudeDelta=radians(stationLongitude-longitude);
+  const distance=Math.sin(latitudeDelta/2)**2+
+    Math.cos(radians(latitude))*Math.cos(radians(stationLatitude))*
+    Math.sin(longitudeDelta/2)**2;
+
+  return 6371*2*Math.atan2(Math.sqrt(distance),Math.sqrt(1-distance));
+}
+
+async function fetchNearbyRadioStations(latitude,longitude){
+  const lat=encodeURIComponent(latitude);
+  const lon=encodeURIComponent(longitude);
+
+  try{
+    const nearby=playableStations(
+      await radioApi(`/json/stations/bylatlon/${lat}/${lon}?limit=30&hidebroken=true`)
+    );
+    if(nearby.length)return nearby;
+  }catch(error){
+    // The current public API does not expose bylatlon on every mirror.
+  }
+
+  const query=new URLSearchParams({
+    latitude:String(latitude),
+    longitude:String(longitude),
+    has_geo_info:"true",
+    limit:"500",
+    hidebroken:"true"
+  });
+  const candidates=playableStations(
+    await radioApi(`/json/stations/search?${query}`)
+  );
+
+  return candidates
+    .map(station=>({station,distance:radioDistance(latitude,longitude,station)}))
+    .filter(result=>Number.isFinite(result.distance))
+    .sort((a,b)=>a.distance-b.distance)
+    .map(result=>result.station);
+}
+
+async function loadRadioStation(index,autoplay){
+  if(!radioStations.length)return;
+
+  radioStationIndex=(index+radioStations.length)%radioStations.length;
+  const station=radioStations[radioStationIndex];
+  const audio=document.getElementById("radio-audio");
+  const playButton=document.getElementById("radio-play");
+  const nextButton=document.getElementById("radio-next");
+  if(!audio)return;
+
+  setRadioStation(station);
+  audio.pause();
+  audio.src=station.url_resolved;
+  audio.load();
+  if(playButton)playButton.disabled=false;
+  if(nextButton)nextButton.disabled=radioStations.length<2;
+  setRadioStatus("Connecting to station…");
+
+  if(autoplay){
+    try{
+      await audio.play();
+      setRadioStatus("Live · Playing");
+    }catch(error){
+      setRadioPlaying(false);
+      setRadioStatus("Click play to start listening");
+    }
+  }
+}
+
+async function startRadioPlayer(){
+  const playButton=document.getElementById("radio-play");
+  const nextButton=document.getElementById("radio-next");
+  const audio=document.getElementById("radio-audio");
+  const volume=document.getElementById("radio-volume");
+  if(!playButton||!audio)return;
+
+  audio.volume=Number(volume?.value||0.8);
+  volume?.addEventListener("input",()=>audio.volume=Number(volume.value));
+  playButton.addEventListener("click",async()=>{
+    if(!audio.src)return;
+    if(!audio.paused){
+      audio.pause();
+      return;
+    }
+    try{
+      await audio.play();
+      setRadioStatus("Live · Playing");
+    }catch(error){
+      setRadioStatus("Click play to start listening");
+    }
+  });
+  nextButton?.addEventListener("click",()=>loadRadioStation(radioStationIndex+1,true));
+  audio.addEventListener("playing",()=>{
+    setRadioPlaying(true);
+    setRadioStatus("Live · Playing");
+  });
+  audio.addEventListener("pause",()=>setRadioPlaying(false));
+  audio.addEventListener("error",()=>{
+    setRadioPlaying(false);
+    setRadioStatus("Stream unavailable. Try the next station.");
+  });
+
+  let stations=[];
+  try{
+    setRadioStatus("Finding nearby stations…");
+    const location=await getRadioLocation();
+    stations=await fetchNearbyRadioStations(
+      location.coords.latitude,
+      location.coords.longitude
+    );
+  }catch(error){
+    stations=[];
+  }
+
+  if(!stations.length){
+    try{
+      setRadioStatus("Loading top stations…");
+      stations=playableStations(await radioApi("/json/stations/topclick?limit=30&hidebroken=true"));
+    }catch(error){
+      setRadioStatus("Radio stations are currently unavailable");
+      document.getElementById("radio-station").textContent="Could not load stations";
+      document.getElementById("radio-tags").textContent="Please try again later";
+      return;
+    }
+  }
+
+  radioStations=stations;
+  if(!radioStations.length){
+    setRadioStatus("No playable stations were found");
+    document.getElementById("radio-station").textContent="No stations available";
+    return;
+  }
+
+  await loadRadioStation(0,true);
+}
+
+startRadioPlayer();
 init();

@@ -11,6 +11,25 @@
 </head>
 <body>
   <div id="app"></div>
+  <section class="radio-player" id="radio-player" aria-label="Radio mini-player">
+    <audio id="radio-audio" preload="none"></audio>
+    <button class="radio-play" id="radio-play" type="button" aria-label="Play station" disabled>
+      <span aria-hidden="true">▶</span>
+    </button>
+    <div class="radio-info">
+      <div class="radio-eyebrow">NICHE RADIO</div>
+      <strong id="radio-station">Finding a station…</strong>
+      <span id="radio-tags">Discovering local radio</span>
+      <span class="radio-status" id="radio-status" role="status" aria-live="polite">Locating nearby stations…</span>
+    </div>
+    <button class="radio-next" id="radio-next" type="button" aria-label="Play next station" disabled>
+      <span aria-hidden="true">⏭</span>
+    </button>
+    <label class="radio-volume" for="radio-volume">
+      <span aria-hidden="true">VOL</span>
+      <input id="radio-volume" type="range" min="0" max="1" step="0.05" value="0.8" aria-label="Volume">
+    </label>
+  </section>
   <div id="toast"></div>
   <div id="modal-root"></div>
   <div id="notification-portal"></div>
