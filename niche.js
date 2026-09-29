@@ -193,6 +193,10 @@ function route(){
     return{type:"settings"};
   }
 
+  if(/^\/following\/?$/i.test(r)){
+    return{type:"following"};
+  }
+
   let q=r.match(/^\/post\/([^/]+)\/?$/i);
 
   if(q){
@@ -3487,12 +3491,13 @@ function unreadCount(){
 }
 
 function notificationPanel(){
-  let root=
-    document.getElementById(
-      "notification-portal"
-    );
+  let root=document.getElementById("notification-portal");
 
-  if(!root)return;
+  if(!root){
+    root=document.createElement("div");
+    root.id="notification-portal";
+    document.body.appendChild(root);
+  }
 
   let u=unreadCount();
 
@@ -3703,6 +3708,25 @@ function notificationMenu(){
 }
 
 /* =========================================================
+   FOLLOWING PAGE
+   ========================================================= */
+
+function followingPage(){
+  return `
+    <section class="following-page">
+      <header class="header">
+        <button class="back" onclick="nav('/')">← Home</button>
+        <h1 class="title">Following</h1>
+        <div class="sub">People and niches you follow.</div>
+      </header>
+      <div class="following-page-body">
+        ${followingCard()}
+      </div>
+    </section>
+  `;
+}
+
+/* =========================================================
    LAYOUT
    ========================================================= */
 
@@ -3750,6 +3774,11 @@ function layout(content){
           >
             <i>◯</i>
             Profile
+          </button>
+
+          <button onclick="nav('/following')">
+            <i>♧</i>
+            Following
           </button>
 
           <button onclick="nav('/settings')">
@@ -3888,10 +3917,6 @@ function layout(content){
 
       </aside>
 
-      <section class="mobile-following" aria-label="Your following">
-        ${followingCard()}
-      </section>
-
       <nav class="mobile-nav">
 
         <button onclick="nav('/')">
@@ -3904,27 +3929,9 @@ function layout(content){
           <span>Explore</span>
         </button>
 
-        <button
-          class="mobile-notif"
-          onclick="toggleNotifications(event)"
-        >
-
-          <i>♢</i>
-
-          ${
-            unreadCount()
-            ? `
-              <b class="mobile-badge">
-                ${Math.min(99,unreadCount())}
-              </b>
-            `
-            :""
-          }
-
-          <span>
-            Alerts
-          </span>
-
+        <button onclick="nav('/following')">
+          <i>♧</i>
+          <span>Following</span>
         </button>
 
         <button
@@ -4125,6 +4132,11 @@ async function render(){
 
     document.getElementById("app").innerHTML=
       layout(settings());
+
+  }else if(r.type==="following"){
+
+    document.getElementById("app").innerHTML=
+      layout(followingPage());
 
   }else if(r.type==="profile-edit"){
 
