@@ -75,23 +75,32 @@ function tags(v){
 }
 
 function time(v){
-  let s=Math.floor((Date.now()-new Date(v))/1000);
+  const date=new Date(v);
+  const ms=Date.now()-date.getTime();
 
-  if(!Number.isFinite(s)||s<60)return"now";
+  if(!Number.isFinite(ms)||ms<0)return"just now";
 
-  let m=Math.floor(s/60);
+  const s=Math.floor(ms/1000);
+  if(s<10)return"just now";
+  if(s<60)return s+"s";
 
+  const m=Math.floor(s/60);
   if(m<60)return m+"m";
 
-  let h=Math.floor(m/60);
-
+  const h=Math.floor(m/60);
   if(h<24)return h+"h";
 
-  let d=Math.floor(h/24);
+  const d=Math.floor(h/24);
+  if(d<7)return d+"d";
 
-  return d<7
-    ? d+"d"
-    : new Date(v).toLocaleDateString();
+  const w=Math.floor(d/7);
+  if(w<4)return w+"w";
+
+  return date.toLocaleDateString([], {
+    day:"numeric",
+    month:"short",
+    year:date.getFullYear()!==new Date().getFullYear()?"numeric":undefined
+  });
 }
 
 function toast(m){
@@ -3878,6 +3887,10 @@ function layout(content){
         </div>
 
       </aside>
+
+      <section class="mobile-following" aria-label="Your following">
+        ${followingCard()}
+      </section>
 
       <nav class="mobile-nav">
 
