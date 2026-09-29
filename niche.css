@@ -99,6 +99,8 @@ a{color:inherit;text-decoration:none}
 
 .right{padding:25px 18px}
 
+.mobile-following{display:none}
+
 .brand{
   display:inline-block;
   padding:5px 9px
@@ -1353,9 +1355,10 @@ button:disabled{
 }
 
 @media(max-width:430px){
-  .handle,.time,.dot{display:none}
+  .handle,.dot{display:none}
+  .time{display:inline-block;font-size:10px;flex-shrink:0}
 
-  .name{max-width:180px}
+  .name{max-width:170px}
 
   .emoji-grid{
     grid-template-columns:repeat(6,1fr)
@@ -1363,92 +1366,108 @@ button:disabled{
 }
 
     /* =========================================================
-   TOUCH DEVICES — LANDSCAPE
-   Keep bottom navigation on phones and tablets,
-   including larger devices such as Pixel 9 and iPad.
+   RESPONSIVE TABLET / PHONE LAYOUT
+   The compact interface is based on viewport + touch capability,
+   not only a small pixel width. This keeps iPad/Pixel-sized devices
+   and landscape phones on the same mobile navigation.
    ========================================================= */
 
-@media (orientation: landscape) and (hover: none) and (pointer: coarse) {
-
-  .app-shell {
-    display: block !important;
+@media (hover:none) and (pointer:coarse){
+  .shell{
+    display:block !important;
+    width:100%;
+    max-width:none;
   }
 
-  .sidebar,
-  .rightbar {
-    display: none !important;
+  .side,
+  .right{
+    display:none !important;
   }
 
-  .main {
-    width: 100%;
-    max-width: none;
-    border-right: 0;
+  .main{
+    width:100%;
+    max-width:none;
+    border-right:0;
+    padding-bottom:82px;
   }
 
-  .mobile-logo {
-    display: block !important;
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: -.06em;
+  .mobile-brand{
+    display:block !important;
   }
 
-  .topbar {
-    height: 58px;
+  .mobile-nav{
+    display:grid !important;
   }
 
-  .bottom-nav {
-    display: flex !important;
+  .mobile-following{
+    display:block;
+    padding:0 14px 18px;
+  }
+
+  .mobile-following .card{
+    margin-top:0;
+  }
+
+  .top{
+    height:60px;
   }
 
   .post,
   .composer,
-  .niche-header {
-    width: 100%;
-  }
-
-  .main {
-    padding-bottom: 70px;
-  }
-}
-
-
-/* =========================================================
-   LARGE TABLETS — LANDSCAPE
-   Covers devices that don't report a coarse pointer correctly.
-   ========================================================= */
-
-@media (orientation: landscape)
-       and (max-width: 1366px)
-       and (min-height: 500px) {
-
-  .app-shell {
-    display: block !important;
-  }
-
-  .sidebar,
-  .rightbar {
-    display: none !important;
-  }
-
-  .main {
-    width: 100%;
-    max-width: none;
-    border-right: 0;
-    padding-bottom: 70px;
-  }
-
-  .mobile-logo {
-    display: block !important;
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: -.06em;
-  }
-
-  .bottom-nav {
-    display: flex !important;
+  .header,
+  .explore,
+  .setting-section,
+  .niche-header{
+    width:100%;
+    max-width:none;
   }
 }
 
+/* Tablets and compact windows that do not expose a touch pointer. */
+@media (max-width:900px){
+  .shell{
+    grid-template-columns:1fr;
+  }
+
+  .side,
+  .right{
+    display:none;
+  }
+
+  .main{
+    width:100%;
+    border-right:0;
+    padding-bottom:82px;
+  }
+
+  .mobile-brand{display:block}
+  .mobile-nav{display:grid}
+  .mobile-following{display:block;padding:0 14px 18px}
+}
+
+/* Landscape: never switch back to the desktop three-column layout. */
+@media (orientation:landscape) and (max-height:700px){
+  .shell{
+    display:block !important;
+    width:100%;
+  }
+
+  .side,
+  .right{
+    display:none !important;
+  }
+
+  .main{
+    width:100%;
+    max-width:none;
+    border-right:0;
+    padding-bottom:82px;
+  }
+
+  .mobile-brand{display:block !important}
+  .mobile-nav{display:grid !important}
+  .mobile-following{display:block;padding:0 14px 18px}
+}
 
 /* =========================================================
    PIN + POST WIDGET STYLES (integrated from feature modules)
