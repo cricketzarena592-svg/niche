@@ -642,6 +642,151 @@ a{
   display:none
 }
 
+.chat-request-section h2,
+.chat-conversations-section h2{
+  margin:17px 18px 0;
+  font-size:14px
+}
+
+.chat-list{
+  display:grid;
+  gap:8px;
+  padding:12px 18px
+}
+
+.chat-row{
+  width:100%;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface);
+  color:var(--text);
+  text-align:left
+}
+
+button.chat-row{
+  cursor:pointer
+}
+
+.chat-row .avatar{
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  font-size:19px
+}
+
+.chat-row-copy{
+  min-width:0;
+  flex:1
+}
+
+.chat-row-copy strong,
+.chat-row-copy small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap
+}
+
+.chat-row-copy small,
+.request-pending{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:11px
+}
+
+.chat-row-actions{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:6px
+}
+
+.chat-row-actions button{
+  padding:7px 10px;
+  font-size:11px
+}
+
+.chat-row-arrow{
+  color:var(--muted);
+  font-size:22px
+}
+
+.chat-thread-header{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:12px 18px;
+  border-bottom:1px solid var(--border)
+}
+
+.chat-thread-header strong,
+.chat-thread-header small{
+  display:block
+}
+
+.chat-thread-header small{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:11px
+}
+
+.chat-thread-messages{
+  min-height:180px;
+  max-height:min(55vh,600px);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  overflow:auto;
+  padding:14px 18px
+}
+
+.chat-bubble{
+  max-width:min(82%,440px);
+  align-self:flex-start;
+  padding:9px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface2);
+  overflow-wrap:anywhere;
+  white-space:pre-wrap;
+  font-size:13px;
+  line-height:1.45
+}
+
+.chat-bubble.mine{
+  align-self:flex-end;
+  background:color-mix(in srgb,var(--blue) 18%,var(--surface))
+}
+
+.chat-bubble time{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:9px
+}
+
+.chat-composer{
+  display:flex;
+  gap:8px;
+  padding:12px 18px;
+  border-top:1px solid var(--border)
+}
+
+.chat-composer input{
+  min-width:0;
+  flex:1;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 12px;
+  background:var(--surface2);
+  color:var(--text)
+}
+
 
 /* =========================================================
    AVATARS

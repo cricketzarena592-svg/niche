@@ -69,6 +69,11 @@ const S={
   presenceUpdateTimer:null,
   myStuffTab:"explore",
   chatTab:"messages",
+  chatRequests:[],
+  chatConversations:[],
+  chatProfiles:{},
+  chatMessages:[],
+  activeChatId:null,
   followCounts:{},
   activityPrivate:false,
   modal:null,
@@ -2182,6 +2187,225 @@ function isFollowingUser(id){
   return!!id&&S.followingUserIds.has(id);
 }
 
+function chatProfile(userId){
+  return S.chatProfiles[userId]||{};
+}
+
+async function loadChatData(){
+  if(!S.user)return;
+
+  const[membersResult,requestsResult]=await Promise.all([
+    sb
+      .from("chat_members")
+      .select("conversation_id,user_id,role")
+      .eq("user_id",S.user.id),
+    sb
+      .from("chat_requests")
+      .select("id,sender_id,recipient_id,status,created_at")
+      .eq("status","pending")
+      .or(`sender_id.eq.${S.user.id},recipient_id.eq.${S.user.id}`)
+      .order("created_at",{ascending:false})
+  ]);
+
+  if(membersResult.error){
+    console.error("Chat memberships unavailable:",membersResult.error);
+  }
+  if(requestsResult.error){
+    console.error("Chat requests unavailable:",requestsResult.error);
+  }
+
+  let memberships=membersResult.data||[];
+  let conversationIds=[...new Set(memberships.map(item=>item.conversation_id))];
+  let conversations=[];
+  let participants=[];
+
+  if(conversationIds.length){
+    const[conversationsResult,participantsResult]=await Promise.all([
+      sb
+        .from("chat_conversations")
+        .select("id,kind,title,created_at")
+        .in("id",conversationIds)
+        .eq("kind","direct")
+        .order("created_at",{ascending:false}),
+      sb
+        .from("chat_members")
+        .select("conversation_id,user_id,role")
+        .in("conversation_id",conversationIds)
+    ]);
+
+    if(conversationsResult.error){
+      console.error("Chat conversations unavailable:",conversationsResult.error);
+    }
+    if(participantsResult.error){
+      console.error("Chat participants unavailable:",participantsResult.error);
+    }
+
+    conversations=conversationsResult.data||[];
+    participants=participantsResult.data||[];
+  }
+
+  S.chatRequests=requestsResult.data||[];
+  let peopleIds=new Set();
+
+  S.chatRequests.forEach(request=>{
+    peopleIds.add(request.sender_id);
+    peopleIds.add(request.recipient_id);
+  });
+  participants.forEach(person=>peopleIds.add(person.user_id));
+  peopleIds.delete(S.user.id);
+
+  let profiles=[];
+  if(peopleIds.size){
+    const{data,error}=await sb
+      .from("profiles")
+      .select("id,username,display_name,avatar_emoji")
+      .in("id",[...peopleIds]);
+
+    if(error){
+      console.error("Chat profiles unavailable:",error);
+    }else{
+      profiles=data||[];
+    }
+  }
+
+  S.chatProfiles=Object.fromEntries(
+    profiles.map(profile=>[profile.id,profile])
+  );
+  S.chatConversations=conversations.map(conversation=>({
+    ...conversation,
+    otherUserId:participants.find(person=>
+      person.conversation_id===conversation.id&&person.user_id!==S.user.id
+    )?.user_id
+  }));
+
+  if(S.activeChatId&&!S.chatConversations.some(chat=>chat.id===S.activeChatId)){
+    S.activeChatId=null;
+    S.chatMessages=[];
+  }
+}
+
+async function loadChatMessages(conversationId){
+  if(!conversationId)return;
+
+  const{data,error}=await sb
+    .from("chat_messages")
+    .select("id,conversation_id,sender_id,body,created_at")
+    .eq("conversation_id",conversationId)
+    .order("created_at",{ascending:true})
+    .limit(100);
+
+  if(error){
+    console.error("Chat messages unavailable:",error);
+    toast(error.message);
+    return;
+  }
+
+  S.chatMessages=data||[];
+}
+
+async function requestChat(userId){
+  await loadChatData();
+
+  let existingChat=S.chatConversations.find(
+    conversation=>conversation.otherUserId===userId
+  );
+  if(existingChat){
+    await openChat(existingChat.id);
+    return;
+  }
+
+  let pending=S.chatRequests.find(request=>
+    (request.sender_id===S.user.id&&request.recipient_id===userId)||
+    (request.sender_id===userId&&request.recipient_id===S.user.id)
+  );
+  if(pending){
+    S.chatTab="requests";
+    toast(pending.sender_id===S.user.id
+      ?"Your chat request is still pending."
+      :"They already sent you a chat request.");
+    if(route().type==="chat")render();
+    else nav("/chat");
+    return;
+  }
+
+  const{data,error}=await sb.rpc("request_direct_chat",{
+    p_recipient_id:userId
+  });
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  await loadChatData();
+
+  const{data:request}=await sb
+    .from("chat_requests")
+    .select("sender_id")
+    .eq("id",data)
+    .maybeSingle();
+
+  S.chatTab="requests";
+  toast(request?.sender_id===S.user.id
+    ?"Chat request sent."
+    :"They already sent you a chat request.");
+  if(route().type==="chat")render();
+  else nav("/chat");
+}
+
+async function respondToChatRequest(requestId,accept){
+  const{data,error}=await sb.rpc(
+    accept?"accept_chat_request":"decline_chat_request",
+    {p_request_id:requestId}
+  );
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  if(accept){
+    S.activeChatId=data;
+    S.chatTab="messages";
+  }
+
+  await loadChatData();
+  if(accept)await loadChatMessages(S.activeChatId);
+  toast(accept?"Chat request accepted.":"Chat request declined.");
+  render();
+}
+
+async function openChat(conversationId){
+  S.activeChatId=conversationId;
+  S.chatTab="messages";
+  await loadChatMessages(conversationId);
+  if(route().type!=="chat"){
+    nav("/chat");
+  }else{
+    render();
+  }
+}
+
+async function sendChatMessage(){
+  let input=document.getElementById("chat-message");
+  let body=input?.value.trim();
+  if(!body||!S.activeChatId)return;
+
+  const{error}=await sb.from("chat_messages").insert({
+    conversation_id:S.activeChatId,
+    sender_id:S.user.id,
+    body
+  });
+
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  await loadChatMessages(S.activeChatId);
+  render();
+}
+
 async function toggleUserFollow(id){
   if(!id||id===S.user.id){
     return;
@@ -2364,7 +2588,15 @@ function profilePage(){
                   Customize profile
                 </button>
               `
-              : profileFollowButton(p)
+              : `
+                ${profileFollowButton(p)}
+                <button
+                  class="secondary"
+                  onclick="requestChat('${esc(p.id)}')"
+                >
+                  ✉ Request chat
+                </button>
+              `
             }
 
           </div>
@@ -4118,12 +4350,128 @@ function myStuffPage(){
 }
 
 function setChatTab(tab){
-  S.chatTab=tab==="groups"?"groups":"messages";
-  if(route().type==="groups"){
+  S.chatTab=["requests","groups"].includes(tab)?tab:"messages";
+  if(route().type!=="chat"){
     nav("/chat");
   }else{
     render();
   }
+}
+
+function chatRequestsHTML(){
+  let incoming=S.chatRequests.filter(
+    request=>request.recipient_id===S.user?.id
+  );
+  let outgoing=S.chatRequests.filter(
+    request=>request.sender_id===S.user?.id
+  );
+
+  if(!incoming.length&&!outgoing.length){
+    return`<section class="social-empty"><h2>No requests</h2><p>Chat requests from other people will appear here.</p></section>`;
+  }
+
+  return`
+    ${incoming.length?`
+      <section class="chat-request-section">
+        <h2>Received</h2>
+        <div class="chat-list">
+          ${incoming.map(request=>{
+            let person=chatProfile(request.sender_id);
+            return`
+              <div class="chat-row">
+                <a class="avatar" href="${hrefP(person.username||"")}" onclick="event.preventDefault();nav('/profile/${encodeURIComponent(person.username||"")}')">${esc(person.avatar_emoji||"🙂")}</a>
+                <div class="chat-row-copy">
+                  <strong>${esc(person.display_name||person.username||"NICHE user")}</strong>
+                  <small>@${esc(person.username||"")}</small>
+                </div>
+                <div class="chat-row-actions">
+                  <button class="primary" onclick="respondToChatRequest('${esc(request.id)}',true)">Accept</button>
+                  <button class="secondary" onclick="respondToChatRequest('${esc(request.id)}',false)">Decline</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </section>
+    `:""}
+    ${outgoing.length?`
+      <section class="chat-request-section">
+        <h2>Sent</h2>
+        <div class="chat-list">
+          ${outgoing.map(request=>{
+            let person=chatProfile(request.recipient_id);
+            return`
+              <div class="chat-row">
+                <a class="avatar" href="${hrefP(person.username||"")}" onclick="event.preventDefault();nav('/profile/${encodeURIComponent(person.username||"")}')">${esc(person.avatar_emoji||"🙂")}</a>
+                <div class="chat-row-copy">
+                  <strong>${esc(person.display_name||person.username||"NICHE user")}</strong>
+                  <small>Waiting for a response</small>
+                </div>
+                <span class="request-pending">Pending</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </section>
+    `:""}
+  `;
+}
+
+function chatConversationsHTML(){
+  if(!S.chatConversations.length){
+    return`<section class="social-empty"><h2>No conversations yet</h2><p>Send a chat request from someone’s profile. Messages open after they accept.</p></section>`;
+  }
+
+  return`
+    <div class="chat-list">
+      ${S.chatConversations.map(conversation=>{
+        let person=chatProfile(conversation.otherUserId);
+        return`
+          <button class="chat-row" onclick="openChat('${esc(conversation.id)}')">
+            <span class="avatar">${esc(person.avatar_emoji||"🙂")}</span>
+            <span class="chat-row-copy">
+              <strong>${esc(person.display_name||person.username||"NICHE user")}</strong>
+              <small>@${esc(person.username||"")}</small>
+            </span>
+            <span class="chat-row-arrow">›</span>
+          </button>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function chatThreadHTML(){
+  let conversation=S.chatConversations.find(
+    item=>item.id===S.activeChatId
+  );
+  if(!conversation)return"";
+
+  let person=chatProfile(conversation.otherUserId);
+
+  return`
+    <section class="chat-thread-view">
+      <header class="chat-thread-header">
+        <button class="back" onclick="S.activeChatId=null;S.chatMessages=[];render()">← Chats</button>
+        <div>
+          <strong>${esc(person.display_name||person.username||"NICHE user")}</strong>
+          <small>@${esc(person.username||"")}</small>
+        </div>
+      </header>
+      <div class="chat-thread-messages" id="chat-thread-messages">
+        ${S.chatMessages.length?S.chatMessages.map(message=>`
+          <div class="chat-bubble ${message.sender_id===S.user?.id?"mine":""}">
+            <div>${esc(message.body)}</div>
+            <time>${esc(time(message.created_at))}</time>
+          </div>
+        `).join(""):`<div class="social-empty"><p>Say hello to start chatting.</p></div>`}
+      </div>
+      <form class="chat-composer" onsubmit="event.preventDefault();sendChatMessage()">
+        <input id="chat-message" maxlength="4000" placeholder="Write a message..." aria-label="Message" autocomplete="off">
+        <button class="primary" type="submit">Send</button>
+      </form>
+    </section>
+  `;
 }
 
 function chatPage(tab=S.chatTab){
@@ -4140,6 +4488,12 @@ function chatPage(tab=S.chatTab){
         onclick="setChatTab('messages')"
       >Messages</button>
       <button
+        class="${tab==="requests"?"active":""}"
+        role="tab"
+        aria-selected="${tab==="requests"}"
+        onclick="setChatTab('requests')"
+      >Requests${S.chatRequests.some(request=>request.recipient_id===S.user?.id)?` · ${S.chatRequests.filter(request=>request.recipient_id===S.user?.id).length}`:""}</button>
+      <button
         class="${tab==="groups"?"active":""}"
         role="tab"
         aria-selected="${tab==="groups"}"
@@ -4152,7 +4506,12 @@ function chatPage(tab=S.chatTab){
         <h2>No groups yet</h2>
         <p>Group conversations will appear here.</p>
       </section>
-    `:`
+    `:tab==="requests"?chatRequestsHTML():S.activeChatId?chatThreadHTML():`
+      <section class="chat-conversations-section">
+        <h2>Messages</h2>
+        ${chatConversationsHTML()}
+      </section>
+
       <section class="social-empty">
         <h2>Your note</h2>
         <p>Share a short note with people who are online.</p>
@@ -4166,11 +4525,6 @@ function chatPage(tab=S.chatTab){
           >
           <span class="note-count">${S.note.length}/60</span>
         </div>
-      </section>
-
-      <section class="social-empty">
-        <h2>Conversations</h2>
-        <p>No conversations yet.</p>
       </section>
 
       <section>
@@ -4631,6 +4985,9 @@ async function render(){
       layout(followingPage());
 
   }else if(r.type==="chat"){
+
+    await loadChatData();
+    if(S.activeChatId)await loadChatMessages(S.activeChatId);
 
     document.getElementById("app").innerHTML=
       layout(chatPage());
