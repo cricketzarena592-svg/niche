@@ -50,6 +50,10 @@ const S={
   glassTheme:localStorage.getItem("niche-glass-theme")==="on",
   glassAppearance:localStorage.getItem("niche-glass-appearance")==="dark"?"dark":"light",
   glassBackground:localStorage.getItem("niche-glass-background")||"sky",
+  radioEnabled:localStorage.getItem("niche-radio-enabled")!=="off",
+  radioRegionCode:(localStorage.getItem("niche-radio-region")||"GLOBAL").toUpperCase(),
+  radioCountries:[],
+  radioCountriesLoaded:false,
   notifications:[],
   notificationsOpen:false,
   notificationsLoaded:false,
@@ -3287,6 +3291,57 @@ function settings(){
 
       </section>
 
+      <section class="setting-section radio-settings">
+
+        <h1>Radio player</h1>
+
+        <p>
+          Choose whether the mini-player is shown and which region supplies stations.
+        </p>
+
+        <div class="activity-row">
+          <div>
+            <b style="font-size:13px">Show mini-player</b>
+            <div class="glass-description">
+              Keep community radio available at the bottom of the page.
+            </div>
+          </div>
+
+          <button
+            class="switch-control ${S.radioEnabled?"on":""}"
+            role="switch"
+            aria-checked="${S.radioEnabled}"
+            aria-label="Show radio mini-player"
+            onclick="setRadioEnabled(!S.radioEnabled)"
+          >
+            <span class="switch-knob"></span>
+          </button>
+        </div>
+
+        <label class="radio-region-label" for="radio-region">Station region</label>
+        <select
+          class="radio-region-select"
+          id="radio-region"
+          onchange="setRadioRegion(this.value)"
+          ${S.radioEnabled?"":"disabled"}
+        >
+          <option value="GLOBAL" ${S.radioRegionCode==="GLOBAL"?"selected":""}>Global top stations</option>
+          ${S.radioCountries.map(country=>`
+            <option
+              value="${esc(country.iso_3166_1)}"
+              ${S.radioRegionCode===country.iso_3166_1?"selected":""}
+            >
+              ${esc(country.name)}
+            </option>
+          `).join("")}
+        </select>
+
+        <div class="radio-region-hint" id="radio-region-hint">
+          ${S.radioCountriesLoaded?"Stations are selected from the region you choose.":"Loading available regions…"}
+        </div>
+
+      </section>
+
       <section class="setting-section">
 
         <h1>Activity privacy</h1>
@@ -6502,8 +6557,10 @@ function setRadioStation(station){
 
 function setRadioPlaying(playing){
   const button=document.getElementById("radio-play");
+  const player=document.getElementById("radio-player");
   if(!button)return;
 
+  player?.classList.toggle("playing",playing);
   button.innerHTML=`<span aria-hidden="true">${playing?"Ⅱ":"▶"}</span>`;
   button.setAttribute("aria-label",playing?"Pause station":"Play station");
 }
@@ -6557,69 +6614,86 @@ async function radioApi(path){
   throw lastError||new Error("All Radio-Browser mirrors failed");
 }
 
-function getRadioLocation(){
-  return new Promise((resolve,reject)=>{
-    if(!navigator.geolocation){
-      reject(new Error("Geolocation is unavailable"));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      resolve,
-      reject,
-      {enableHighAccuracy:false,timeout:9000,maximumAge:600000}
-    );
-  });
-}
-
 function playableStations(stations){
   return (stations||[]).filter(station=>station.url_resolved);
 }
 
-function radioDistance(latitude,longitude,station){
-  const stationLatitude=Number(station.geo_lat);
-  const stationLongitude=Number(station.geo_long);
-  if(!Number.isFinite(stationLatitude)||!Number.isFinite(stationLongitude))return Infinity;
+let radioRequestId=0;
+let radioCountriesLoaded=false;
+let radioFavorites=new Set();
 
-  const radians=value=>value*Math.PI/180;
-  const latitudeDelta=radians(stationLatitude-latitude);
-  const longitudeDelta=radians(stationLongitude-longitude);
-  const distance=Math.sin(latitudeDelta/2)**2+
-    Math.cos(radians(latitude))*Math.cos(radians(stationLatitude))*
-    Math.sin(longitudeDelta/2)**2;
-
-  return 6371*2*Math.atan2(Math.sqrt(distance),Math.sqrt(1-distance));
+try{
+  radioFavorites=new Set(JSON.parse(localStorage.getItem("niche-radio-favorites")||"[]"));
+}catch(error){
+  radioFavorites=new Set();
 }
 
-async function fetchNearbyRadioStations(latitude,longitude){
-  const lat=encodeURIComponent(latitude);
-  const lon=encodeURIComponent(longitude);
+function radioRegionName(){
+  if(S.radioRegionCode==="GLOBAL")return"Global";
+  return S.radioCountries.find(country=>country.iso_3166_1===S.radioRegionCode)?.name||S.radioRegionCode;
+}
 
-  try{
-    const nearby=playableStations(
-      await radioApi(`/json/stations/bylatlon/${lat}/${lon}?limit=30&hidebroken=true`)
-    );
-    if(nearby.length)return nearby;
-  }catch(error){
-    // The current public API does not expose bylatlon on every mirror.
+function updateRadioRegionLabel(){
+  const label=document.getElementById("radio-region-label");
+  if(label)label.textContent=`${radioRegionName()} radio`;
+}
+
+function updateRadioFavorite(station){
+  const button=document.getElementById("radio-favorite");
+  if(!button)return;
+
+  const favorite=!!station?.stationuuid&&radioFavorites.has(station.stationuuid);
+  button.textContent=favorite?"♥":"♡";
+  button.classList.toggle("active",favorite);
+  button.setAttribute("aria-pressed",String(favorite));
+  button.setAttribute("aria-label",favorite?"Remove station from favorites":"Add station to favorites");
+}
+
+function toggleRadioFavorite(){
+  const station=radioStations[radioStationIndex];
+  if(!station?.stationuuid)return;
+
+  if(radioFavorites.has(station.stationuuid))radioFavorites.delete(station.stationuuid);
+  else radioFavorites.add(station.stationuuid);
+
+  localStorage.setItem("niche-radio-favorites",JSON.stringify([...radioFavorites]));
+  updateRadioFavorite(station);
+}
+
+function renderRadioCountryOptions(){
+  const select=document.getElementById("radio-region");
+  if(!select)return;
+
+  select.innerHTML=`
+    <option value="GLOBAL">Global top stations</option>
+    ${S.radioCountries.map(country=>`
+      <option value="${esc(country.iso_3166_1)}">${esc(country.name)} (${country.stationcount})</option>
+    `).join("")}
+  `;
+  select.value=S.radioRegionCode;
+  if(select.value!==S.radioRegionCode){
+    S.radioRegionCode="GLOBAL";
+    localStorage.setItem("niche-radio-region","GLOBAL");
+    select.value="GLOBAL";
   }
 
-  const query=new URLSearchParams({
-    latitude:String(latitude),
-    longitude:String(longitude),
-    has_geo_info:"true",
-    limit:"500",
-    hidebroken:"true"
-  });
-  const candidates=playableStations(
-    await radioApi(`/json/stations/search?${query}`)
-  );
+  const hint=document.getElementById("radio-region-hint");
+  if(hint)hint.textContent="Stations are selected from the region you choose.";
+}
 
-  return candidates
-    .map(station=>({station,distance:radioDistance(latitude,longitude,station)}))
-    .filter(result=>Number.isFinite(result.distance))
-    .sort((a,b)=>a.distance-b.distance)
-    .map(result=>result.station);
+async function loadRadioCountries(){
+  try{
+    const countries=await radioApi("/json/countries?order=stationcount&reverse=true");
+    S.radioCountries=(countries||[])
+      .filter(country=>country.iso_3166_1&&Number(country.stationcount)>0)
+      .sort((a,b)=>Number(b.stationcount)-Number(a.stationcount));
+    S.radioCountriesLoaded=true;
+    radioCountriesLoaded=true;
+    renderRadioCountryOptions();
+  }catch(error){
+    const hint=document.getElementById("radio-region-hint");
+    if(hint)hint.textContent="Region list is unavailable. Global stations are still available.";
+  }
 }
 
 async function loadRadioStation(index,autoplay){
@@ -6630,14 +6704,17 @@ async function loadRadioStation(index,autoplay){
   const audio=document.getElementById("radio-audio");
   const playButton=document.getElementById("radio-play");
   const nextButton=document.getElementById("radio-next");
+  const previousButton=document.getElementById("radio-previous");
   if(!audio)return;
 
   setRadioStation(station);
+  updateRadioFavorite(station);
   audio.pause();
   audio.src=station.url_resolved;
   audio.load();
   if(playButton)playButton.disabled=false;
   if(nextButton)nextButton.disabled=radioStations.length<2;
+  if(previousButton)previousButton.disabled=radioStations.length<2;
   setRadioStatus("Connecting to station…");
 
   if(autoplay){
@@ -6651,17 +6728,122 @@ async function loadRadioStation(index,autoplay){
   }
 }
 
+async function loadRadioStationsForRegion(){
+  if(!S.radioEnabled)return;
+
+  const requestId=++radioRequestId;
+  let stations=[];
+
+  try{
+    if(S.radioRegionCode==="GLOBAL"){
+      setRadioStatus("Loading global stations…");
+      stations=playableStations(
+        await radioApi("/json/stations/topclick?limit=50&hidebroken=true")
+      );
+    }else{
+      setRadioStatus(`Loading ${radioRegionName()} stations…`);
+      const query=new URLSearchParams({
+        countrycode:S.radioRegionCode,
+        limit:"100",
+        hidebroken:"true",
+        order:"clickcount",
+        reverse:"true"
+      });
+      stations=playableStations(await radioApi(`/json/stations/search?${query}`));
+    }
+  }catch(error){
+    stations=[];
+  }
+
+  if(requestId!==radioRequestId||!S.radioEnabled)return;
+
+  if(!stations.length&&S.radioRegionCode!=="GLOBAL"){
+    setRadioStatus("No stations found there. Loading global favorites…");
+    try{
+      stations=playableStations(
+        await radioApi("/json/stations/topclick?limit=50&hidebroken=true")
+      );
+    }catch(error){
+      stations=[];
+    }
+  }
+
+  if(requestId!==radioRequestId||!S.radioEnabled)return;
+  radioStations=stations;
+
+  if(!radioStations.length){
+    setRadioStatus("Radio stations are currently unavailable");
+    const name=document.getElementById("radio-station");
+    const tags=document.getElementById("radio-tags");
+    if(name)name.textContent="Could not load stations";
+    if(tags)tags.textContent="Please try again later";
+    return;
+  }
+
+  await loadRadioStation(0,true);
+}
+
+function setRadioRegion(regionCode){
+  const normalized=String(regionCode||"GLOBAL").toUpperCase();
+  const valid=normalized==="GLOBAL"||S.radioCountries.some(country=>country.iso_3166_1===normalized);
+  S.radioRegionCode=valid?normalized:"GLOBAL";
+  localStorage.setItem("niche-radio-region",S.radioRegionCode);
+  updateRadioRegionLabel();
+
+  if(S.radioEnabled)loadRadioStationsForRegion();
+}
+
+function setRadioEnabled(enabled){
+  S.radioEnabled=!!enabled;
+  localStorage.setItem("niche-radio-enabled",S.radioEnabled?"on":"off");
+
+  const player=document.getElementById("radio-player");
+  const audio=document.getElementById("radio-audio");
+  const button=document.querySelector(".radio-settings [role='switch']");
+  const select=document.getElementById("radio-region");
+
+  document.documentElement.classList.toggle("radio-disabled",!S.radioEnabled);
+  if(player)player.hidden=!S.radioEnabled;
+  if(button){
+    button.classList.toggle("on",S.radioEnabled);
+    button.setAttribute("aria-checked",String(S.radioEnabled));
+  }
+  if(select)select.disabled=!S.radioEnabled;
+
+  if(!S.radioEnabled){
+    radioRequestId++;
+    audio?.pause();
+    return;
+  }
+
+  if(audio?.src&&radioStations.length){
+    audio.play().then(
+      ()=>setRadioStatus("Live · Playing"),
+      ()=>setRadioStatus("Click play to start listening")
+    );
+  }else{
+    loadRadioStationsForRegion();
+  }
+}
+
 async function startRadioPlayer(){
   const playButton=document.getElementById("radio-play");
+  const previousButton=document.getElementById("radio-previous");
   const nextButton=document.getElementById("radio-next");
   const audio=document.getElementById("radio-audio");
   const volume=document.getElementById("radio-volume");
   if(!playButton||!audio)return;
 
+  document.documentElement.classList.toggle("radio-disabled",!S.radioEnabled);
+  document.getElementById("radio-player").hidden=!S.radioEnabled;
+  updateRadioRegionLabel();
   audio.volume=Number(volume?.value||0.8);
   volume?.addEventListener("input",()=>audio.volume=Number(volume.value));
   playButton.addEventListener("click",async()=>{
-    if(!audio.src)return;
+    if(!audio.src){
+      await loadRadioStationsForRegion();
+      return;
+    }
     if(!audio.paused){
       audio.pause();
       return;
@@ -6673,7 +6855,9 @@ async function startRadioPlayer(){
       setRadioStatus("Click play to start listening");
     }
   });
+  previousButton?.addEventListener("click",()=>loadRadioStation(radioStationIndex-1,true));
   nextButton?.addEventListener("click",()=>loadRadioStation(radioStationIndex+1,true));
+  document.getElementById("radio-favorite")?.addEventListener("click",toggleRadioFavorite);
   audio.addEventListener("playing",()=>{
     setRadioPlaying(true);
     setRadioStatus("Live · Playing");
@@ -6684,38 +6868,8 @@ async function startRadioPlayer(){
     setRadioStatus("Stream unavailable. Try the next station.");
   });
 
-  let stations=[];
-  try{
-    setRadioStatus("Finding nearby stations…");
-    const location=await getRadioLocation();
-    stations=await fetchNearbyRadioStations(
-      location.coords.latitude,
-      location.coords.longitude
-    );
-  }catch(error){
-    stations=[];
-  }
-
-  if(!stations.length){
-    try{
-      setRadioStatus("Loading top stations…");
-      stations=playableStations(await radioApi("/json/stations/topclick?limit=30&hidebroken=true"));
-    }catch(error){
-      setRadioStatus("Radio stations are currently unavailable");
-      document.getElementById("radio-station").textContent="Could not load stations";
-      document.getElementById("radio-tags").textContent="Please try again later";
-      return;
-    }
-  }
-
-  radioStations=stations;
-  if(!radioStations.length){
-    setRadioStatus("No playable stations were found");
-    document.getElementById("radio-station").textContent="No stations available";
-    return;
-  }
-
-  await loadRadioStation(0,true);
+  loadRadioCountries();
+  if(S.radioEnabled)loadRadioStationsForRegion();
 }
 
 startRadioPlayer();

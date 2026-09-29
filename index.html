@@ -13,22 +13,37 @@
   <div id="app"></div>
   <section class="radio-player" id="radio-player" aria-label="Radio mini-player">
     <audio id="radio-audio" preload="none"></audio>
-    <button class="radio-play" id="radio-play" type="button" aria-label="Play station" disabled>
-      <span aria-hidden="true">▶</span>
-    </button>
-    <div class="radio-info">
-      <div class="radio-eyebrow">NICHE RADIO</div>
-      <strong id="radio-station">Finding a station…</strong>
-      <span id="radio-tags">Discovering local radio</span>
-      <span class="radio-status" id="radio-status" role="status" aria-live="polite">Locating nearby stations…</span>
+    <div class="radio-art" aria-hidden="true">
+      <span>NICHE<br>RADIO</span>
+      <i></i><i></i><i></i>
     </div>
-    <button class="radio-next" id="radio-next" type="button" aria-label="Play next station" disabled>
-      <span aria-hidden="true">⏭</span>
-    </button>
-    <label class="radio-volume" for="radio-volume">
-      <span aria-hidden="true">VOL</span>
-      <input id="radio-volume" type="range" min="0" max="1" step="0.05" value="0.8" aria-label="Volume">
-    </label>
+    <div class="radio-content">
+      <div class="radio-heading">
+        <div class="radio-info">
+          <span class="radio-region-label" id="radio-region-label">Global radio</span>
+          <strong id="radio-station">Choose a region</strong>
+          <span id="radio-tags">Community radio, everywhere</span>
+        </div>
+        <button class="radio-favorite" id="radio-favorite" type="button" aria-label="Add station to favorites" aria-pressed="false">♡</button>
+      </div>
+      <div class="radio-control-row">
+        <div class="radio-live-track" aria-label="Live radio stream">
+          <span class="radio-live-dot"></span>
+          <span class="radio-live-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="radio-live-label">LIVE</span>
+        </div>
+        <div class="radio-controls">
+          <button class="radio-skip" id="radio-previous" type="button" aria-label="Previous station" disabled>◀</button>
+          <button class="radio-play" id="radio-play" type="button" aria-label="Play station" disabled>▶</button>
+          <button class="radio-skip" id="radio-next" type="button" aria-label="Next station" disabled>▶</button>
+        </div>
+        <label class="radio-volume" for="radio-volume">
+          <span aria-hidden="true">VOL</span>
+          <input id="radio-volume" type="range" min="0" max="1" step="0.05" value="0.8" aria-label="Volume">
+        </label>
+      </div>
+      <span class="radio-status" id="radio-status" role="status" aria-live="polite">Loading community radio…</span>
+    </div>
   </section>
   <div id="toast"></div>
   <div id="modal-root"></div>
