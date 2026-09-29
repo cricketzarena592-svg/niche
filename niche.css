@@ -347,6 +347,8 @@ a{
   border-radius:18px;
   box-shadow:0 20px 60px rgba(0,0,0,.28);
   overflow:hidden;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
   z-index:80
 }
 
@@ -507,6 +509,104 @@ a{
 
 .setting-section+.setting-section{
   border-top:1px solid var(--border)
+}
+
+.social-empty{
+  padding:28px 20px;
+  border-bottom:1px solid var(--border);
+  text-align:center
+}
+
+.social-empty h2{
+  margin:0;
+  font-size:18px
+}
+
+.social-empty p{
+  max-width:360px;
+  margin:9px auto 0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.55
+}
+
+.section-heading{
+  padding:16px 18px 0
+}
+
+.section-heading h2{
+  margin:0;
+  font-size:14px
+}
+
+.note-editor{
+  display:flex;
+  gap:8px;
+  margin-top:14px
+}
+
+.note-editor input{
+  min-width:0;
+  flex:1;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 12px;
+  background:var(--surface2);
+  color:var(--text)
+}
+
+.note-editor span{
+  align-self:center;
+  color:var(--muted);
+  font-size:10px
+}
+
+.online-list{
+  display:grid;
+  gap:8px;
+  padding:14px 18px
+}
+
+.online-person{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface)
+}
+
+.online-person-copy{
+  min-width:0;
+  flex:1
+}
+
+.online-person-copy strong,
+.online-person-copy small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap
+}
+
+.online-person-copy small{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:11px
+}
+
+.online-indicator{
+  display:inline-block;
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--green);
+  vertical-align:middle
+}
+
+.online-indicator[hidden]{
+  display:none
 }
 
 
@@ -1511,7 +1611,7 @@ button:disabled{
   bottom:0;
   height:64px;
   z-index:90;
-  grid-template-columns:repeat(5,1fr);
+  grid-template-columns:repeat(7,minmax(0,1fr));
   padding:7px 8px calc(7px + env(safe-area-inset-bottom));
   background:color-mix(in srgb,var(--surface) 92%,transparent);
   backdrop-filter:blur(18px);
@@ -1524,13 +1624,18 @@ button:disabled{
   background:transparent;
   color:var(--muted);
   border-radius:13px;
+  padding:2px 1px;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   gap:2px;
-  font-size:10px;
+  font-size:8px;
   font-weight:750
+}
+
+.mobile-nav span{
+  white-space:nowrap
 }
 
 .mobile-nav button:hover,
@@ -1541,7 +1646,7 @@ button:disabled{
 
 .mobile-nav i{
   font-style:normal;
-  font-size:20px;
+  font-size:18px;
   line-height:1.05
 }
 

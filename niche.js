@@ -59,9 +59,14 @@ const S={
   notificationsLoaded:false,
   notificationsLoading:false,
   notificationsError:"",
-  followingNiches:[],
-  followingPeople:[],
-  followingUserIds:new Set(),
+    followingNiches:[],
+    followingPeople:[],
+    followingUserIds:new Set(),
+    showOnlineStatus:localStorage.getItem("niche-show-online")!=="off",
+    presenceChannel:null,
+    onlineUsers:[],
+    note:"",
+    presenceUpdateTimer:null,
   followCounts:{},
   activityPrivate:false,
   modal:null,
@@ -155,6 +160,133 @@ function applyTheme(){
   document.documentElement.dataset.glass=S.glassTheme?"on":"off";
   document.documentElement.dataset.glassAppearance=S.glassAppearance;
   document.documentElement.dataset.glassBackground=S.glassBackground;
+}
+
+function noteStorageKey(){
+  return"niche-note-"+(S.user?.id||"guest");
+}
+
+function updatePresenceIndicators(){
+  document.querySelectorAll("[data-online-user]").forEach(indicator=>{
+    indicator.hidden=!isOnline(indicator.dataset.onlineUser);
+  });
+}
+
+function isOnline(userId){
+  return S.showOnlineStatus&&S.onlineUsers.some(
+    user=>user.user_id===userId
+  );
+}
+
+function presencePayload(){
+  return{
+    user_id:S.user?.id,
+    username:S.profile?.username||"",
+    display_name:S.profile?.display_name||S.profile?.username||"User",
+    avatar_emoji:S.profile?.avatar_emoji||"🙂",
+    note:S.note||""
+  };
+}
+
+async function setupPresence(){
+  if(!S.user){
+    if(S.presenceChannel){
+      await sb.removeChannel(S.presenceChannel);
+      S.presenceChannel=null;
+    }
+    S.onlineUsers=[];
+    updatePresenceIndicators();
+    return;
+  }
+
+  if(S.presenceChannel)return;
+
+  let channel=sb.channel("niche-presence-v1",{
+    config:{presence:{key:S.user.id}}
+  });
+
+  S.presenceChannel=channel;
+
+  channel.on("presence",{event:"sync"},()=>{
+    let state=channel.presenceState();
+    let people=new Map();
+    Object.values(state).flat().forEach(person=>{
+      if(person.user_id)people.set(person.user_id,person);
+    });
+    S.onlineUsers=[...people.values()];
+    updatePresenceIndicators();
+    renderOnlinePeople();
+  }).subscribe(async status=>{
+    if(status==="SUBSCRIBED"&&S.showOnlineStatus){
+      await channel.track(presencePayload());
+    }
+  });
+}
+
+async function setOnlineStatus(enabled){
+  S.showOnlineStatus=!!enabled;
+  localStorage.setItem(
+    "niche-show-online",
+    S.showOnlineStatus?"on":"off"
+  );
+
+  if(S.presenceChannel){
+    if(S.showOnlineStatus){
+      await S.presenceChannel.track(presencePayload());
+    }else{
+      await S.presenceChannel.untrack();
+    }
+  }
+
+  updatePresenceIndicators();
+  render();
+}
+
+function saveNote(value){
+  S.note=String(value||"").slice(0,60);
+  localStorage.setItem(noteStorageKey(),S.note);
+  let counter=document.querySelector(".note-count");
+  if(counter)counter.textContent=S.note.length+"/60";
+  clearTimeout(S.presenceUpdateTimer);
+  S.presenceUpdateTimer=setTimeout(()=>{
+    if(S.presenceChannel&&S.showOnlineStatus){
+      S.presenceChannel.track(presencePayload());
+    }
+  },350);
+}
+
+function onlinePeopleHTML(){
+  let people=S.onlineUsers.filter(
+    person=>person.user_id!==S.user?.id
+  );
+
+  if(!S.showOnlineStatus){
+    return`<div class="social-empty"><p>Online status is turned off in Settings.</p></div>`;
+  }
+
+  if(!people.length){
+    return`<div class="social-empty"><p>No one else is online.</p></div>`;
+  }
+
+  return`
+    <div class="online-list">
+      ${people.map(person=>`
+        <a class="online-person" href="${hrefP(person.username)}" onclick="event.preventDefault();nav('/profile/${encodeURIComponent(person.username||"")}')">
+          <div class="avatar">${esc(person.avatar_emoji||"🙂")}</div>
+          <div class="online-person-copy">
+            <strong>${esc(person.display_name||person.username||"User")}</strong>
+            <small>${esc(person.note||"Online")}</small>
+          </div>
+          <span class="online-indicator" aria-label="Online"></span>
+        </a>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderOnlinePeople(){
+  let root=document.getElementById("online-people");
+  if(root)root.innerHTML=onlinePeopleHTML();
 }
 
 function setTheme(t){
@@ -271,6 +403,14 @@ function route(){
     return{type:"following"};
   }
 
+  if(/^\/chat\/?$/i.test(r)){
+    return{type:"chat"};
+  }
+
+  if(/^\/groups\/?$/i.test(r)){
+    return{type:"groups"};
+  }
+
   let q=r.match(/^\/post\/([^/]+)\/?$/i);
 
   if(q){
@@ -320,6 +460,7 @@ async function loadProfile(){
 
   if(S.profile){
     S.activityPrivate=!!S.profile.activity_private;
+      S.note=localStorage.getItem(noteStorageKey())||"";
   }
 }
 
@@ -2170,6 +2311,12 @@ function profilePage(){
 
           <div class="profile-handle">
             @${esc(p.username)}
+            <span
+              class="online-indicator"
+              data-online-user="${esc(p.id)}"
+              aria-label="Online"
+              ${isOnline(p.id)?"":"hidden"}
+            ></span>
           </div>
 
           ${
@@ -3359,6 +3506,31 @@ function settings(){
 
       <section class="setting-section">
 
+        <h1>Online status</h1>
+
+        <p>
+          Turn this off to stop sharing your presence and hide online indicators.
+        </p>
+
+        <div class="activity-row">
+          <div>
+            <b style="font-size:13px">Show online status</b>
+          </div>
+          <button
+            class="switch-control ${S.showOnlineStatus?"on":""}"
+            role="switch"
+            aria-checked="${S.showOnlineStatus}"
+            aria-label="Show online status"
+            onclick="setOnlineStatus(!S.showOnlineStatus)"
+          >
+            <span class="switch-knob"></span>
+          </button>
+        </div>
+
+      </section>
+
+      <section class="setting-section">
+
         <h1>Activity privacy</h1>
 
         <p>
@@ -3911,6 +4083,55 @@ function notificationMenu(){
    FOLLOWING PAGE
    ========================================================= */
 
+function chatPage(){
+  return`
+    <section class="header">
+      <h1 class="title">Chat</h1>
+      <div class="sub">Your conversations</div>
+    </section>
+
+    <section class="social-empty">
+      <h2>Your note</h2>
+      <p>Share a short note with people who are online.</p>
+      <div class="note-editor">
+        <input
+          maxlength="60"
+          aria-label="Your note"
+          placeholder="Write a note..."
+          value="${esc(S.note)}"
+          oninput="saveNote(this.value)"
+        >
+        <span class="note-count">${S.note.length}/60</span>
+      </div>
+    </section>
+
+    <section class="social-empty">
+      <h2>Conversations</h2>
+      <p>No conversations yet.</p>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <h2>Online now</h2>
+      </div>
+      <div id="online-people">${onlinePeopleHTML()}</div>
+    </section>
+  `;
+}
+
+function groupsPage(){
+  return`
+    <section class="header">
+      <h1 class="title">Groups</h1>
+      <div class="sub">Group conversations</div>
+    </section>
+    <section class="social-empty">
+      <h2>No groups yet</h2>
+      <p>Groups will appear here when group conversations are available.</p>
+    </section>
+  `;
+}
+
 function followingPage(){
   return `
     <section class="following-page">
@@ -3979,6 +4200,16 @@ function layout(content){
           <button onclick="nav('/following')">
             <i>♧</i>
             Following
+          </button>
+
+          <button onclick="nav('/chat')">
+            <i>✉</i>
+            Chat
+          </button>
+
+          <button onclick="nav('/groups')">
+            <i>◉</i>
+            Groups
           </button>
 
           <button onclick="nav('/settings')">
@@ -4127,6 +4358,16 @@ function layout(content){
         <button onclick="nav('/explore')">
           <i>⌕</i>
           <span>Explore</span>
+        </button>
+
+        <button onclick="nav('/chat')">
+          <i>✉</i>
+          <span>Chat</span>
+        </button>
+
+        <button onclick="nav('/groups')">
+          <i>◉</i>
+          <span>Groups</span>
         </button>
 
         <button onclick="nav('/following')">
@@ -4339,6 +4580,16 @@ async function render(){
     document.getElementById("app").innerHTML=
       layout(followingPage());
 
+  }else if(r.type==="chat"){
+
+    document.getElementById("app").innerHTML=
+      layout(chatPage());
+
+  }else if(r.type==="groups"){
+
+    document.getElementById("app").innerHTML=
+      layout(groupsPage());
+
   }else if(r.type==="profile-edit"){
 
     S.search="";
@@ -4492,6 +4743,8 @@ async function init(){
     await loadProfile();
   }
 
+  await setupPresence();
+
   await render();
 
   notificationPanel();
@@ -4531,6 +4784,8 @@ async function init(){
         S.profile=null;
         S.setupDraft=null;
       }
+
+      await setupPresence();
 
       await render();
 
