@@ -2763,3 +2763,49 @@ html[data-interface="glass"][data-theme="dark"] .comment{
   background:rgba(30,45,55,.48);
   border-color:rgba(150,210,255,.14)
 }
+.interface-styles{
+  display:grid;
+  gap:8px;
+  margin-top:14px;
+}
+
+.interface-style{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:var(--surface);
+  color:var(--text);
+  text-align:left;
+  cursor:pointer;
+}
+
+.interface-style:hover{
+  background:var(--surface2);
+}
+
+.interface-style.active{
+  border-color:var(--text);
+  background:var(--surface2);
+}
+
+.interface-style b{
+  display:block;
+  font-size:13px;
+}
+
+.interface-style small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:11px;
+}
+
+.interface-style > span{
+  font-size:16px;
+  font-weight:800;
+}
