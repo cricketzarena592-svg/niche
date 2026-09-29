@@ -49,6 +49,7 @@ const S={
   theme:localStorage.getItem("niche-theme")||"system",
 interfaceStyle:localStorage.getItem("niche-interface-style")||"basic",
   notifications:[],
+  interfaceStyle:localStorage.getItem("niche-interface-style")||"basic",
   notificationsOpen:false,
   notificationsLoaded:false,
   notificationsLoading:false,
