@@ -1712,6 +1712,22 @@ html.device-mobile .niche-widget-tab{
   margin-top:18px
 }
 
+.glass-mode-setting{
+  margin-top:15px
+}
+
+.glass-mode-label{
+  display:block;
+  margin-bottom:8px;
+  font-size:12px
+}
+
+.glass-modes{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px
+}
+
 .glass-description{
   margin-top:3px;
   color:var(--muted);
@@ -1777,7 +1793,34 @@ html[data-glass="on"]{
   --border:rgba(255,255,255,.78);
   --blue:#285f9f;
   --top:rgba(240,249,255,.68);
+  --glass-panel:rgba(240,249,255,.66);
+  --glass-panel-strong:rgba(234,246,255,.82);
+  --glass-sidebar:rgba(239,248,255,.86);
+  --glass-border:rgba(255,255,255,.82);
+  --glass-shadow:0 10px 28px rgba(28,66,88,.16);
+  --glass-inset:inset 0 1px rgba(255,255,255,.92);
+  --glass-hover:rgba(255,255,255,.68);
   background:var(--bg)
+}
+
+html[data-glass="on"][data-glass-appearance="dark"]{
+  color-scheme:dark;
+  --bg:#111923;
+  --surface:rgba(20,34,49,.68);
+  --surface2:rgba(25,42,59,.76);
+  --surface3:rgba(32,51,70,.86);
+  --text:#f4f8fc;
+  --muted:#c2d2e0;
+  --border:rgba(226,241,255,.26);
+  --blue:#a8d0ff;
+  --top:rgba(17,30,44,.76);
+  --glass-panel:rgba(17,31,46,.72);
+  --glass-panel-strong:rgba(15,28,42,.84);
+  --glass-sidebar:rgba(15,29,43,.88);
+  --glass-border:rgba(226,241,255,.3);
+  --glass-shadow:0 12px 32px rgba(0,0,0,.28);
+  --glass-inset:inset 0 1px rgba(255,255,255,.2);
+  --glass-hover:rgba(220,239,255,.13)
 }
 
 html[data-glass="on"] body{
@@ -1827,41 +1870,41 @@ html[data-glass="on"] .following-item,
 html[data-glass="on"] .customize-preview,
 html[data-glass="on"] .formatbtn,
 html[data-glass="on"] .glass-background{
-  background-color:rgba(240,249,255,.66);
-  border-color:rgba(255,255,255,.82);
+  background-color:var(--glass-panel);
+  border-color:var(--glass-border);
   backdrop-filter:blur(24px) saturate(155%);
   -webkit-backdrop-filter:blur(24px) saturate(155%);
   box-shadow:
-    inset 0 1px rgba(255,255,255,.92),
-    0 10px 28px rgba(28,66,88,.16)
+    var(--glass-inset),
+    var(--glass-shadow)
 }
 
 html[data-glass="on"] .search,
 html[data-glass="on"] .following-item,
 html[data-glass="on"] .customize-preview,
 html[data-glass="on"] .formatbtn{
-  background-color:rgba(234,246,255,.76)
+  background-color:var(--glass-panel-strong)
 }
 
 html[data-glass="on"] .post{
   margin:8px 12px;
-  border:1px solid rgba(255,255,255,.62);
+  border:1px solid var(--glass-border);
   border-radius:14px
 }
 
 html[data-glass="on"] .side,
 html[data-glass="on"] .main{
-  border-color:rgba(255,255,255,.24)
+  border-color:var(--glass-border)
 }
 
 html[data-glass="on"] .side{
   height:calc(100vh - 24px);
   top:12px;
   margin:12px 10px 12px 8px;
-  background:rgba(239,248,255,.78);
-  border:1px solid rgba(255,255,255,.84);
+  background:var(--glass-sidebar);
+  border:1px solid var(--glass-border);
   border-radius:22px;
-  box-shadow:8px 0 32px rgba(22,55,78,.12);
+  box-shadow:8px 0 32px rgba(22,55,78,.12),var(--glass-shadow);
   backdrop-filter:blur(30px) saturate(145%);
   -webkit-backdrop-filter:blur(30px) saturate(145%)
 }
@@ -1870,52 +1913,52 @@ html[data-glass="on"] .side .brand,
 html[data-glass="on"] .side .nav button,
 html[data-glass="on"] .side .mini,
 html[data-glass="on"] .side .mini-actions{
-  color:#102b40
+  color:var(--text)
 }
 
 html[data-glass="on"] .side .brand span,
 html[data-glass="on"] .side .mini small,
 html[data-glass="on"] .side .linkbtn{
-  color:#36566d
+  color:var(--muted)
 }
 
 html[data-glass="on"] .side .nav button:hover{
-  background:rgba(255,255,255,.68)
+  background:var(--glass-hover)
 }
 
 html[data-glass="on"] .mobile-nav{
-  background:rgba(239,248,255,.88);
-  border-color:rgba(255,255,255,.9);
+  background:var(--glass-sidebar);
+  border-color:var(--glass-border);
   box-shadow:0 -8px 30px rgba(22,55,78,.12);
   backdrop-filter:blur(26px) saturate(150%);
   -webkit-backdrop-filter:blur(26px) saturate(150%)
 }
 
 html[data-glass="on"] .mobile-nav button{
-  color:#102b40
+  color:var(--text)
 }
 
 html[data-glass="on"] .main,
 html[data-glass="on"] .right{
-  color:#102b40
+  color:var(--text)
 }
 
 html[data-glass="on"] .card p,
 html[data-glass="on"] .post small,
 html[data-glass="on"] .post time,
 html[data-glass="on"] .setting-section p{
-  color:#36566d
+  color:var(--muted)
 }
 
 html[data-glass="on"] input,
 html[data-glass="on"] textarea,
 html[data-glass="on"] select{
-  color:#102b40
+  color:var(--text)
 }
 
 html[data-glass="on"] input::placeholder,
 html[data-glass="on"] textarea::placeholder{
-  color:#506b7e;
+  color:var(--muted);
   opacity:1
 }
 

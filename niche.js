@@ -48,6 +48,7 @@ const S={
   results:[],
   theme:localStorage.getItem("niche-theme")||"system",
   glassTheme:localStorage.getItem("niche-glass-theme")==="on",
+  glassAppearance:localStorage.getItem("niche-glass-appearance")==="dark"?"dark":"light",
   glassBackground:localStorage.getItem("niche-glass-background")||"sky",
   notifications:[],
   notificationsOpen:false,
@@ -148,6 +149,7 @@ function toast(m){
 function applyTheme(){
   document.documentElement.dataset.theme=S.theme;
   document.documentElement.dataset.glass=S.glassTheme?"on":"off";
+  document.documentElement.dataset.glassAppearance=S.glassAppearance;
   document.documentElement.dataset.glassBackground=S.glassBackground;
 }
 
@@ -178,6 +180,18 @@ function setGlassTheme(enabled){
   localStorage.setItem(
     "niche-glass-theme",
     S.glassTheme?"on":"off"
+  );
+
+  applyTheme();
+  render();
+}
+
+function setGlassAppearance(appearance){
+  S.glassAppearance=appearance==="dark"?"dark":"light";
+
+  localStorage.setItem(
+    "niche-glass-appearance",
+    S.glassAppearance
   );
 
   applyTheme();
@@ -3232,6 +3246,24 @@ function settings(){
           </div>
 
           ${S.glassTheme?`
+            <div class="glass-mode-setting">
+              <b class="glass-mode-label">Glass color</b>
+              <div class="glass-modes" role="group" aria-label="Glass color mode">
+                ${[
+                  ["light","Light glass"],
+                  ["dark","Dark glass"]
+                ].map(([mode,label])=>`
+                  <button
+                    class="themeopt ${S.glassAppearance===mode?"active":""}"
+                    aria-pressed="${S.glassAppearance===mode}"
+                    onclick="setGlassAppearance('${mode}')"
+                  >
+                    ${label}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+
             <div class="glass-backgrounds" aria-label="Glass theme background">
               ${[
                 ["sky","Sky"],
