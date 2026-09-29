@@ -1769,14 +1769,14 @@ html.device-mobile .niche-widget-tab{
 html[data-glass="on"]{
   color-scheme:light;
   --bg:#e6f2f6;
-  --surface:rgba(235,247,255,.38);
-  --surface2:rgba(225,242,252,.42);
-  --surface3:rgba(216,237,249,.58);
-  --text:#183448;
-  --muted:#506d80;
-  --border:rgba(255,255,255,.64);
-  --blue:#3974b8;
-  --top:rgba(231,245,255,.38);
+  --surface:rgba(244,250,255,.62);
+  --surface2:rgba(236,247,255,.68);
+  --surface3:rgba(224,240,251,.78);
+  --text:#102b40;
+  --muted:#3d586c;
+  --border:rgba(255,255,255,.78);
+  --blue:#285f9f;
+  --top:rgba(240,249,255,.68);
   background:var(--bg)
 }
 
@@ -1827,20 +1827,20 @@ html[data-glass="on"] .following-item,
 html[data-glass="on"] .customize-preview,
 html[data-glass="on"] .formatbtn,
 html[data-glass="on"] .glass-background{
-  background-color:rgba(232,246,255,.43);
-  border-color:rgba(255,255,255,.66);
-  backdrop-filter:blur(22px) saturate(165%);
-  -webkit-backdrop-filter:blur(22px) saturate(165%);
+  background-color:rgba(240,249,255,.66);
+  border-color:rgba(255,255,255,.82);
+  backdrop-filter:blur(24px) saturate(155%);
+  -webkit-backdrop-filter:blur(24px) saturate(155%);
   box-shadow:
-    inset 0 1px rgba(255,255,255,.78),
-    0 10px 28px rgba(28,66,88,.12)
+    inset 0 1px rgba(255,255,255,.92),
+    0 10px 28px rgba(28,66,88,.16)
 }
 
 html[data-glass="on"] .search,
 html[data-glass="on"] .following-item,
 html[data-glass="on"] .customize-preview,
 html[data-glass="on"] .formatbtn{
-  background-color:rgba(225,242,252,.49)
+  background-color:rgba(234,246,255,.76)
 }
 
 html[data-glass="on"] .post{
@@ -1852,6 +1852,67 @@ html[data-glass="on"] .post{
 html[data-glass="on"] .side,
 html[data-glass="on"] .main{
   border-color:rgba(255,255,255,.24)
+}
+
+html[data-glass="on"] .side{
+  background:rgba(239,248,255,.78);
+  border-right:1px solid rgba(255,255,255,.84);
+  box-shadow:8px 0 32px rgba(22,55,78,.12);
+  backdrop-filter:blur(30px) saturate(145%);
+  -webkit-backdrop-filter:blur(30px) saturate(145%)
+}
+
+html[data-glass="on"] .side .brand,
+html[data-glass="on"] .side .nav button,
+html[data-glass="on"] .side .mini,
+html[data-glass="on"] .side .mini-actions{
+  color:#102b40
+}
+
+html[data-glass="on"] .side .brand span,
+html[data-glass="on"] .side .mini small,
+html[data-glass="on"] .side .linkbtn{
+  color:#36566d
+}
+
+html[data-glass="on"] .side .nav button:hover{
+  background:rgba(255,255,255,.68)
+}
+
+html[data-glass="on"] .mobile-nav{
+  background:rgba(239,248,255,.88);
+  border-color:rgba(255,255,255,.9);
+  box-shadow:0 -8px 30px rgba(22,55,78,.12);
+  backdrop-filter:blur(26px) saturate(150%);
+  -webkit-backdrop-filter:blur(26px) saturate(150%)
+}
+
+html[data-glass="on"] .mobile-nav button{
+  color:#102b40
+}
+
+html[data-glass="on"] .main,
+html[data-glass="on"] .right{
+  color:#102b40
+}
+
+html[data-glass="on"] .card p,
+html[data-glass="on"] .post small,
+html[data-glass="on"] .post time,
+html[data-glass="on"] .setting-section p{
+  color:#36566d
+}
+
+html[data-glass="on"] input,
+html[data-glass="on"] textarea,
+html[data-glass="on"] select{
+  color:#102b40
+}
+
+html[data-glass="on"] input::placeholder,
+html[data-glass="on"] textarea::placeholder{
+  color:#506b7e;
+  opacity:1
 }
 
 html[data-glass="on"] .primary{
