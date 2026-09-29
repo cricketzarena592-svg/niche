@@ -59,14 +59,16 @@ const S={
   notificationsLoaded:false,
   notificationsLoading:false,
   notificationsError:"",
-    followingNiches:[],
-    followingPeople:[],
-    followingUserIds:new Set(),
-    showOnlineStatus:localStorage.getItem("niche-show-online")!=="off",
-    presenceChannel:null,
-    onlineUsers:[],
-    note:"",
-    presenceUpdateTimer:null,
+  followingNiches:[],
+  followingPeople:[],
+  followingUserIds:new Set(),
+  showOnlineStatus:localStorage.getItem("niche-show-online")!=="off",
+  presenceChannel:null,
+  onlineUsers:[],
+  note:"",
+  presenceUpdateTimer:null,
+  myStuffTab:"explore",
+  chatTab:"messages",
   followCounts:{},
   activityPrivate:false,
   modal:null,
@@ -393,6 +395,10 @@ function route(){
 
   if(/^\/explore\/?$/i.test(r)){
     return{type:"explore"};
+  }
+
+  if(/^\/my-stuff\/?$/i.test(r)){
+    return{type:"my-stuff"};
   }
 
   if(/^\/settings\/?$/i.test(r)){
@@ -4083,53 +4089,102 @@ function notificationMenu(){
    FOLLOWING PAGE
    ========================================================= */
 
-function chatPage(){
+function setMyStuffTab(tab){
+  S.myStuffTab=tab==="following"?"following":"explore";
+  render();
+}
+
+function myStuffPage(){
+  return`
+    <section class="header">
+      <h1 class="title">My Stuff</h1>
+    </section>
+    <div class="social-tabs" role="tablist" aria-label="My Stuff">
+      <button
+        class="${S.myStuffTab==="explore"?"active":""}"
+        role="tab"
+        aria-selected="${S.myStuffTab==="explore"}"
+        onclick="setMyStuffTab('explore')"
+      >Explore</button>
+      <button
+        class="${S.myStuffTab==="following"?"active":""}"
+        role="tab"
+        aria-selected="${S.myStuffTab==="following"}"
+        onclick="setMyStuffTab('following')"
+      >Following</button>
+    </div>
+    ${S.myStuffTab==="explore"?explore():`<div class="following-page-body">${followingCard()}</div>`}
+  `;
+}
+
+function setChatTab(tab){
+  S.chatTab=tab==="groups"?"groups":"messages";
+  if(route().type==="groups"){
+    nav("/chat");
+  }else{
+    render();
+  }
+}
+
+function chatPage(tab=S.chatTab){
   return`
     <section class="header">
       <h1 class="title">Chat</h1>
-      <div class="sub">Your conversations</div>
     </section>
 
-    <section class="social-empty">
-      <h2>Your note</h2>
-      <p>Share a short note with people who are online.</p>
-      <div class="note-editor">
-        <input
-          maxlength="60"
-          aria-label="Your note"
-          placeholder="Write a note..."
-          value="${esc(S.note)}"
-          oninput="saveNote(this.value)"
-        >
-        <span class="note-count">${S.note.length}/60</span>
-      </div>
-    </section>
+    <div class="social-tabs" role="tablist" aria-label="Chat">
+      <button
+        class="${tab==="messages"?"active":""}"
+        role="tab"
+        aria-selected="${tab==="messages"}"
+        onclick="setChatTab('messages')"
+      >Messages</button>
+      <button
+        class="${tab==="groups"?"active":""}"
+        role="tab"
+        aria-selected="${tab==="groups"}"
+        onclick="setChatTab('groups')"
+      >Groups</button>
+    </div>
 
-    <section class="social-empty">
-      <h2>Conversations</h2>
-      <p>No conversations yet.</p>
-    </section>
+    ${tab==="groups"?`
+      <section class="social-empty">
+        <h2>No groups yet</h2>
+        <p>Group conversations will appear here.</p>
+      </section>
+    `:`
+      <section class="social-empty">
+        <h2>Your note</h2>
+        <p>Share a short note with people who are online.</p>
+        <div class="note-editor">
+          <input
+            maxlength="60"
+            aria-label="Your note"
+            placeholder="Write a note..."
+            value="${esc(S.note)}"
+            oninput="saveNote(this.value)"
+          >
+          <span class="note-count">${S.note.length}/60</span>
+        </div>
+      </section>
 
-    <section>
-      <div class="section-heading">
-        <h2>Online now</h2>
-      </div>
-      <div id="online-people">${onlinePeopleHTML()}</div>
-    </section>
+      <section class="social-empty">
+        <h2>Conversations</h2>
+        <p>No conversations yet.</p>
+      </section>
+
+      <section>
+        <div class="section-heading">
+          <h2>Online now</h2>
+        </div>
+        <div id="online-people">${onlinePeopleHTML()}</div>
+      </section>
+    `}
   `;
 }
 
 function groupsPage(){
-  return`
-    <section class="header">
-      <h1 class="title">Groups</h1>
-      <div class="sub">Group conversations</div>
-    </section>
-    <section class="social-empty">
-      <h2>No groups yet</h2>
-      <p>Groups will appear here when group conversations are available.</p>
-    </section>
-  `;
+  return chatPage("groups");
 }
 
 function followingPage(){
@@ -4355,24 +4410,14 @@ function layout(content){
           <span>Home</span>
         </button>
 
-        <button onclick="nav('/explore')">
-          <i>⌕</i>
-          <span>Explore</span>
+        <button onclick="nav('/my-stuff')">
+          <i>▤</i>
+          <span>My Stuff</span>
         </button>
 
         <button onclick="nav('/chat')">
           <i>✉</i>
           <span>Chat</span>
-        </button>
-
-        <button onclick="nav('/groups')">
-          <i>◉</i>
-          <span>Groups</span>
-        </button>
-
-        <button onclick="nav('/following')">
-          <i>♧</i>
-          <span>Following</span>
         </button>
 
         <button
@@ -4569,6 +4614,11 @@ async function render(){
 
     document.getElementById("app").innerHTML=
       layout(explore());
+
+  }else if(r.type==="my-stuff"){
+
+    document.getElementById("app").innerHTML=
+      layout(myStuffPage());
 
   }else if(r.type==="settings"){
 

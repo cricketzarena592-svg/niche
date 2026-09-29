@@ -116,7 +116,13 @@ a{
   height:100vh;
   position:sticky;
   top:0;
-  padding:25px 18px;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:25px 18px 18px;
   border-right:1px solid var(--border)
 }
 
@@ -164,7 +170,7 @@ a{
    ========================================================= */
 
 .nav{
-  margin-top:34px;
+  margin-top:24px;
   display:grid;
   gap:4px
 }
@@ -173,7 +179,7 @@ a{
   border:0;
   background:transparent;
   color:var(--text);
-  padding:12px 13px;
+  padding:10px 13px;
   border-radius:13px;
   text-align:left;
   font-weight:750
@@ -197,8 +203,8 @@ a{
    ========================================================= */
 
 .mini{
-  margin-top:40px;
-  padding:18px 9px;
+  margin-top:auto;
+  padding:14px 9px 10px;
   border-top:1px solid var(--border);
   display:flex;
   gap:10px;
@@ -228,6 +234,7 @@ a{
 
 .mini-actions{
   padding-left:9px;
+  padding-bottom:4px;
   display:flex;
   gap:13px
 }
@@ -515,6 +522,32 @@ a{
   padding:28px 20px;
   border-bottom:1px solid var(--border);
   text-align:center
+}
+
+.social-tabs{
+  display:flex;
+  gap:4px;
+  margin:14px 18px;
+  padding:4px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface2)
+}
+
+.social-tabs button{
+  min-height:38px;
+  flex:1;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:750
+}
+
+.social-tabs button.active{
+  background:var(--surface);
+  color:var(--text)
 }
 
 .social-empty h2{
@@ -1611,7 +1644,7 @@ button:disabled{
   bottom:0;
   height:64px;
   z-index:90;
-  grid-template-columns:repeat(7,minmax(0,1fr));
+  grid-template-columns:repeat(5,minmax(0,1fr));
   padding:7px 8px calc(7px + env(safe-area-inset-bottom));
   background:color-mix(in srgb,var(--surface) 92%,transparent);
   backdrop-filter:blur(18px);
