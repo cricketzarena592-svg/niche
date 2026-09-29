@@ -148,6 +148,34 @@ function toast(m){
 function applyTheme(){
   document.documentElement.dataset.theme=S.theme;
 }
+function applyInterfaceStyle(){
+  document.documentElement.dataset.interface =
+    S.interfaceStyle==="glass"
+      ? "glass"
+      : "basic";
+}
+
+function setInterfaceStyle(style){
+  S.interfaceStyle =
+    style==="glass"
+      ? "glass"
+      : "basic";
+
+  localStorage.setItem(
+    "niche-interface-style",
+    S.interfaceStyle
+  );
+
+  applyInterfaceStyle();
+
+  toast(
+    S.interfaceStyle==="glass"
+      ? "Glass style enabled"
+      : "Basic style enabled"
+  );
+
+  render();
+}
 
 function applyInterfaceStyle(){
   const style=
