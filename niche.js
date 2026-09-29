@@ -4188,6 +4188,7 @@ async function refresh(){
 async function render(){
 
   applyTheme();
+  syncRadioPlayerVisibility();
 
   if(isRecoveryRoute()){
 
@@ -6619,6 +6620,7 @@ function playableStations(stations){
 }
 
 let radioRequestId=0;
+let radioLoadingRegion=false;
 let radioCountriesLoaded=false;
 let radioFavorites=new Set();
 
@@ -6729,9 +6731,10 @@ async function loadRadioStation(index,autoplay){
 }
 
 async function loadRadioStationsForRegion(){
-  if(!S.radioEnabled)return;
+  if(!S.radioEnabled||!S.session||needSetup()||radioLoadingRegion)return;
 
   const requestId=++radioRequestId;
+  radioLoadingRegion=true;
   let stations=[];
 
   try{
@@ -6755,7 +6758,10 @@ async function loadRadioStationsForRegion(){
     stations=[];
   }
 
-  if(requestId!==radioRequestId||!S.radioEnabled)return;
+  if(requestId!==radioRequestId||!S.radioEnabled){
+    if(requestId===radioRequestId)radioLoadingRegion=false;
+    return;
+  }
 
   if(!stations.length&&S.radioRegionCode!=="GLOBAL"){
     setRadioStatus("No stations found there. Loading global favorites…");
@@ -6768,7 +6774,11 @@ async function loadRadioStationsForRegion(){
     }
   }
 
-  if(requestId!==radioRequestId||!S.radioEnabled)return;
+  if(requestId!==radioRequestId||!S.radioEnabled){
+    if(requestId===radioRequestId)radioLoadingRegion=false;
+    return;
+  }
+  radioLoadingRegion=false;
   radioStations=stations;
 
   if(!radioStations.length){
@@ -6790,7 +6800,29 @@ function setRadioRegion(regionCode){
   localStorage.setItem("niche-radio-region",S.radioRegionCode);
   updateRadioRegionLabel();
 
-  if(S.radioEnabled)loadRadioStationsForRegion();
+  radioRequestId++;
+  radioLoadingRegion=false;
+  radioStations=[];
+  if(S.radioEnabled&&S.session&&!needSetup())loadRadioStationsForRegion();
+}
+
+function syncRadioPlayerVisibility(){
+  const available=!!S.radioEnabled&&!!S.session&&!needSetup()&&!isRecoveryRoute();
+  const player=document.getElementById("radio-player");
+  const audio=document.getElementById("radio-audio");
+
+  document.documentElement.classList.toggle("radio-disabled",!S.radioEnabled);
+  document.documentElement.classList.toggle("radio-unavailable",!available);
+  if(player)player.hidden=!available;
+
+  if(!available){
+    radioRequestId++;
+    radioLoadingRegion=false;
+    audio?.pause();
+    return;
+  }
+
+  if(!radioStations.length&&!radioLoadingRegion)loadRadioStationsForRegion();
 }
 
 function setRadioEnabled(enabled){
@@ -6812,7 +6844,13 @@ function setRadioEnabled(enabled){
 
   if(!S.radioEnabled){
     radioRequestId++;
+    radioLoadingRegion=false;
     audio?.pause();
+    return;
+  }
+
+  if(!S.session||needSetup()){
+    syncRadioPlayerVisibility();
     return;
   }
 
@@ -6834,8 +6872,7 @@ async function startRadioPlayer(){
   const volume=document.getElementById("radio-volume");
   if(!playButton||!audio)return;
 
-  document.documentElement.classList.toggle("radio-disabled",!S.radioEnabled);
-  document.getElementById("radio-player").hidden=!S.radioEnabled;
+  syncRadioPlayerVisibility();
   updateRadioRegionLabel();
   audio.volume=Number(volume?.value||0.8);
   volume?.addEventListener("input",()=>audio.volume=Number(volume.value));
@@ -6869,7 +6906,6 @@ async function startRadioPlayer(){
   });
 
   loadRadioCountries();
-  if(S.radioEnabled)loadRadioStationsForRegion();
 }
 
 startRadioPlayer();
