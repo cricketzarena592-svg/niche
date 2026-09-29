@@ -1423,28 +1423,6 @@ button:disabled{
   }
 }
 
-/* Tablets and compact windows that do not expose a touch pointer. */
-@media (max-width:900px){
-  .shell{
-    grid-template-columns:1fr;
-  }
-
-  .side,
-  .right{
-    display:none;
-  }
-
-  .main{
-    width:100%;
-    border-right:0;
-    padding-bottom:82px;
-  }
-
-  .mobile-brand{display:block}
-  .mobile-nav{display:grid}
-  .mobile-following{display:block;padding:0 14px 18px}
-}
-
 /* Landscape: never switch back to the desktop three-column layout. */
 @media (orientation:landscape) and (max-height:700px){
   .shell{
@@ -1687,3 +1665,10 @@ button:disabled{
       }
 
     }
+
+
+/* Following page */
+.following-page-body{padding:18px}
+.following-page-body>.card{max-width:680px;margin:0 auto}
+@media(max-width:700px){.following-page-body{padding:14px}}
+@media(hover:none) and (pointer:coarse){.following-page-body{padding-bottom:95px}}
