@@ -5,7 +5,33 @@ const sb=window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+(function(){
 
+  const ua = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+
+  const isAndroid = /Android/i.test(ua);
+
+  const isIOS =
+    /iPhone|iPad|iPod/i.test(ua) ||
+    (
+      platform === "MacIntel" &&
+      navigator.maxTouchPoints > 1
+    );
+
+  const isMobileOS = isAndroid || isIOS;
+
+  document.documentElement.classList.toggle(
+    "device-mobile",
+    isMobileOS
+  );
+
+  document.documentElement.classList.toggle(
+    "device-desktop",
+    !isMobileOS
+  );
+
+})();
 const S={
   session:null,
   user:null,
