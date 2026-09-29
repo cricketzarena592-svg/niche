@@ -1,0 +1,6295 @@
+const SUPABASE_URL="https://phdwefylrpcdlfjwpdge.supabase.co";
+const SUPABASE_KEY="sb_publishable_yfzOWHkT7kg-gpgX_3v3aQ__vC-cRFE";
+
+const sb=window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+const S={
+  session:null,
+  user:null,
+  profile:null,
+  posts:[],
+  niche:null,
+  publicProfile:null,
+  comments:{},
+  commentOpen:{},
+  following:false,
+  mode:"login",
+  loading:false,
+  search:"",
+  results:[],
+  theme:localStorage.getItem("niche-theme")||"system",
+  notifications:[],
+  notificationsOpen:false,
+  notificationsLoaded:false,
+  notificationsLoading:false,
+  notificationsError:"",
+  followingNiches:[],
+  followingPeople:[],
+  followingUserIds:new Set(),
+  followCounts:{},
+  activityPrivate:false,
+  modal:null,
+  editingProfile:false,
+  setupDraft:null,
+  verificationDialog:null
+};
+
+const EMOJIS=[
+  "🙂","😎","🤓","😄","😃","😌","🤠","🧑‍💻",
+  "👾","🚀","🌎","🌙","⭐","🔥","⚡","🎮",
+  "🏏","⚽","🏀","🎵","🎨","📚","💻","🐱",
+  "🐶","🦊","🐼","🦁","🐸","🐧","🍀","🌻"
+];
+
+function esc(v){
+  return v==null
+    ? ""
+    : String(v)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+function topic(v){
+  return String(v||"")
+    .trim()
+    .replace(/^#+/,"")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g,"")
+    .slice(0,50);
+}
+
+function tags(v){
+  return [
+    ...new Set(
+      (String(v||"").match(/#[a-zA-Z0-9_-]+/g)||[])
+        .map(topic)
+        .filter(Boolean)
+    )
+  ];
+}
+
+function time(v){
+  let s=Math.floor((Date.now()-new Date(v))/1000);
+
+  if(!Number.isFinite(s)||s<60)return"now";
+
+  let m=Math.floor(s/60);
+
+  if(m<60)return m+"m";
+
+  let h=Math.floor(m/60);
+
+  if(h<24)return h+"h";
+
+  let d=Math.floor(h/24);
+
+  return d<7
+    ? d+"d"
+    : new Date(v).toLocaleDateString();
+}
+
+function toast(m){
+  let e=document.getElementById("toast");
+
+  e.textContent=m;
+  e.className="show";
+
+  clearTimeout(toast.t);
+
+  toast.t=setTimeout(
+    ()=>e.className="",
+    2500
+  );
+}
+
+function applyTheme(){
+  document.documentElement.dataset.theme=S.theme;
+}
+
+function setTheme(t){
+  S.theme=["dark","light","system"].includes(t)
+    ? t
+    : "system";
+
+  localStorage.setItem(
+    "niche-theme",
+    S.theme
+  );
+
+  applyTheme();
+  render();
+}
+
+function cycleTheme(){
+  let a=["system","dark","light"];
+  let i=a.indexOf(S.theme);
+
+  setTheme(a[(i+1)%3]);
+}
+
+function hrefN(t){
+  return"#/niche/"+encodeURIComponent(topic(t));
+}
+
+function hrefP(u){
+  return"#/profile/"+encodeURIComponent(u);
+}
+
+function hrefPost(id){
+  return"#/post/"+encodeURIComponent(id);
+}
+
+function route(){
+  let r=location.hash.replace(/^#/,"")||"/";
+
+  if(!r.startsWith("/"))r="/"+r;
+
+  r=r.split("?")[0];
+
+  let n=r.match(/^\/niche\/([^/]+)\/?$/i);
+
+  if(n){
+    return{
+      type:"niche",
+      topic:topic(decodeURIComponent(n[1]))
+    };
+  }
+
+  if(/^\/profile\/edit\/?$/i.test(r)){
+    return{type:"profile-edit"};
+  }
+
+  let p=r.match(/^\/profile\/([^/]+)\/?$/i);
+
+  if(p){
+    return{
+      type:"profile",
+      username:decodeURIComponent(p[1])
+        .replace(/^@/,"")
+        .toLowerCase()
+    };
+  }
+
+  if(/^\/explore\/?$/i.test(r)){
+    return{type:"explore"};
+  }
+
+  if(/^\/settings\/?$/i.test(r)){
+    return{type:"settings"};
+  }
+
+  let q=r.match(/^\/post\/([^/]+)\/?$/i);
+
+  if(q){
+    return{
+      type:"post",
+      id:decodeURIComponent(q[1])
+    };
+  }
+
+  return{type:"home"};
+}
+
+function nav(p){
+  location.hash=p.startsWith("/")
+    ? p
+    : "/"+p;
+
+  scrollTo(0,0);
+}
+
+addEventListener("hashchange",render);
+
+document.addEventListener("click",e=>{
+  if(
+    S.notificationsOpen &&
+    !e.target.closest(".notif-wrap") &&
+    !e.target.closest("#notification-portal") &&
+    !e.target.closest(".mobile-notif")
+  ){
+    closeNotifications();
+  }
+});
+
+async function loadProfile(){
+  if(!S.user){
+    S.profile=null;
+    return;
+  }
+
+  let{data}=await sb
+    .from("profiles")
+    .select("*")
+    .eq("id",S.user.id)
+    .maybeSingle();
+
+  S.profile=data;
+
+  if(S.profile){
+    S.activityPrivate=!!S.profile.activity_private;
+  }
+}
+
+function needSetup(){
+  return!S.profile||!S.profile.username;
+}
+
+async function login(){
+  let e=document.getElementById("email")?.value.trim();
+  let p=document.getElementById("password")?.value||"";
+
+  if(!e||!p){
+    return toast("Enter your email and password.");
+  }
+
+  S.busy=true;
+  renderAuth();
+
+  let{error}=await sb.auth.signInWithPassword({
+    email:e,
+    password:p
+  });
+
+  S.busy=false;
+
+  if(error){
+    toast(error.message);
+    renderAuth();
+  }
+}
+
+async function signup(){
+  let e=document.getElementById("email")?.value.trim();
+  let p=document.getElementById("password")?.value||"";
+
+  if(!e||!p){
+    return toast("Enter your email and password.");
+  }
+
+  if(p.length<6){
+    return toast("Password must contain at least 6 characters.");
+  }
+
+  S.busy=true;
+  renderAuth();
+
+  /*
+   * Do NOT append a hash route here. Supabase may use the URL hash
+   * for the verification session, and a router hash such as #/ can
+   * consume/corrupt those authentication parameters.
+   */
+  let redirect=location.origin+location.pathname;
+
+  let{data,error}=await sb.auth.signUp({
+    email:e,
+    password:p,
+    options:{
+      emailRedirectTo:redirect
+    }
+  });
+
+  S.busy=false;
+
+  if(error){
+    toast(error.message);
+    renderAuth();
+    return;
+  }
+
+  /* If email confirmation is enabled, Supabase normally returns no session.
+     Show a real dialog instead of a tiny toast so the instruction is obvious. */
+  if(!data?.session){
+    openVerificationDialog(e);
+  }else{
+    toast("Account created successfully.");
+  }
+
+  renderAuth();
+}
+
+function openVerificationDialog(email){
+  S.verificationDialog={email};
+  renderVerificationDialog();
+}
+
+function closeVerificationDialog(){
+  S.verificationDialog=null;
+  renderVerificationDialog();
+}
+
+function renderVerificationDialog(){
+  let root=document.getElementById("modal-root");
+  if(!root)return;
+
+  /* Keep the existing confirmation modal working independently. */
+  if(S.verificationDialog){
+    root.innerHTML=`
+      <div
+        class="modal-backdrop verify-dialog"
+        onclick="if(event.target===this) closeVerificationDialog()"
+      >
+        <div class="modal">
+          <div class="verify-dialog-icon">✉</div>
+          <h2>Check your email</h2>
+          <p>
+            We sent a verification link to your inbox.
+            Open that link to verify your account.
+            NICHE will sign you in automatically.
+          </p>
+          <div class="verify-dialog-email">
+            ${esc(S.verificationDialog.email)}
+          </div>
+          <p style="margin-bottom:0">
+            If you do not see it, check your spam or junk folder.
+          </p>
+          <div class="modal-actions" style="justify-content:center">
+            <button class="primary" onclick="closeVerificationDialog()">
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  renderModal();
+}
+
+function renderAuth(){
+  document.getElementById("app").innerHTML=`
+    <div class="auth">
+      <div class="authbox">
+
+        <div class="authlogo">NICHE</div>
+
+        <div class="tagline">
+          Everything starts with a topic.
+        </div>
+
+        <div class="authcard">
+
+          <h3>
+            ${S.mode==="login"
+              ?"Welcome back"
+              :"Create your account"}
+          </h3>
+
+          <p style="color:var(--muted);font-size:12px">
+            ${
+              S.mode==="login"
+              ?"Log in to continue."
+              :"Join conversations around topics you care about."
+            }
+          </p>
+
+          <form
+            class="authform"
+            onsubmit="
+              event.preventDefault();
+              ${S.mode==="login"?"login()":"signup()"}
+            "
+          >
+
+            <input
+              id="email"
+              class="input"
+              type="email"
+              autocomplete="email"
+              placeholder="Email"
+              required
+            >
+
+            <input
+              id="password"
+              class="input"
+              type="password"
+              minlength="6"
+              autocomplete="${
+                S.mode==="login"
+                  ?"current-password"
+                  :"new-password"
+              }"
+              placeholder="Password"
+              required
+            >
+
+            <button
+              class="primary"
+              type="submit"
+              ${S.busy?"disabled":""}
+            >
+              ${
+                S.busy
+                ?"Please wait..."
+                :S.mode==="login"
+                  ?"Log in"
+                  :"Create account"
+              }
+            </button>
+
+          </form>
+
+          <button
+            class="switch"
+            onclick="
+              S.mode=S.mode==='login'
+                ?'signup'
+                :'login';
+              renderAuth()
+            "
+          >
+            ${
+              S.mode==="login"
+              ?"Create a new account"
+              :"Already have an account? Log in"
+            }
+          </button>
+
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function setupDraft(){
+  if(!S.setupDraft){
+    S.setupDraft={
+      username:S.profile?.username||"",
+      displayName:S.profile?.display_name||"",
+      bio:S.profile?.bio||"",
+      avatar:S.profile?.avatar_emoji||"🙂"
+    };
+  }
+
+  return S.setupDraft;
+}
+
+function syncSetupDraft(){
+  let d=setupDraft();
+  let u=document.getElementById("uname");
+  let n=document.getElementById("dname");
+  let b=document.getElementById("bio");
+
+  if(u)d.username=u.value;
+  if(n)d.displayName=n.value;
+  if(b)d.bio=b.value;
+}
+
+function renderSetup(){
+  let d=setupDraft();
+  let cur=d.avatar||"🙂";
+
+  document.getElementById("app").innerHTML=`
+    <div class="setup">
+
+      <div style="font-size:42px">
+        ${esc(cur)}
+      </div>
+
+      <h1>Set up your profile</h1>
+
+      <p style="color:var(--muted);font-size:13px">
+        Choose how people will see you on NICHE.
+      </p>
+
+      <div class="group">
+        <label class="label">Username</label>
+
+        <div class="username">
+          <span>@</span>
+          <input
+            id="uname"
+            maxlength="24"
+            placeholder="yourname"
+            value="${esc(d.username)}"
+            oninput="S.setupDraft.username=this.value"
+          >
+        </div>
+      </div>
+
+      <div class="group">
+        <label class="label">Display name</label>
+
+        <input
+          id="dname"
+          class="input"
+          maxlength="40"
+          placeholder="Your name"
+          value="${esc(d.displayName)}"
+          oninput="S.setupDraft.displayName=this.value"
+        >
+      </div>
+
+      <div class="group">
+        <label class="label">Avatar</label>
+
+        <div class="emoji-grid">
+          ${EMOJIS.map(x=>`
+            <button
+              type="button"
+              class="emoji ${x===cur?"selected":""}"
+              onclick="selectSetupEmoji('${x}')"
+            >
+              ${x}
+            </button>
+          `).join("")}
+        </div>
+      </div>
+
+      <div class="group">
+        <label class="label">Bio</label>
+
+        <textarea
+          id="bio"
+          class="textarea"
+          maxlength="160"
+          placeholder="A little about you..."
+          oninput="S.setupDraft.bio=this.value"
+        >${esc(d.bio)}</textarea>
+      </div>
+
+      <div id="setuperr"></div>
+
+      <button
+        class="primary"
+        style="width:100%;margin-top:22px"
+        onclick="saveProfile()"
+      >
+        Continue to NICHE
+      </button>
+
+    </div>
+  `;
+}
+
+function selectSetupEmoji(emoji){
+  /* Inputs are already stored in S.setupDraft on every keystroke.
+     Sync once more before changing the avatar, then rerender. */
+  syncSetupDraft();
+  S.setupDraft.avatar=emoji;
+  renderSetup();
+}
+
+async function saveProfile(){
+  syncSetupDraft();
+
+  let d=setupDraft();
+  let u=(d.username||"").trim().toLowerCase();
+  let displayName=(d.displayName||"").trim();
+  let bio=(d.bio||"").trim();
+
+  if(!/^[a-zA-Z0-9_]{3,24}$/.test(u||"")){
+    document.getElementById("setuperr").innerHTML=`
+      <div class="error">
+        Username must contain 3–24 letters, numbers, or underscores.
+      </div>
+    `;
+    return;
+  }
+
+  let{error}=await sb
+    .from("profiles")
+    .update({
+      username:u,
+      display_name:displayName||u,
+      avatar_emoji:d.avatar||"🙂",
+      bio
+    })
+    .eq("id",S.user.id);
+
+  if(error){
+    document.getElementById("setuperr").innerHTML=`
+      <div class="error">
+        ${esc(error.message)}
+      </div>
+    `;
+    return;
+  }
+
+  S.setupDraft=null;
+  await loadProfile();
+  render();
+}
+
+async function loadPosts(){
+  S.loading=true;
+
+  let base=`
+    *,
+    author:profiles!posts_author_id_fkey(
+      id,
+      username,
+      display_name,
+      avatar_emoji,
+      bio
+    ),
+    likes(user_id),
+    reposts(user_id)
+  `;
+
+  let q=sb
+    .from("posts")
+    .select(base)
+    .order("created_at",{ascending:false})
+    .limit(50);
+
+  if(S.niche?.id){
+    q=q.eq("niche_id",S.niche.id);
+  }else if(S.niche?.slug){
+    q=q.eq("hashtag",S.niche.slug);
+  }
+
+  let{data,error}=await q;
+
+  if(error){
+    let f=sb
+      .from("posts")
+      .select("*")
+      .order("created_at",{ascending:false})
+      .limit(50);
+
+    if(S.niche?.slug){
+      f=f.eq("hashtag",S.niche.slug);
+    }
+
+    let z=await f;
+
+    data=await enrichPosts(z.data||[]);
+  }
+
+  S.posts=data||[];
+
+  if(S.niche?.id&&S.posts.length===0){
+    let f=await sb
+      .from("posts")
+      .select(base)
+      .eq("hashtag",S.niche.slug)
+      .order("created_at",{ascending:false})
+      .limit(50);
+
+    if(!f.error){
+      S.posts=f.data||[];
+    }
+  }
+
+  S.loading=false;
+}
+
+async function enrichPosts(a){
+  let ids=[
+    ...new Set(
+      a.map(x=>x.author_id).filter(Boolean)
+    )
+  ];
+
+  if(!ids.length)return a;
+
+  let{data}=await sb
+    .from("profiles")
+    .select(
+      "id,username,display_name,avatar_emoji,bio"
+    )
+    .in("id",ids);
+
+  let m=new Map(
+    (data||[]).map(x=>[x.id,x])
+  );
+
+  return a.map(x=>({
+    ...x,
+    author:m.get(x.author_id)||null
+  }));
+}
+
+function normalizeModerationText(v){
+  return String(v||"")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/[@4]/g,"a")
+    .replace(/[3]/g,"e")
+    .replace(/[1!|]/g,"i")
+    .replace(/[0]/g,"o")
+    .replace(/[5$]/g,"s")
+    .replace(/[7]/g,"t")
+    .replace(/[^a-z0-9]+/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+const BLOCKED_WORDS=[
+  "fuck",
+  "fucking",
+  "fucker",
+  "motherfucker",
+  "shit",
+  "bullshit",
+  "bitch",
+  "bastard",
+  "asshole",
+  "dumbass",
+  "jackass",
+  "dickhead",
+  "cocksucker",
+  "piss off",
+  "slut",
+  "whore",
+  "nigger",
+  "nigga",
+  "faggot",
+  "retard"
+];
+
+function moderationMatch(v){
+  let n=normalizeModerationText(v);
+
+  return BLOCKED_WORDS.find(w=>
+    new RegExp(
+      "(^|\\s)"+
+      w.replace(/[-\\s]/g,"\\s+")+
+      "($|\\s)",
+      "i"
+    ).test(n)
+  )||null;
+}
+
+function formatSelection(before,after,label){
+  let t=document.getElementById("composer");
+
+  if(!t)return;
+
+  let start=t.selectionStart;
+  let end=t.selectionEnd;
+
+  let selected=t.value.slice(start,end);
+
+  if(!selected){
+    toast("Select some text first.");
+    t.focus();
+    return;
+  }
+
+  let replacement=before+selected+after;
+
+  t.setRangeText(
+    replacement,
+    start,
+    end,
+    "select"
+  );
+
+  t.focus();
+
+  preview();
+}
+
+function insertFormat(type){
+  if(type==="bold"){
+    formatSelection("**","**","bold");
+  }else if(type==="italic"){
+    formatSelection("*","*","italic");
+  }else if(type==="underline"){
+    formatSelection("__","__","underline");
+  }else if(type==="strike"){
+    formatSelection("~~","~~","strike");
+  }else if(type==="code"){
+    formatSelection("`","`","code");
+  }
+}
+
+async function createPost(){
+  let t=document.getElementById("composer");
+  let b=t?.value.trim();
+
+  if(!b)return;
+
+  let bad=moderationMatch(b);
+
+  if(bad){
+    return toast(
+      "Please remove inappropriate language before posting."
+    );
+  }
+
+  let hs=tags(b);
+
+  if(!hs.length){
+    return toast(
+      "Add a hashtag such as #football."
+    );
+  }
+
+  let btn=document.getElementById("postbtn");
+
+  if(btn)btn.disabled=true;
+
+  let{error}=await sb
+    .from("posts")
+    .insert({
+      author_id:S.user.id,
+      body:b,
+      hashtag:hs[0]
+    });
+
+  if(error){
+    toast(error.message);
+  }else{
+    t.value="";
+    toast("Posted!");
+    await refresh();
+  }
+
+  if(btn)btn.disabled=false;
+
+  preview();
+}
+
+function preview(){
+  let t=document.getElementById("composer");
+  let p=document.getElementById("tags");
+  let c=document.getElementById("count");
+  let b=document.getElementById("postbtn");
+  let m=document.getElementById("moderation");
+
+  if(!t)return;
+
+  let h=tags(t.value);
+  let bad=moderationMatch(t.value);
+
+  p.innerHTML=
+    h.map(x=>
+      `<span class="tag">#${esc(x)}</span>`
+    ).join("")
+    ||
+    `<span style="color:var(--muted);font-size:12px">
+      Add #topic
+    </span>`;
+
+  c.textContent=t.value.length+"/500";
+
+  b.disabled=
+    !t.value.trim()||
+    !h.length||
+    !!bad;
+
+  if(m){
+    m.innerHTML=
+      bad
+      ? `<div class="moderation-warning">
+          This post contains language that isn't allowed on NICHE.
+          Remove it before posting.
+        </div>`
+      : (
+          t.value.trim()
+          ? `<div class="moderation-ok">
+              ✓ No blocked language detected
+            </div>`
+          : ""
+        );
+  }
+}
+
+function liked(p){
+  return!!p.likes?.some(
+    x=>x.user_id===S.user.id
+  );
+}
+
+function reposted(p){
+  return!!p.reposts?.some(
+    x=>x.user_id===S.user.id
+  );
+}
+
+async function like(id){
+  let p=S.posts.find(x=>x.id===id);
+
+  if(!p)return;
+
+  let r=liked(p);
+
+  let q=r
+    ?sb.from("likes")
+      .delete()
+      .eq("post_id",id)
+      .eq("user_id",S.user.id)
+    :sb.from("likes")
+      .insert({
+        post_id:id,
+        user_id:S.user.id
+      });
+
+  let{error}=await q;
+
+  if(error){
+    toast(error.message);
+  }else{
+    refresh();
+  }
+}
+
+async function repost(id){
+  let p=S.posts.find(x=>x.id===id);
+
+  if(!p)return;
+
+  let r=reposted(p);
+
+  let q=r
+    ?sb.from("reposts")
+      .delete()
+      .eq("post_id",id)
+      .eq("user_id",S.user.id)
+    :sb.from("reposts")
+      .insert({
+        post_id:id,
+        user_id:S.user.id
+      });
+
+  let{error}=await q;
+
+  if(error){
+    console.error("Repost failed",error);
+    toast("Repost failed: "+error.message);
+    return;
+  }
+
+  if(p.reposts){
+    if(r){
+      p.reposts=p.reposts.filter(
+        x=>x.user_id!==S.user.id
+      );
+    }else{
+      p.reposts=[
+        ...(p.reposts||[]),
+        {user_id:S.user.id}
+      ];
+    }
+  }
+
+  render();
+}
+
+async function loadComments(id){
+  if(!S.commentOpen[id])return;
+
+  let{data,error}=await sb
+    .from("comments")
+    .select(`
+      *,
+      author:profiles!comments_author_id_fkey(
+        id,
+        username,
+        display_name,
+        avatar_emoji
+      )
+    `)
+    .eq("post_id",id)
+    .order("created_at",{ascending:true})
+    .limit(100);
+
+  if(error){
+    let f=await sb
+      .from("comments")
+      .select("*")
+      .eq("post_id",id)
+      .order("created_at",{ascending:true})
+      .limit(100);
+
+    data=await enrichComments(f.data||[]);
+  }
+
+  S.comments[id]=data||[];
+
+  updateCommentsHost(id);
+  updateCommentCount(id);
+}
+
+async function enrichComments(a){
+  let ids=[
+    ...new Set(
+      a.map(x=>x.author_id).filter(Boolean)
+    )
+  ];
+
+  if(!ids.length)return a;
+
+  let{data}=await sb
+    .from("profiles")
+    .select(
+      "id,username,display_name,avatar_emoji"
+    )
+    .in("id",ids);
+
+  let m=new Map(
+    (data||[]).map(x=>[x.id,x])
+  );
+
+  return a.map(x=>({
+    ...x,
+    author:m.get(x.author_id)||null
+  }));
+}
+
+async function deleteComment(id){
+  let c=S.comments[id]?.find(
+    x=>x.id===id
+  );
+
+  if(!c||c.author_id!==S.user.id)return;
+
+  openModal(
+    "Delete comment?",
+    "This comment will be permanently removed.",
+    async()=>{
+      let{error}=await sb
+        .from("comments")
+        .delete()
+        .eq("id",id)
+        .eq("author_id",S.user.id);
+
+      if(error){
+        toast(error.message);
+        return;
+      }
+
+      S.comments[c.post_id]=
+        (S.comments[c.post_id]||[])
+        .filter(x=>x.id!==id);
+
+      closeModal();
+
+      updateCommentsHost(c.post_id);
+      updateCommentCount(c.post_id);
+
+      toast("Comment deleted");
+    }
+  );
+}
+
+function commentsMarkup(id){
+  if(!S.commentOpen[id])return"";
+
+  if(!S.comments[id]){
+    return`
+      <div class="comments">
+
+        <form
+          class="comment-form"
+          onsubmit="
+            event.preventDefault();
+            sendComment('${esc(id)}')
+          "
+        >
+          <input
+            id="ci-${esc(id)}"
+            class="comment-input"
+            maxlength="500"
+            autocomplete="off"
+            placeholder="Write a comment..."
+          >
+
+          <button
+            id="cs-${esc(id)}"
+            class="primary"
+            type="submit"
+          >
+            Send
+          </button>
+        </form>
+
+        <div class="comment-empty">
+          Loading comments...
+        </div>
+
+      </div>
+    `;
+  }
+
+  let a=S.comments[id];
+
+  return`
+    <div class="comments">
+
+      <form
+        class="comment-form"
+        onsubmit="
+          event.preventDefault();
+          sendComment('${esc(id)}')
+        "
+      >
+
+        <input
+          id="ci-${esc(id)}"
+          class="comment-input"
+          maxlength="500"
+          autocomplete="off"
+          placeholder="Write a comment..."
+        >
+
+        <button
+          id="cs-${esc(id)}"
+          class="primary"
+          type="submit"
+        >
+          Send
+        </button>
+
+      </form>
+
+      ${
+        a.length
+        ? `
+          <div class="comment-list">
+            ${a.map(c=>`
+              <div class="comment">
+
+                <div class="avatar">
+                  ${esc(c.author?.avatar_emoji||"🙂")}
+                </div>
+
+                <div class="comment-text">
+
+                  <div class="comment-meta">
+                    <b>
+                      ${esc(
+                        c.author?.display_name||
+                        c.author?.username||
+                        "User"
+                      )}
+                    </b>
+
+                    <span>
+                      @${esc(c.author?.username||"")}
+                      ·
+                      ${esc(time(c.created_at))}
+                    </span>
+                  </div>
+
+                  <div class="comment-body">${esc(c.body)}</div>
+
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        `
+        : `
+          <div class="comment-empty">
+            No comments yet. Start the conversation.
+          </div>
+        `
+      }
+
+    </div>
+  `;
+}
+
+function commentsHTML(id){
+  return`
+    <div id="comments-host-${esc(id)}">
+      ${commentsMarkup(id)}
+    </div>
+  `;
+}
+
+function updateCommentsHost(id){
+  let host=document.getElementById(
+    "comments-host-"+id
+  );
+
+  if(host){
+    host.innerHTML=commentsMarkup(id);
+  }
+}
+
+function updateCommentCount(id){
+  let el=document.getElementById(
+    "comment-count-"+id
+  );
+
+  if(!el)return;
+
+  let p=S.posts.find(x=>x.id===id);
+
+  let count=
+    S.comments[id]?.length ??
+    p?.comment_count ??
+    0;
+
+  el.textContent=count;
+}
+
+async function sendComment(id){
+  let i=document.getElementById("ci-"+id);
+  let b=i?.value.trim();
+  let btn=document.getElementById("cs-"+id);
+
+  if(!b)return;
+
+  if(moderationMatch(b)){
+    return toast(
+      "Please remove inappropriate language before commenting."
+    );
+  }
+
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="Sending…";
+  }
+
+  let{error}=await sb
+    .from("comments")
+    .insert({
+      post_id:id,
+      author_id:S.user.id,
+      body:b
+    });
+
+  if(error){
+    if(btn){
+      btn.disabled=false;
+      btn.textContent="Send";
+    }
+
+    toast(error.message);
+    return;
+  }
+
+  if(i)i.value="";
+
+  toast("Comment added");
+
+  await loadComments(id);
+}
+
+function toggleComments(id){
+  S.commentOpen[id]=!S.commentOpen[id];
+
+  if(!S.commentOpen[id]){
+    delete S.comments[id];
+    render();
+    return;
+  }
+
+  S.comments[id]=null;
+
+  render();
+
+  loadComments(id);
+}
+
+function delPost(id){
+  openModal(
+    "Delete post?",
+    "This post and its associated content will be removed. This cannot be undone.",
+    async()=>{
+      let{error}=await sb
+        .from("posts")
+        .delete()
+        .eq("id",id)
+        .eq("author_id",S.user.id);
+
+      if(error){
+        toast(error.message);
+        return;
+      }
+
+      closeModal();
+      toast("Post deleted");
+      refresh();
+    }
+  );
+}
+
+async function share(p){
+  let u=
+    location.origin+
+    location.pathname+
+    "#/post/"+
+    encodeURIComponent(p.id);
+
+  try{
+    if(navigator.share){
+      await navigator.share({
+        title:"NICHE",
+        text:p.body,
+        url:u
+      });
+    }else{
+      await navigator.clipboard.writeText(u);
+      toast("Post link copied.");
+    }
+  }catch{}
+}
+
+function bodyHTML(text){
+  if(!text) return "";
+
+  let out=esc(text);
+
+  out=out.replace(
+    /\*\*(.+?)\*\*/gs,
+    "<strong>$1</strong>"
+  );
+
+  out=out.replace(
+    /~~(.+?)~~/gs,
+    "<s>$1</s>"
+  );
+
+  out=out.replace(
+    /__([^_\n]+?)__/g,
+    "<u>$1</u>"
+  );
+
+  out=out.replace(
+    /(?<!\*)\*([^*\n]+?)\*(?!\*)/g,
+    "<em>$1</em>"
+  );
+
+  out=out.replace(
+    /`([^`\n]+?)`/g,
+    "<code>$1</code>"
+  );
+
+  out=out.replace(
+    /#([a-zA-Z0-9_-]+)/g,
+    (match,tag)=>{
+      const t=topic(tag);
+      const href=hrefN(t);
+
+      return `<a class="hashtag" href="${hrefN(t)}" onclick="event.preventDefault();nav('/niche/${encodeURIComponent(t)}')">#${esc(t)}</a>`;
+    }
+  );
+
+  return out.replace(/\r?\n/g,"<br>");
+}
+
+function postHTML(p){
+  let a=p.author||{};
+
+  let dn=
+    a.display_name||
+    a.username||
+    "User";
+
+  let hn=
+    a.username
+    ? "@"+a.username
+    : "";
+
+  let lc=
+    p.like_count ??
+    p.likes?.length ??
+    0;
+
+  let rc=
+    p.repost_count ??
+    p.reposts?.length ??
+    0;
+
+  let cc=
+    p.comment_count ??
+    S.comments[p.id]?.length ??
+    0;
+
+  return`
+    <article
+      class="post"
+      id="post-${esc(p.id)}"
+    >
+
+      <div class="post-row">
+
+        <a
+          class="avatar"
+          href="${a.username?hrefP(a.username):"#"}"
+        >
+          ${esc(a.avatar_emoji||"🙂")}
+        </a>
+
+        <div class="post-main">
+
+          <div class="head">
+
+            <a
+              class="name"
+              href="${a.username?hrefP(a.username):"#"}"
+            >
+              ${esc(dn)}
+            </a>
+
+            ${
+              hn
+              ? `
+                <a
+                  class="handle"
+                  href="${hrefP(a.username)}"
+                >
+                  ${esc(hn)}
+                </a>
+              `
+              :""
+            }
+
+            <span class="dot">·</span>
+
+            <span class="time">
+              ${esc(time(p.created_at))}
+            </span>
+
+          </div>
+
+          <div class="body">${bodyHTML(p.body)}</div>
+
+          ${
+            p.hashtag
+            ? `
+              <a
+                class="posttag"
+                href="${hrefN(p.hashtag)}"
+                onclick="
+                  event.preventDefault();
+                  nav('/niche/${encodeURIComponent(topic(p.hashtag))}')
+                "
+              >
+                #${esc(topic(p.hashtag))}
+              </a>
+            `
+            :""
+          }
+
+          <div class="actions">
+
+            <button
+              id="comment-action-${esc(p.id)}"
+              class="action"
+              onclick="toggleComments('${esc(p.id)}')"
+            >
+              💬
+              <span id="comment-count-${esc(p.id)}">
+                ${cc}
+              </span>
+            </button>
+
+            <button
+              class="action ${reposted(p)?"reposted":""}"
+              onclick="repost('${esc(p.id)}')"
+            >
+              ↻ ${rc}
+            </button>
+
+            <button
+              class="action ${liked(p)?"liked":""}"
+              onclick="like('${esc(p.id)}')"
+            >
+              ${liked(p)?"♥":"♡"} ${lc}
+            </button>
+
+            <button
+              class="action"
+              onclick='share(${JSON.stringify(p).replace(/'/g,"&#039;")})'
+            >
+              ↗
+            </button>
+
+            ${
+              S.user.id===p.author_id
+              ? `
+                <button
+                  class="action"
+                  onclick="delPost('${esc(p.id)}')"
+                >
+                  ×
+                </button>
+              `
+              :""
+            }
+
+          </div>
+
+          ${commentsHTML(p.id)}
+
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function composer(){
+  return`
+    <section class="composer">
+
+      <div class="avatar">
+        ${esc(S.profile?.avatar_emoji||"🙂")}
+      </div>
+
+      <div class="composer-main">
+
+        <div class="formatbar">
+
+          <button
+            class="formatbtn"
+            type="button"
+            onclick="insertFormat('bold')"
+          >
+            <b>B</b>
+          </button>
+
+          <button
+            class="formatbtn"
+            type="button"
+            onclick="insertFormat('italic')"
+          >
+            <i>I</i>
+          </button>
+
+          <button
+            class="formatbtn"
+            type="button"
+            onclick="insertFormat('underline')"
+          >
+            <u>U</u>
+          </button>
+
+          <button
+            class="formatbtn"
+            type="button"
+            onclick="insertFormat('strike')"
+          >
+            <s>S</s>
+          </button>
+
+          <button
+            class="formatbtn"
+            type="button"
+            onclick="insertFormat('code')"
+          >
+            &lt;/&gt;
+          </button>
+
+          <span class="format-help">
+            Select text, then choose a format
+          </span>
+
+        </div>
+
+        <textarea
+          id="composer"
+          maxlength="500"
+          placeholder="What's happening in your niche?"
+          oninput="preview()"
+        ></textarea>
+
+        <div id="moderation"></div>
+
+        <div class="format-note">
+          Formatting:
+          <b>bold</b>,
+          <i>italic</i>,
+          <u>underline</u>,
+          <s>strike</s>,
+          and <code>code</code>.
+          Posts with blocked language cannot be published.
+        </div>
+
+        <div class="composer-foot">
+
+          <div id="tags" class="tags">
+            <span style="color:var(--muted);font-size:12px">
+              Add #topic
+            </span>
+          </div>
+
+          <span id="count" class="count">
+            0/500
+          </span>
+
+          <button
+            id="postbtn"
+            class="primary"
+            disabled
+            onclick="createPost()"
+          >
+            Post
+          </button>
+
+        </div>
+
+      </div>
+    </section>
+  `;
+}
+
+async function loadNiche(t){
+  S.niche=null;
+
+  let{data}=await sb
+    .from("niches")
+    .select("*")
+    .eq("slug",topic(t))
+    .maybeSingle();
+
+  if(data){
+    S.niche=data;
+  }else{
+    let{data:p}=await sb
+      .from("posts")
+      .select("id,hashtag")
+      .eq("hashtag",topic(t))
+      .limit(1);
+
+    if(p?.length){
+      S.niche={
+        id:null,
+        slug:topic(t),
+        name:topic(t),
+        post_count:0,
+        follower_count:0,
+        virtual:true
+      };
+    }
+  }
+}
+
+async function follow(){
+  if(!S.niche?.id){
+    return toast(
+      "This niche is not registered yet."
+    );
+  }
+
+  let q=S.following
+    ? sb.from("niche_followers")
+      .delete()
+      .eq("niche_id",S.niche.id)
+      .eq("user_id",S.user.id)
+    : sb.from("niche_followers")
+      .insert({
+        niche_id:S.niche.id,
+        user_id:S.user.id
+      });
+
+  let{error}=await q;
+
+  if(error){
+    toast(error.message);
+  }else{
+    S.following=!S.following;
+    render();
+  }
+}
+
+async function loadFollow(){
+  if(!S.niche?.id){
+    S.following=false;
+    return;
+  }
+
+  let{data}=await sb
+    .from("niche_followers")
+    .select("user_id")
+    .eq("niche_id",S.niche.id)
+    .eq("user_id",S.user.id)
+    .maybeSingle();
+
+  S.following=!!data;
+}
+
+async function loadPublicProfile(u){
+  let{data}=await sb
+    .from("profiles")
+    .select("*")
+    .eq("username",u)
+    .maybeSingle();
+
+  S.publicProfile=data;
+}
+
+async function profilePosts(id){
+  let{data}=await sb
+    .from("posts")
+    .select(`
+      *,
+      author:profiles!posts_author_id_fkey(
+        id,
+        username,
+        display_name,
+        avatar_emoji,
+        bio
+      ),
+      likes(user_id),
+      reposts(user_id)
+    `)
+    .eq("author_id",id)
+    .order("created_at",{ascending:false})
+    .limit(50);
+
+  return data||[];
+}
+
+function home(){
+  return`
+    ${composer()}
+
+    ${
+      S.loading
+      ? `<div class="loading">
+          Loading feed...
+        </div>`
+      : S.posts.length
+        ? S.posts.map(postHTML).join("")
+        : `
+          <div class="empty">
+            <div class="icon">🌱</div>
+            <h2>Your feed is empty</h2>
+            <p>
+              Create the first post and give a topic somewhere to start.
+            </p>
+          </div>
+        `
+    }
+  `;
+}
+
+function nichePage(){
+  if(!S.niche){
+    return`
+      <div class="empty">
+        <div class="icon">🔎</div>
+        <h2>Niche not found</h2>
+        <p>
+          No posts or registered niche match this topic.
+        </p>
+
+        <button
+          class="primary"
+          style="margin-top:18px"
+          onclick="nav('/')"
+        >
+          Go home
+        </button>
+      </div>
+    `;
+  }
+
+  let n=S.niche;
+
+  return`
+    <header class="header">
+
+      <button
+        class="back"
+        onclick="nav('/')"
+      >
+        ← Home
+      </button>
+
+      <div class="title-row">
+
+        <div>
+
+          <h1 class="title">
+            #${esc(n.name||n.slug)}
+          </h1>
+
+          <div class="sub">
+            Topic · #${esc(n.slug)}
+          </div>
+
+          ${
+            n.description
+            ? `
+              <div class="desc">
+                ${esc(n.description)}
+              </div>
+            `
+            :""
+          }
+
+          <div class="stats">
+
+            <span>
+              <b>${esc(n.post_count??S.posts.length)}</b>
+              posts
+            </span>
+
+            <span>
+              <b>${esc(n.follower_count??0)}</b>
+              followers
+            </span>
+
+          </div>
+
+        </div>
+
+        ${
+          n.id
+          ? `
+            <button
+              class="secondary"
+              onclick="follow()"
+            >
+              ${S.following?"Following":"Follow"}
+            </button>
+          `
+          :""
+        }
+
+      </div>
+    </header>
+
+    ${
+      S.loading
+      ? `<div class="loading">
+          Loading niche...
+        </div>`
+      : S.posts.length
+        ? S.posts.map(postHTML).join("")
+        : `
+          <div class="empty">
+            <div class="icon">🌱</div>
+            <h2>No posts yet</h2>
+            <p>
+              Be the first person to post here.
+            </p>
+          </div>
+        `
+    }
+  `;
+}
+
+/* =========================================================
+   USER FOLLOW SYSTEM
+   ========================================================= */
+
+function profileFollowButton(p){
+  if(!p || p.id===S.user.id){
+    return "";
+  }
+
+  const f=isFollowingUser(p.id);
+
+  return`
+    <button
+      class="${f?"secondary":"primary"}"
+      onclick="toggleUserFollow('${esc(p.id)}')"
+    >
+      ${f?"Following":"Follow"}
+    </button>
+  `;
+}
+
+async function getUserFollowCounts(userId){
+  if(!userId){
+    return{
+      followers:0,
+      following:0
+    };
+  }
+
+  const[
+    followersResult,
+    followingResult
+  ]=await Promise.all([
+
+    sb
+      .from("user_follows")
+      .select("*",{count:"exact",head:true})
+      .eq("following_id",userId),
+
+    sb
+      .from("user_follows")
+      .select("*",{count:"exact",head:true})
+      .eq("follower_id",userId)
+
+  ]);
+
+  if(followersResult.error){
+    console.error(
+      "Followers count error:",
+      followersResult.error
+    );
+  }
+
+  if(followingResult.error){
+    console.error(
+      "Following count error:",
+      followingResult.error
+    );
+  }
+
+  return{
+    followers:followersResult.count||0,
+    following:followingResult.count||0
+  };
+}
+
+async function loadFollowCounts(userId){
+  const counts=await getUserFollowCounts(userId);
+
+  if(!S.followCounts){
+    S.followCounts={};
+  }
+
+  S.followCounts[userId]=counts;
+
+  return counts;
+}
+
+function isFollowingUser(id){
+  return!!id&&S.followingUserIds.has(id);
+}
+
+async function toggleUserFollow(id){
+  if(!id||id===S.user.id){
+    return;
+  }
+
+  const following=isFollowingUser(id);
+
+  if(following){
+
+    const{error}=await sb
+      .from("user_follows")
+      .delete()
+      .eq("follower_id",S.user.id)
+      .eq("following_id",id);
+
+    if(error){
+      console.error(
+        "Unfollow failed:",
+        error
+      );
+
+      toast(
+        "Unfollow failed: "+
+        error.message
+      );
+
+      return;
+    }
+
+    S.followingUserIds.delete(id);
+
+    toast("Unfollowed");
+
+  }else{
+
+    const{error}=await sb
+      .from("user_follows")
+      .insert({
+        follower_id:S.user.id,
+        following_id:id
+      });
+
+    if(error){
+      console.error(
+        "Follow failed:",
+        error
+      );
+
+      toast(
+        "Follow failed: "+
+        error.message
+      );
+
+      return;
+    }
+
+    S.followingUserIds.add(id);
+
+    toast("Following");
+  }
+
+  await loadFollowCounts(id);
+
+  /*
+   * Also refresh the current user's following count.
+   */
+  await loadFollowCounts(S.user.id);
+
+  await render();
+}
+
+function profilePage(){
+  let p=S.publicProfile;
+
+  if(!p){
+    return`
+      <div class="empty">
+
+        <div class="icon">👤</div>
+
+        <h2>Profile not found</h2>
+
+        <p>
+          That username does not exist.
+        </p>
+
+        <button
+          class="primary"
+          style="margin-top:18px"
+          onclick="nav('/')"
+        >
+          Go home
+        </button>
+
+      </div>
+    `;
+  }
+
+  let own=p.id===S.user?.id;
+
+  let priv=
+    !!p.activity_private &&
+    !own;
+
+  let counts=
+    S.followCounts?.[p.id]||
+    {
+      followers:0,
+      following:0
+    };
+
+  return`
+    <header class="header">
+
+      <button
+        class="back"
+        onclick="nav('/')"
+      >
+        ← Home
+      </button>
+
+      <div class="profile-head">
+
+        <div class="avatar big">
+          ${esc(p.avatar_emoji||"🙂")}
+        </div>
+
+        <div class="profile-info">
+
+          <div class="profile-name">
+            ${esc(p.display_name||p.username)}
+          </div>
+
+          <div class="profile-handle">
+            @${esc(p.username)}
+          </div>
+
+          ${
+            p.bio
+            ? `
+              <div class="bio">${esc(p.bio)}</div>
+            `
+            :""
+          }
+
+          <div class="stats">
+
+            <span>
+              <b>${S.posts.length}</b>
+              posts
+            </span>
+
+            <span>
+              <b>${counts.followers}</b>
+              followers
+            </span>
+
+            <span>
+              <b>${counts.following}</b>
+              following
+            </span>
+
+          </div>
+
+          <div class="profile-actions">
+
+            ${
+              own
+              ? `
+                <button
+                  class="secondary"
+                  onclick="nav('/profile/edit')"
+                >
+                  Customize profile
+                </button>
+              `
+              : profileFollowButton(p)
+            }
+
+          </div>
+
+          ${
+            priv
+            ? `
+              <div class="activity-line">
+                🔒 Activity is private
+              </div>
+            `
+            :""
+          }
+
+        </div>
+
+      </div>
+
+    </header>
+
+    ${
+      S.posts.length
+      ? S.posts.map(postHTML).join("")
+      : `
+        <div class="empty">
+
+          <div class="icon">✦</div>
+
+          <h2>No posts yet</h2>
+
+          <p>
+            This profile has not posted anything yet.
+          </p>
+
+        </div>
+      `
+    }
+  `;
+}
+
+async function exploreSearch(v){
+  S.search=v;
+
+  let q=v
+    .trim()
+    .replace(/^#/,"")
+    .replace(/^@/,"")
+    .toLowerCase();
+
+  if(!q){
+    S.results=[];
+    render();
+    return;
+  }
+
+  let[n,p]=await Promise.all([
+
+    sb
+      .from("niches")
+      .select("*")
+      .ilike("slug",`%${q}%`)
+      .limit(20),
+
+    sb
+      .from("profiles")
+      .select(
+        "id,username,display_name,avatar_emoji,bio"
+      )
+      .ilike("username",`%${q}%`)
+      .limit(20)
+
+  ]);
+
+  S.results=[
+    ...(n.data||[]).map(x=>({
+      t:"n",
+      x
+    })),
+
+    ...(p.data||[]).map(x=>({
+      t:"p",
+      x
+    }))
+  ];
+
+  render();
+}
+
+function explore(){
+  return`
+    <section class="explore">
+
+      <h1>Explore</h1>
+
+      <p style="color:var(--muted);font-size:12px">
+        Search for niches or people.
+      </p>
+
+      <input
+        class="search"
+        style="border:1px solid var(--border);background:var(--surface)"
+        placeholder="Search #football or @username"
+        value="${esc(S.search)}"
+        onkeydown="
+          if(event.key==='Enter')
+            exploreSearch(this.value)
+        "
+      >
+
+    </section>
+
+    ${
+      S.search
+      ? `
+        <div class="results">
+
+          ${
+            S.results.length
+            ? S.results.map(r=>
+                r.t==="n"
+                ? `
+                  <a
+                    class="result"
+                    href="${hrefN(r.x.slug)}"
+                    onclick="
+                      event.preventDefault();
+                      nav('/niche/${encodeURIComponent(r.x.slug)}')
+                    "
+                  >
+                    <b>
+                      #${esc(r.x.name||r.x.slug)}
+                    </b>
+
+                    <small>
+                      Niche · ${esc(r.x.post_count||0)} posts
+                    </small>
+                  </a>
+                `
+                : `
+                  <a
+                    class="result"
+                    href="${hrefP(r.x.username)}"
+                    onclick="
+                      event.preventDefault();
+                      nav('/profile/${encodeURIComponent(r.x.username)}')
+                    "
+                  >
+                    <b>
+                      ${esc(r.x.display_name||r.x.username)}
+                    </b>
+
+                    <small>
+                      @${esc(r.x.username)}
+                    </small>
+                  </a>
+                `
+              ).join("")
+            : `
+              <div class="empty">
+
+                <div class="icon">🔎</div>
+
+                <h2>No results</h2>
+
+                <p>
+                  Try another topic or username.
+                </p>
+
+              </div>
+            `
+          }
+
+        </div>
+      `
+      : `
+        <div class="empty">
+
+          <div class="icon">⌕</div>
+
+          <h2>Find your next niche</h2>
+
+          <p>
+            Search above for topics and people.
+          </p>
+
+        </div>
+      `
+    }
+  `;
+}
+
+async function loadFollowingNiches(){
+  S.followingNiches=[];
+
+  /*
+   * Don't reset followingUserIds here.
+   * The user-follow system loads that separately.
+   */
+  if(!S.user)return;
+
+  let{data,error}=await sb
+    .from("niche_followers")
+    .select(
+      "niche_id,niches(id,slug,name,description)"
+    )
+    .eq("user_id",S.user.id)
+    .order("created_at",{ascending:false})
+    .limit(8);
+
+  if(!error&&data){
+    S.followingNiches=
+      data
+        .map(x=>x.niches||x.niche)
+        .filter(Boolean);
+
+    return;
+  }
+
+  let{data:rows}=await sb
+    .from("niche_followers")
+    .select("niche_id")
+    .eq("user_id",S.user.id)
+    .limit(8);
+
+  if(!rows?.length)return;
+
+  let ids=rows
+    .map(x=>x.niche_id)
+    .filter(Boolean);
+
+  let{data:niches}=await sb
+    .from("niches")
+    .select(
+      "id,slug,name,description"
+    )
+    .in("id",ids);
+
+  S.followingNiches=niches||[];
+}
+
+async function loadFollowingPeople(userId){
+  if(!userId){
+    S.followingUserIds=new Set();
+    S.followingPeople=[];
+    return[];
+  }
+
+  /*
+   * IMPORTANT:
+   *
+   * We intentionally do NOT do:
+   *
+   * profiles!user_follows_following_id_fkey
+   *
+   * because your database does not have that
+   * foreign-key relationship.
+   */
+
+  const{data,error}=await sb
+    .from("user_follows")
+    .select("following_id")
+    .eq("follower_id",userId)
+    .limit(100);
+
+  if(error){
+    console.error(
+      "Following people unavailable:",
+      error
+    );
+
+    S.followingUserIds=new Set();
+    S.followingPeople=[];
+
+    return[];
+  }
+
+  const ids=(data||[])
+    .map(x=>x.following_id)
+    .filter(Boolean);
+
+  if(userId===S.user.id){
+    S.followingUserIds=new Set(ids);
+  }
+
+  if(!ids.length){
+    S.followingPeople=[];
+    return[];
+  }
+
+  const{
+    data:profiles,
+    error:profileError
+  }=await sb
+    .from("profiles")
+    .select(
+      "id,username,display_name,avatar_emoji,bio"
+    )
+    .in("id",ids);
+
+  if(profileError){
+    console.error(
+      "Following profiles unavailable:",
+      profileError
+    );
+
+    S.followingPeople=[];
+
+    return[];
+  }
+
+  S.followingPeople=profiles||[];
+
+  return S.followingPeople;
+}
+
+function isFollowingUser(id){
+  return!!id&&S.followingUserIds.has(id);
+}
+
+/* =========================================================
+   FOLLOWING CARD
+   ========================================================= */
+
+function followingCard(){
+
+  if(
+    !S.followingNiches.length &&
+    !S.followingPeople.length
+  ){
+    return`
+      <div class="card">
+
+        <h3>Your following</h3>
+
+        <p>
+          You are not following any niches or people yet.
+        </p>
+
+      </div>
+    `;
+  }
+
+  return`
+    <div class="card">
+
+      <h3>Your following</h3>
+
+      ${
+        S.followingNiches.length
+        ? `
+          <p>Topics you follow</p>
+
+          <div class="following-list">
+
+            ${S.followingNiches.map(n=>`
+              <a
+                class="following-item"
+                href="${hrefN(n.slug)}"
+                onclick="
+                  event.preventDefault();
+                  nav('/niche/${encodeURIComponent(n.slug)}')
+                "
+              >
+
+                <div class="avatar">#</div>
+
+                <div style="min-width:0">
+
+                  <div class="following-name">
+                    ${esc(n.name||n.slug)}
+                  </div>
+
+                  <div class="following-slug">
+                    #${esc(n.slug)}
+                  </div>
+
+                </div>
+
+              </a>
+            `).join("")}
+
+          </div>
+        `
+        :""
+      }
+
+      ${
+        S.followingPeople.length
+        ? `
+          <p style="margin-top:15px">
+            People you follow
+          </p>
+
+          <div class="following-list">
+
+            ${S.followingPeople.map(p=>`
+              <a
+                class="following-item"
+                href="${hrefP(p.username)}"
+                onclick="
+                  event.preventDefault();
+                  nav('/profile/${encodeURIComponent(p.username)}')
+                "
+              >
+
+                <div class="avatar">
+                  ${esc(p.avatar_emoji||"🙂")}
+                </div>
+
+                <div style="min-width:0">
+
+                  <div class="following-name">
+                    ${esc(p.display_name||p.username)}
+                  </div>
+
+                  <div class="following-slug">
+                    @${esc(p.username)}
+                  </div>
+
+                </div>
+
+              </a>
+            `).join("")}
+
+          </div>
+        `
+        :""
+      }
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   PROFILE EDIT
+   ========================================================= */
+
+function editProfilePage(){
+  let p=S.profile||{};
+  let cur=p.avatar_emoji||"🙂";
+
+  return`
+    <div class="settings">
+
+      <section class="setting-section">
+
+        <button
+          class="back"
+          onclick="
+            nav('/profile/${encodeURIComponent(p.username||"")}')
+          "
+        >
+          ← Back to profile
+        </button>
+
+        <h1>Customize profile</h1>
+
+        <p>
+          Change how your profile appears to other people.
+        </p>
+
+        <div class="customize-preview">
+
+          <div class="avatar">
+            ${esc(cur)}
+          </div>
+
+          <div>
+
+            <b>
+              ${esc(p.display_name||p.username||"User")}
+            </b>
+
+            <div
+              style="
+                color:var(--muted);
+                font-size:11px;
+                margin-top:3px
+              "
+            >
+              @${esc(p.username||"")}
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="group">
+
+          <label class="label">
+            Username
+          </label>
+
+          <div class="username">
+
+            <span>@</span>
+
+            <input
+              id="edit-uname"
+              maxlength="24"
+              value="${esc(p.username||"")}"
+            >
+
+          </div>
+
+        </div>
+
+        <div class="group">
+
+          <label class="label">
+            Display name
+          </label>
+
+          <input
+            id="edit-dname"
+            class="input"
+            maxlength="40"
+            value="${esc(p.display_name||"")}"
+          >
+
+        </div>
+
+        <div class="group">
+
+          <label class="label">
+            Bio
+          </label>
+
+          <textarea
+            id="edit-bio"
+            class="textarea"
+            rows="4"
+            maxlength="160"
+          >${esc(p.bio||"")}</textarea>
+
+        </div>
+
+        <div class="group">
+
+          <label class="label">
+            Avatar
+          </label>
+
+          <div class="emoji-grid">
+
+            ${EMOJIS.map(x=>`
+              <button
+                type="button"
+                class="emoji ${x===cur?"selected":""}"
+                onclick="
+                  S.profile.avatar_emoji='${x}';
+                  renderEditProfile()
+                "
+              >
+                ${x}
+              </button>
+            `).join("")}
+
+          </div>
+
+        </div>
+
+        <div id="edit-error"></div>
+
+        <button
+          class="primary"
+          style="margin-top:22px"
+          onclick="saveEditedProfile()"
+        >
+          Save changes
+        </button>
+
+      </section>
+
+      <section class="setting-section">
+
+        <h1>Appearance</h1>
+
+        <p>
+          Theme selection is separate from your profile customization.
+        </p>
+
+        <div class="themes">
+
+          ${
+            [
+              ["dark","Dark"],
+              ["system","System"],
+              ["light","Light"]
+            ].map(x=>`
+              <button
+                class="themeopt ${S.theme===x[0]?"active":""}"
+                onclick="setTheme('${x[0]}')"
+              >
+                ${x[1]}
+              </button>
+            `).join("")
+          }
+
+        </div>
+
+      </section>
+
+    </div>
+  `;
+}
+
+function renderEditProfile(){
+  document.getElementById("app").innerHTML=
+    layout(editProfilePage());
+}
+
+async function saveEditedProfile(){
+  let u=document
+    .getElementById("edit-uname")
+    ?.value
+    .trim()
+    .toLowerCase();
+
+  let d=document
+    .getElementById("edit-dname")
+    ?.value
+    .trim();
+
+  let b=document
+    .getElementById("edit-bio")
+    ?.value
+    .trim();
+
+  let e=document.getElementById("edit-error");
+
+  if(!/^[a-zA-Z0-9_]{3,24}$/.test(u||"")){
+    e.innerHTML=`
+      <div class="error">
+        Username must contain 3–24 letters, numbers, or underscores.
+      </div>
+    `;
+    return;
+  }
+
+  let{error}=await sb
+    .from("profiles")
+    .update({
+      username:u,
+      display_name:d||u,
+      avatar_emoji:S.profile?.avatar_emoji||"🙂",
+      bio:b
+    })
+    .eq("id",S.user.id);
+
+  if(error){
+    e.innerHTML=`
+      <div class="error">
+        ${esc(error.message)}
+      </div>
+    `;
+    return;
+  }
+
+  await loadProfile();
+
+  toast("Profile updated.");
+
+  nav(
+    "/profile/"+
+    encodeURIComponent(u)
+  );
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+function openModal(title,text,action){
+  S.modal={
+    title,
+    text,
+    action
+  };
+
+  renderModal();
+}
+
+function closeModal(){
+  S.modal=null;
+  renderModal();
+}
+
+function renderModal(){
+  let r=document.getElementById("modal-root");
+
+  if(!r)return;
+
+  r.innerHTML=S.modal
+    ? `
+      <div
+        class="modal-backdrop"
+        onclick="
+          if(event.target===this)
+            closeModal()
+        "
+      >
+
+        <div class="modal">
+
+          <h2>
+            ${esc(S.modal.title)}
+          </h2>
+
+          <p>
+            ${esc(S.modal.text)}
+          </p>
+
+          <div class="modal-actions">
+
+            <button
+              class="secondary"
+              onclick="closeModal()"
+            >
+              Cancel
+            </button>
+
+            <button
+              class="danger"
+              onclick="runModalAction()"
+            >
+              Confirm
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    `
+    :"";
+}
+
+async function runModalAction(){
+  let a=S.modal?.action;
+
+  if(a){
+    await a();
+  }
+}
+
+/* =========================================================
+   PASSWORD RESET
+   ========================================================= */
+
+async function requestPasswordReset(){
+  let redirect=
+    location.origin+
+    location.pathname+
+    "?recovery=1";
+
+  let{error}=await sb.auth.resetPasswordForEmail(
+    S.user.email,
+    {
+      redirectTo:redirect
+    }
+  );
+
+  if(error){
+    toast(error.message);
+  }else{
+    toast(
+      "Password reset email sent. Check your email."
+    );
+  }
+}
+
+function isRecoveryRoute(){
+  return new URLSearchParams(
+    location.search
+  ).get("recovery")==="1";
+}
+
+function renderPasswordReset(){
+  document.getElementById("app").innerHTML=`
+    <div class="auth">
+
+      <div class="authbox">
+
+        <div class="authlogo">
+          NICHE
+        </div>
+
+        <div class="tagline">
+          Choose a new password.
+        </div>
+
+        <div class="authcard">
+
+          <h3>
+            Reset your password
+          </h3>
+
+          <p style="color:var(--muted);font-size:12px">
+            Enter a new password for your NICHE account.
+            This page is opened securely from your
+            password-reset email.
+          </p>
+
+          <form
+            class="authform"
+            onsubmit="
+              event.preventDefault();
+              saveNewPassword()
+            "
+          >
+
+            <input
+              id="new-password"
+              class="input"
+              type="password"
+              minlength="6"
+              autocomplete="new-password"
+              placeholder="New password"
+              required
+            >
+
+            <input
+              id="new-password-2"
+              class="input"
+              type="password"
+              minlength="6"
+              autocomplete="new-password"
+              placeholder="Confirm new password"
+              required
+            >
+
+            <button
+              id="reset-submit"
+              class="primary"
+              type="submit"
+            >
+              Set new password
+            </button>
+
+          </form>
+
+          <button
+            class="switch"
+            onclick="leaveRecovery()"
+          >
+            Back to NICHE
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
+async function saveNewPassword(){
+  let a=
+    document.getElementById("new-password")
+    ?.value||"";
+
+  let b=
+    document.getElementById("new-password-2")
+    ?.value||"";
+
+  if(a.length<6){
+    return toast(
+      "Password must contain at least 6 characters."
+    );
+  }
+
+  if(a!==b){
+    return toast(
+      "The passwords do not match."
+    );
+  }
+
+  let btn=
+    document.getElementById("reset-submit");
+
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="Updating...";
+  }
+
+  let{error}=await sb.auth.updateUser({
+    password:a
+  });
+
+  if(error){
+
+    if(btn){
+      btn.disabled=false;
+      btn.textContent="Set new password";
+    }
+
+    toast(error.message);
+
+    return;
+  }
+
+  toast(
+    "Password updated successfully."
+  );
+
+  setTimeout(
+    ()=>leaveRecovery(),
+    700
+  );
+}
+
+function leaveRecovery(){
+  history.replaceState(
+    {},
+    "",
+    location.pathname
+  );
+
+  S.notificationsOpen=false;
+
+  render();
+}
+
+/* =========================================================
+   DELETE ACCOUNT
+   ========================================================= */
+
+async function deleteAccount(){
+  openModal(
+    "Delete account?",
+    "This permanently removes your NICHE account and profile. This cannot be undone.",
+    async()=>{
+
+      let{error}=await sb.rpc(
+        "delete_my_account"
+      );
+
+      if(error){
+        toast(
+          "Account deletion needs the SQL function in the setup file."
+        );
+        return;
+      }
+
+      closeModal();
+
+      await sb.auth.signOut();
+    }
+  );
+}
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+
+async function setActivityPrivacy(privateMode){
+  let{error}=await sb
+    .from("profiles")
+    .update({
+      activity_private:privateMode
+    })
+    .eq("id",S.user.id);
+
+  if(error){
+    toast(
+      "Activity privacy needs the database update in the SQL file."
+    );
+    return;
+  }
+
+  S.activityPrivate=privateMode;
+
+  if(S.profile){
+    S.profile.activity_private=privateMode;
+  }
+
+  toast(
+    privateMode
+      ?"Activity privacy on"
+      :"Activity privacy off"
+  );
+
+  render();
+}
+
+function settings(){
+  return`
+    <div class="settings">
+
+      <section class="setting-section">
+
+        <h1>Appearance</h1>
+
+        <p>
+          Dark, System, and Light stay independent.
+        </p>
+
+        <div class="themes">
+
+          ${
+            [
+              ["dark","Dark"],
+              ["system","System"],
+              ["light","Light"]
+            ].map(x=>`
+              <button
+                class="themeopt ${S.theme===x[0]?"active":""}"
+                onclick="setTheme('${x[0]}')"
+              >
+                ${x[1]}
+              </button>
+            `).join("")
+          }
+
+        </div>
+
+      </section>
+
+      <section class="setting-section">
+
+        <h1>Activity privacy</h1>
+
+        <p>
+          When on, other people cannot see your likes,
+          reposts, or the niches and accounts you follow.
+        </p>
+
+        <div class="activity-row">
+
+          <div>
+
+            <b style="font-size:13px">
+              ${
+                S.activityPrivate
+                ?"Private activity"
+                :"Activity visible"
+              }
+            </b>
+
+            <div
+              style="
+                color:var(--muted);
+                font-size:11px;
+                margin-top:3px
+              "
+            >
+              ${
+                S.activityPrivate
+                ?"Only you can see your activity."
+                :"People can see your public activity."
+              }
+            </div>
+
+          </div>
+
+          <button
+            class="switch-control ${
+              S.activityPrivate?"on":""
+            }"
+            onclick="
+              setActivityPrivacy(
+                !S.activityPrivate
+              )
+            "
+          >
+            <span class="switch-knob"></span>
+          </button>
+
+        </div>
+
+      </section>
+
+      <section class="setting-section">
+
+        <h1>Security</h1>
+
+        <p>
+          Signed in as ${esc(S.user?.email||"")}
+        </p>
+
+        <button
+          class="secondary"
+          onclick="requestPasswordReset()"
+        >
+          Reset password
+        </button>
+
+      </section>
+
+      <section class="setting-section">
+
+        <h1>Account</h1>
+
+        <button
+          class="secondary"
+          onclick="sb.auth.signOut()"
+        >
+          Log out
+        </button>
+
+        <button
+          class="danger"
+          style="margin-left:8px"
+          onclick="deleteAccount()"
+        >
+          Delete account
+        </button>
+
+      </section>
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   NOTIFICATIONS
+   ========================================================= */
+
+async function loadNotifications(){
+  if(
+    !S.user||
+    S.notificationsLoading
+  ){
+    return;
+  }
+
+  S.notificationsLoading=true;
+  S.notificationsError="";
+
+  try{
+
+    let{
+      data:myPosts,
+      error:postError
+    }=await sb
+      .from("posts")
+      .select(
+        "id,body,created_at"
+      )
+      .eq("author_id",S.user.id)
+      .order("created_at",{ascending:false})
+      .limit(40);
+
+    if(postError){
+      throw postError;
+    }
+
+    let ids=(myPosts||[]).map(
+      x=>x.id
+    );
+
+    if(!ids.length){
+      S.notifications=[];
+      S.notificationsLoaded=true;
+      return;
+    }
+
+    let[
+      likesRes,
+      commentsRes,
+      repostsRes
+    ]=await Promise.all([
+
+      sb
+        .from("likes")
+        .select(
+          "post_id,user_id,created_at"
+        )
+        .in("post_id",ids)
+        .neq("user_id",S.user.id)
+        .order("created_at",{ascending:false})
+        .limit(30),
+
+      sb
+        .from("comments")
+        .select(
+          "post_id,author_id,body,created_at"
+        )
+        .in("post_id",ids)
+        .neq("author_id",S.user.id)
+        .order("created_at",{ascending:false})
+        .limit(30),
+
+      sb
+        .from("reposts")
+        .select(
+          "post_id,user_id,created_at"
+        )
+        .in("post_id",ids)
+        .neq("user_id",S.user.id)
+        .order("created_at",{ascending:false})
+        .limit(30)
+
+    ]);
+
+    let actorIds=[
+      ...(likesRes.data||[])
+        .map(x=>x.user_id),
+
+      ...(commentsRes.data||[])
+        .map(x=>x.author_id),
+
+      ...(repostsRes.data||[])
+        .map(x=>x.user_id)
+    ];
+
+    let actors=[];
+
+    if(actorIds.length){
+
+      let{data}=await sb
+        .from("profiles")
+        .select(
+          "id,username,display_name,avatar_emoji"
+        )
+        .in(
+          "id",
+          [...new Set(actorIds)]
+        );
+
+      actors=data||[];
+    }
+
+    let amap=new Map(
+      actors.map(x=>[x.id,x])
+    );
+
+    let pmap=new Map(
+      (myPosts||[]).map(x=>[x.id,x])
+    );
+
+    S.notifications=[];
+
+    for(
+      const x of likesRes.data||[]
+    ){
+      S.notifications.push({
+        kind:"like",
+        actor:amap.get(x.user_id),
+        post:pmap.get(x.post_id),
+        time:x.created_at
+      });
+    }
+
+    for(
+      const x of commentsRes.data||[]
+    ){
+      S.notifications.push({
+        kind:"comment",
+        actor:amap.get(x.author_id),
+        post:pmap.get(x.post_id),
+        body:x.body,
+        time:x.created_at
+      });
+    }
+
+    for(
+      const x of repostsRes.data||[]
+    ){
+      S.notifications.push({
+        kind:"repost",
+        actor:amap.get(x.user_id),
+        post:pmap.get(x.post_id),
+        time:x.created_at
+      });
+    }
+
+    S.notifications.sort(
+      (a,b)=>
+        new Date(b.time)-
+        new Date(a.time)
+    );
+
+    S.notifications=
+      S.notifications.slice(0,30);
+
+    S.notificationsLoaded=true;
+
+  }catch(e){
+
+    console.error(
+      "Notification load failed",
+      e
+    );
+
+    S.notificationsError=
+      "Notifications could not be loaded right now.";
+
+    S.notificationsLoaded=true;
+
+  }finally{
+
+    S.notificationsLoading=false;
+
+    notificationPanel();
+    updateNotificationButtons();
+  }
+}
+
+function notificationText(n){
+  const name=
+    esc(
+      n.actor?.display_name||
+      n.actor?.username||
+      "Someone"
+    );
+
+  if(n.kind==="like"){
+    return`<b>${name}</b> liked your post.`;
+  }
+
+  if(n.kind==="comment"){
+    return`
+      <b>${name}</b>
+      commented on your post
+      ${n.body
+        ? `: <span>${esc(n.body).slice(0,120)}</span>`
+        :""
+      }.
+    `;
+  }
+
+  if(n.kind==="repost"){
+    return`<b>${name}</b> reposted your post.`;
+  }
+
+  return`<b>${name}</b> interacted with your post.`;
+}
+
+function notificationReadKey(){
+  return"niche-notifications-read-"+
+    (S.user?.id||"");
+}
+
+function notificationReadAt(){
+  return Number(
+    localStorage.getItem(
+      notificationReadKey()
+    )||0
+  );
+}
+
+function unreadCount(){
+  let t=notificationReadAt();
+
+  return S.notifications.filter(
+    x=>
+      new Date(x.time).getTime()>t
+  ).length;
+}
+
+function notificationPanel(){
+  let root=
+    document.getElementById(
+      "notification-portal"
+    );
+
+  if(!root)return;
+
+  let u=unreadCount();
+
+  root.innerHTML=
+    S.notificationsOpen
+    ? `
+      <div
+        class="notif-menu"
+        role="dialog"
+        aria-label="Notifications"
+      >
+
+        <div class="notif-head">
+
+          <strong>
+            Notifications
+          </strong>
+
+          ${
+            S.notifications.length
+            ? `
+              <button
+                type="button"
+                onclick="markNotificationsRead()"
+              >
+                Mark all read
+              </button>
+            `
+            :""
+          }
+
+        </div>
+
+        <div class="notif-list">
+
+          ${
+            S.notificationsLoading
+            ? `
+              <div class="notif-empty">
+                Loading notifications…
+              </div>
+            `
+            : S.notificationsError
+              ? `
+                <div class="notif-empty">
+
+                  ${esc(S.notificationsError)}
+
+                  <button
+                    class="secondary"
+                    style="
+                      margin-top:10px;
+                      font-size:11px
+                    "
+                    onclick="
+                      S.notificationsLoaded=false;
+                      loadNotifications()
+                    "
+                  >
+                    Try again
+                  </button>
+
+                </div>
+              `
+              : S.notifications.length
+                ? S.notifications.map(n=>`
+                    <a
+                      class="notification"
+                      href="${hrefPost(n.post?.id||"")}"
+                      onclick="
+                        event.preventDefault();
+                        S.notificationsOpen=false;
+                        notificationPanel();
+                        nav('/post/${encodeURIComponent(n.post?.id||"")}')
+                      "
+                    >
+
+                      <div class="avatar">
+                        ${esc(n.actor?.avatar_emoji||"🙂")}
+                      </div>
+
+                      <div class="notification-text">
+
+                        ${notificationText(n)}
+
+                        <span class="notification-time">
+                          ${esc(time(n.time))}
+                        </span>
+
+                      </div>
+
+                    </a>
+                  `).join("")
+                : `
+                  <div class="notif-empty">
+                    No notifications yet.
+                  </div>
+                `
+          }
+
+        </div>
+      </div>
+    `
+    :"";
+
+  updateNotificationButtons();
+}
+
+async function toggleNotifications(e){
+  if(e){
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  S.notificationsOpen=
+    !S.notificationsOpen;
+
+  notificationPanel();
+  updateNotificationButtons();
+
+  if(
+    S.notificationsOpen&&
+    !S.notificationsLoaded
+  ){
+    await loadNotifications();
+  }
+}
+
+function closeNotifications(){
+  if(!S.notificationsOpen)return;
+
+  S.notificationsOpen=false;
+
+  notificationPanel();
+}
+
+function markNotificationsRead(){
+  localStorage.setItem(
+    notificationReadKey(),
+    String(Date.now())
+  );
+
+  S.notificationsOpen=false;
+
+  notificationPanel();
+  updateNotificationButtons();
+}
+
+function updateNotificationButtons(){
+  document
+    .querySelectorAll(".notif")
+    .forEach(b=>{
+
+      let u=unreadCount();
+
+      b.innerHTML=
+        (S.notificationsOpen
+          ?"✕"
+          :"🔔")+
+        (
+          u
+          ? `
+            <span class="notif-badge">
+              ${u>9?"9+":u}
+            </span>
+          `
+          :""
+        );
+
+      b.setAttribute(
+        "aria-expanded",
+        S.notificationsOpen
+      );
+    });
+}
+
+function notificationMenu(){
+  let u=unreadCount();
+
+  return`
+    <div class="notif-wrap">
+
+      <button
+        id="notification-button"
+        class="notif"
+        type="button"
+        onclick="toggleNotifications(event)"
+        title="Notifications"
+        aria-expanded="${S.notificationsOpen}"
+      >
+
+        ${S.notificationsOpen?"✕":"🔔"}
+
+        ${
+          u
+          ? `
+            <span class="notif-badge">
+              ${u>9?"9+":u}
+            </span>
+          `
+          :""
+        }
+
+      </button>
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   LAYOUT
+   ========================================================= */
+
+function layout(content){
+  let p=S.profile||{};
+
+  return`
+    <div class="shell">
+
+      <aside class="side">
+
+        <a
+          class="brand"
+          href="#/"
+          onclick="
+            event.preventDefault();
+            nav('/')
+          "
+        >
+
+          <b>NICHE</b>
+
+          <span>
+            Everything starts with a topic.
+          </span>
+
+        </a>
+
+        <nav class="nav">
+
+          <button onclick="nav('/')">
+            <i>⌂</i>
+            Home
+          </button>
+
+          <button onclick="nav('/explore')">
+            <i>⌕</i>
+            Explore
+          </button>
+
+          <button
+            onclick="
+              nav('/profile/${encodeURIComponent(p.username||'')}')
+            "
+          >
+            <i>◯</i>
+            Profile
+          </button>
+
+          <button onclick="nav('/settings')">
+            <i>⚙</i>
+            Settings
+          </button>
+
+        </nav>
+
+        <div class="mini">
+
+          <div class="avatar">
+            ${esc(p.avatar_emoji||"🙂")}
+          </div>
+
+          <div class="txt">
+
+            <strong>
+              ${esc(p.display_name||p.username||"User")}
+            </strong>
+
+            <small>
+              @${esc(p.username||"")}
+            </small>
+
+          </div>
+
+        </div>
+
+        <div class="mini-actions">
+
+          <button
+            class="linkbtn"
+            onclick="nav('/profile/edit')"
+          >
+            Customize
+          </button>
+
+          <button
+            class="linkbtn"
+            onclick="sb.auth.signOut()"
+          >
+            Log out
+          </button>
+
+        </div>
+
+      </aside>
+
+      <main class="main">
+
+        <header class="top">
+
+          <a
+            class="mobile-brand"
+            href="#/"
+            onclick="
+              event.preventDefault();
+              nav('/')
+            "
+          >
+            NICHE
+          </a>
+
+          <div class="searchbox">
+
+            <input
+              id="topsearch"
+              class="search"
+              placeholder="Search niches..."
+              value="${esc(S.search)}"
+              onkeydown="
+                if(event.key==='Enter'){
+                  let x=topic(this.value);
+                  if(x)
+                    nav('/niche/'+encodeURIComponent(x))
+                }
+              "
+            >
+
+          </div>
+
+          ${notificationMenu()}
+
+          <button
+            class="theme"
+            onclick="cycleTheme()"
+            title="Change theme"
+          >
+            ${
+              S.theme==='dark'
+              ?"☾"
+              :S.theme==='light'
+                ?"☀"
+                :"◐"
+            }
+          </button>
+
+        </header>
+
+        ${content}
+
+      </main>
+
+      <aside class="right">
+
+        <div class="card">
+
+          <h3>
+            Welcome to NICHE
+          </h3>
+
+          <p>
+            Follow topics, join conversations,
+            and share what matters to you.
+          </p>
+
+        </div>
+
+        ${followingCard()}
+
+        <div class="card">
+
+          <h3>
+            How it works
+          </h3>
+
+          <p>
+            Every post belongs to a niche.
+            Add a hashtag such as
+            <b>#football</b>
+            to enter that topic.
+          </p>
+
+        </div>
+
+      </aside>
+
+      <nav class="mobile-nav">
+
+        <button onclick="nav('/')">
+          <i>⌂</i>
+          <span>Home</span>
+        </button>
+
+        <button onclick="nav('/explore')">
+          <i>⌕</i>
+          <span>Explore</span>
+        </button>
+
+        <button
+          class="mobile-notif"
+          onclick="toggleNotifications(event)"
+        >
+
+          <i>♢</i>
+
+          ${
+            unreadCount()
+            ? `
+              <b class="mobile-badge">
+                ${Math.min(99,unreadCount())}
+              </b>
+            `
+            :""
+          }
+
+          <span>
+            Alerts
+          </span>
+
+        </button>
+
+        <button
+          onclick="
+            nav('/profile/${encodeURIComponent(p.username||'')}')
+          "
+        >
+          <i>◯</i>
+          <span>Profile</span>
+        </button>
+
+        <button onclick="nav('/settings')">
+          <i>⚙</i>
+          <span>Settings</span>
+        </button>
+
+      </nav>
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   REFRESH / RENDER
+   ========================================================= */
+
+async function refresh(){
+  let r=route();
+
+  if(r.type==="niche"){
+
+    await loadNiche(r.topic);
+    await loadFollow();
+    await loadPosts();
+
+  }else if(r.type==="profile"){
+
+    await loadPublicProfile(
+      r.username
+    );
+
+    if(S.publicProfile){
+
+      S.posts=await profilePosts(
+        S.publicProfile.id
+      );
+
+      await loadFollowCounts(
+        S.publicProfile.id
+      );
+
+    }else{
+
+      S.posts=[];
+
+    }
+
+  }else{
+
+    S.niche=null;
+    S.publicProfile=null;
+
+    await loadPosts();
+  }
+
+  render();
+}
+
+async function render(){
+
+  applyTheme();
+
+  if(isRecoveryRoute()){
+
+    if(!S.session){
+
+      document.getElementById("app").innerHTML=`
+        <div class="auth">
+
+          <div class="authbox">
+
+            <div class="authlogo">
+              NICHE
+            </div>
+
+            <div class="tagline">
+              Password reset
+            </div>
+
+            <div class="authcard">
+
+              <h3>
+                Reset link expired
+              </h3>
+
+              <p style="color:var(--muted);font-size:12px">
+                The secure reset session could not be established.
+                Please request a new password reset email.
+              </p>
+
+              <button
+                class="primary"
+                onclick="
+                  history.replaceState({},"",location.pathname);
+                  render()
+                "
+              >
+                Return to login
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      `;
+
+      return;
+    }
+
+    renderPasswordReset();
+
+    return;
+  }
+
+  if(!S.session){
+    renderAuth();
+    return;
+  }
+
+  if(needSetup()){
+    renderSetup();
+    return;
+  }
+
+  /*
+   * Load current user's following data.
+   *
+   * loadFollowingNiches() no longer resets
+   * followingUserIds.
+   */
+  await loadFollowingNiches();
+
+  await loadFollowingPeople(
+    S.user.id
+  );
+
+  if(!S.notificationsLoaded){
+    await loadNotifications();
+  }
+
+  let r=route();
+
+  if(r.type==="niche"){
+
+    S.search="#"+r.topic;
+
+    await loadNiche(r.topic);
+    await loadFollow();
+    await loadPosts();
+
+    document.getElementById("app").innerHTML=
+      layout(nichePage());
+
+  }else if(r.type==="profile"){
+
+    S.search="";
+
+    await loadPublicProfile(
+      r.username
+    );
+
+    if(S.publicProfile){
+
+      S.posts=await profilePosts(
+        S.publicProfile.id
+      );
+
+      await loadFollowCounts(
+        S.publicProfile.id
+      );
+
+    }else{
+
+      S.posts=[];
+
+    }
+
+    document.getElementById("app").innerHTML=
+      layout(profilePage());
+
+  }else if(r.type==="explore"){
+
+    document.getElementById("app").innerHTML=
+      layout(explore());
+
+  }else if(r.type==="settings"){
+
+    document.getElementById("app").innerHTML=
+      layout(settings());
+
+  }else if(r.type==="profile-edit"){
+
+    S.search="";
+
+    renderEditProfile();
+
+  }else if(r.type==="post"){
+
+    await loadPosts();
+
+    document.getElementById("app").innerHTML=
+      layout(home());
+
+    setTimeout(
+      ()=>{
+        document
+          .getElementById(
+            "post-"+CSS.escape(r.id)
+          )
+          ?.scrollIntoView({
+            behavior:"smooth",
+            block:"center"
+          });
+      },
+      50
+    );
+
+  }else{
+
+    S.search="";
+    S.niche=null;
+    S.publicProfile=null;
+
+    await loadPosts();
+
+    document.getElementById("app").innerHTML=
+      layout(home());
+  }
+}
+
+/* =========================================================
+   AUTH CALLBACK / INIT
+   ========================================================= */
+
+async function prepareAuthCallback(){
+  /* Supabase can return a PKCE code in the query string. Exchange it before
+     the first render so the app never briefly falls back to the login screen. */
+  let params=new URLSearchParams(location.search);
+  let code=params.get("code");
+
+  if(code){
+    let{error}=await sb.auth.exchangeCodeForSession(code);
+
+    if(error){
+      console.error("NICHE auth callback:",error);
+    }else{
+      params.delete("code");
+      let clean=params.toString();
+      history.replaceState({},"",location.pathname+(clean?"?"+clean:""));
+    }
+  }
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+
+async function init(){
+
+  applyTheme();
+
+  renderModal();
+  notificationPanel();
+
+  await prepareAuthCallback();
+
+  let{data}=await sb.auth.getSession();
+
+  S.session=data.session;
+  S.user=data.session?.user||null;
+
+  if(S.user){
+    await loadProfile();
+  }
+
+  await render();
+
+  notificationPanel();
+
+  sb.auth.onAuthStateChange(
+    async(event,session)=>{
+
+      S.session=session;
+      S.user=session?.user||null;
+
+      if(event!=="PASSWORD_RECOVERY"){
+
+        S.notifications=[];
+        S.notificationsLoaded=false;
+        S.followingNiches=[];
+        S.followingPeople=[];
+        S.followingUserIds=new Set();
+        S.followCounts={};
+
+      }
+
+      if(S.user){
+        S.verificationDialog=null;
+        await loadProfile();
+
+        /* Start a fresh setup draft only when there is no draft already.
+           This keeps typed profile fields intact if auth state changes. */
+        if(!S.profile?.username && !S.setupDraft){
+          S.setupDraft={
+            username:"",
+            displayName:S.profile?.display_name||"",
+            bio:S.profile?.bio||"",
+            avatar:S.profile?.avatar_emoji||"🙂"
+          };
+        }
+      }else{
+        S.profile=null;
+        S.setupDraft=null;
+      }
+
+      await render();
+
+      notificationPanel();
+    }
+  );
+
+  sb.channel("niche-v2")
+
+    .on(
+      "postgres_changes",
+      {
+        event:"*",
+        schema:"public",
+        table:"posts"
+      },
+      refresh
+    )
+
+    .on(
+      "postgres_changes",
+      {
+        event:"*",
+        schema:"public",
+        table:"likes"
+      },
+      refresh
+    )
+
+    .on(
+      "postgres_changes",
+      {
+        event:"*",
+        schema:"public",
+        table:"reposts"
+      },
+      refresh
+    )
+
+    .subscribe();
+}
+/* =========================================================
+   NICHE POSTING / COMMENTING PIN
+   Paste this block immediately BEFORE the final init();
+   ========================================================= */
+
+(function(){
+
+  const PIN_ENABLED_KEY="niche-posting-pin-enabled";
+  const PIN_HASH_KEY="niche-posting-pin-hash";
+
+  function pinKey(base){
+    return base+"-"+(S.user?.id||"guest");
+  }
+
+  function pinEnabled(){
+    return localStorage.getItem(
+      pinKey(PIN_ENABLED_KEY)
+    )==="1";
+  }
+
+  function setPinEnabled(v){
+    localStorage.setItem(
+      pinKey(PIN_ENABLED_KEY),
+      v?"1":"0"
+    );
+  }
+
+  function getPinHash(){
+    return localStorage.getItem(
+      pinKey(PIN_HASH_KEY)
+    )||"";
+  }
+
+  async function hashPin(pin){
+    const data=new TextEncoder().encode(pin);
+
+    const hash=await crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
+
+    return Array.from(
+      new Uint8Array(hash)
+    )
+    .map(
+      x=>x.toString(16).padStart(2,"0")
+    )
+    .join("");
+  }
+
+  function pinIsConfigured(){
+    return !!getPinHash();
+  }
+
+  function closePinDialog(){
+    document.getElementById(
+      "niche-pin-dialog"
+    )?.remove();
+  }
+
+  function pinDialogHTML(title,message,buttons){
+    const old=document.getElementById(
+      "niche-pin-dialog"
+    );
+
+    if(old)old.remove();
+
+    const root=document.createElement("div");
+
+    root.id="niche-pin-dialog";
+
+    root.innerHTML=`
+      <div class="modal-backdrop niche-pin-backdrop">
+
+        <div class="modal niche-pin-modal">
+
+          <h2>${esc(title)}</h2>
+
+          <p>${esc(message)}</p>
+
+          <input
+            id="niche-pin-input"
+            class="input"
+            type="password"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="8"
+            autocomplete="off"
+            placeholder="Enter PIN"
+          >
+
+          <div
+            id="niche-pin-error"
+            style="
+              color:var(--red);
+              font-size:11px;
+              margin-top:8px;
+              min-height:15px
+            "
+          ></div>
+
+          <div class="modal-actions">
+            ${buttons}
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(root);
+
+    const input=document.getElementById(
+      "niche-pin-input"
+    );
+
+    setTimeout(
+      ()=>input?.focus(),
+      50
+    );
+
+    input?.addEventListener(
+      "keydown",
+      e=>{
+        if(e.key==="Enter"){
+          e.preventDefault();
+
+          document
+            .getElementById("niche-pin-confirm")
+            ?.click();
+        }
+
+        if(e.key==="Escape"){
+          closePinDialog();
+        }
+      }
+    );
+  }
+
+  async function verifyPinDialog(){
+    const input=document.getElementById(
+      "niche-pin-input"
+    );
+
+    const error=document.getElementById(
+      "niche-pin-error"
+    );
+
+    const pin=input?.value||"";
+
+    if(!/^\d{4,8}$/.test(pin)){
+      if(error){
+        error.textContent=
+          "PIN must contain 4–8 digits.";
+      }
+
+      input?.focus();
+
+      return false;
+    }
+
+    const saved=getPinHash();
+
+    if(!saved){
+      closePinDialog();
+      return true;
+    }
+
+    const hash=await hashPin(pin);
+
+    if(hash!==saved){
+
+      if(error){
+        error.textContent=
+          "Incorrect PIN.";
+      }
+
+      input.value="";
+      input.focus();
+
+      return false;
+    }
+
+    closePinDialog();
+
+    return true;
+  }
+
+  async function askForPin(action){
+
+    if(!pinEnabled()||!pinIsConfigured()){
+      await action();
+      return;
+    }
+
+    pinDialogHTML(
+      "PIN required",
+      "Enter your PIN to continue.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="primary"
+          type="button"
+        >
+          Continue
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    document
+      .getElementById("niche-pin-confirm")
+      ?.addEventListener(
+        "click",
+        async()=>{
+          const ok=
+            await verifyPinDialog();
+
+          if(ok){
+            await action();
+          }
+        }
+      );
+  }
+
+  async function createPin(){
+
+    const input=document.getElementById(
+      "niche-pin-input"
+    );
+
+    const error=document.getElementById(
+      "niche-pin-error"
+    );
+
+    const pin=input?.value||"";
+
+    if(!/^\d{4,8}$/.test(pin)){
+
+      if(error){
+        error.textContent=
+          "PIN must contain 4–8 digits.";
+      }
+
+      return;
+    }
+
+    closePinDialog();
+
+    pinDialogHTML(
+      "Confirm PIN",
+      "Enter the same PIN again.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="primary"
+          type="button"
+        >
+          Confirm
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    const confirmButton=
+      document.getElementById(
+        "niche-pin-confirm"
+      );
+
+    confirmButton?.addEventListener(
+      "click",
+      async()=>{
+
+        const confirmInput=
+          document.getElementById(
+            "niche-pin-input"
+          );
+
+        const confirmPin=
+          confirmInput?.value||"";
+
+        if(confirmPin!==pin){
+
+          const error=
+            document.getElementById(
+              "niche-pin-error"
+            );
+
+          if(error){
+            error.textContent=
+              "PINs do not match.";
+          }
+
+          confirmInput.value="";
+          confirmInput.focus();
+
+          return;
+        }
+
+        const hash=
+          await hashPin(pin);
+
+        localStorage.setItem(
+          pinKey(PIN_HASH_KEY),
+          hash
+        );
+
+        setPinEnabled(true);
+
+        closePinDialog();
+
+        toast(
+          "Posting PIN enabled."
+        );
+
+        render();
+      }
+    );
+  }
+
+  function setupPin(){
+
+    pinDialogHTML(
+      "Set up Posting PIN",
+      "Create a 4–8 digit PIN. It will be required before posting or commenting.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="primary"
+          type="button"
+        >
+          Continue
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    document
+      .getElementById("niche-pin-confirm")
+      ?.addEventListener(
+        "click",
+        createPin
+      );
+  }
+
+  async function changePin(){
+
+    if(!pinIsConfigured()){
+      setupPin();
+      return;
+    }
+
+    pinDialogHTML(
+      "Current PIN",
+      "Enter your current PIN before changing it.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="primary"
+          type="button"
+        >
+          Continue
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    document
+      .getElementById("niche-pin-confirm")
+      ?.addEventListener(
+        "click",
+        async()=>{
+
+          const ok=
+            await verifyPinDialog();
+
+          if(ok){
+            setupPin();
+          }
+        }
+      );
+  }
+
+  async function disablePin(){
+
+    if(!pinIsConfigured()){
+      setPinEnabled(false);
+      render();
+      return;
+    }
+
+    pinDialogHTML(
+      "Disable Posting PIN",
+      "Enter your current PIN to disable PIN protection.",
+      `
+        <button
+          class="secondary"
+          type="button"
+          onclick="window.__nicheCancelPin()"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="niche-pin-confirm"
+          class="danger"
+          type="button"
+        >
+          Disable
+        </button>
+      `
+    );
+
+    window.__nicheCancelPin=()=>{
+      closePinDialog();
+    };
+
+    document
+      .getElementById("niche-pin-confirm")
+      ?.addEventListener(
+        "click",
+        async()=>{
+
+          const ok=
+            await verifyPinDialog();
+
+          if(!ok)return;
+
+          localStorage.removeItem(
+            pinKey(PIN_HASH_KEY)
+          );
+
+          setPinEnabled(false);
+
+          toast(
+            "Posting PIN disabled."
+          );
+
+          render();
+        }
+      );
+  }
+
+  /*
+   * Add the PIN section to the existing Security
+   * section without replacing the existing settings.
+   */
+
+  const originalSettings=settings;
+
+  settings=function(){
+
+    let html=originalSettings();
+
+    const pinSection=`
+      <section class="setting-section">
+
+        <h1>Posting PIN</h1>
+
+        <p>
+          Require a PIN before sending posts or comments.
+          The PIN is stored only on this browser.
+        </p>
+
+        <div class="activity-row">
+
+          <div>
+
+            <b style="font-size:13px">
+              ${
+                pinEnabled()
+                ?"PIN protection on"
+                :"PIN protection off"
+              }
+            </b>
+
+            <div
+              style="
+                color:var(--muted);
+                font-size:11px;
+                margin-top:3px
+              "
+            >
+              ${
+                pinEnabled()
+                ?"A PIN is required before posting or commenting."
+                :"Posts and comments do not require a PIN."
+              }
+            </div>
+
+          </div>
+
+          <button
+            class="switch-control ${
+              pinEnabled()?"on":""
+            }"
+            onclick="
+              ${
+                pinEnabled()
+                ?"window.__nicheDisablePin()"
+                :"window.__nicheSetupPin()"
+              }
+            "
+          >
+            <span class="switch-knob"></span>
+          </button>
+
+        </div>
+
+        ${
+          pinEnabled()
+          ? `
+            <div style="margin-top:12px">
+
+              <button
+                class="secondary"
+                onclick="window.__nicheChangePin()"
+              >
+                Change PIN
+              </button>
+
+            </div>
+          `
+          :""
+        }
+
+      </section>
+    `;
+
+    const marker=
+      `<section class="setting-section">
+
+        <h1>Account</h1>`;
+
+    if(html.includes(marker)){
+      html=html.replace(
+        marker,
+        pinSection+marker
+      );
+    }else{
+      html=html.replace(
+        "</div>\n  `;",
+        pinSection+"</div>\n  `;"
+      );
+    }
+
+    return html;
+  };
+
+  window.__nicheSetupPin=setupPin;
+  window.__nicheChangePin=changePin;
+  window.__nicheDisablePin=disablePin;
+
+  /*
+   * Protect the existing createPost() function.
+   *
+   * The original function is left completely untouched.
+   */
+
+  const originalCreatePost=
+    window.createPost;
+
+  window.createPost=
+    async function(){
+
+      if(
+        pinEnabled()&&
+        pinIsConfigured()
+      ){
+
+        await askForPin(
+          async()=>{
+            await originalCreatePost();
+          }
+        );
+
+        return;
+      }
+
+      await originalCreatePost();
+    };
+
+  /*
+   * Protect the existing sendComment() function.
+   */
+
+  const originalSendComment=
+    window.sendComment;
+
+  window.sendComment=
+    async function(id){
+
+      if(
+        pinEnabled()&&
+        pinIsConfigured()
+      ){
+
+        await askForPin(
+          async()=>{
+            await originalSendComment(id);
+          }
+        );
+
+        return;
+      }
+
+      await originalSendComment(id);
+    };
+
+  /*
+   * Small amount of styling for the PIN dialog.
+   */
+
+})();
+/* =========================================================
+   NICHE POST WIDGETS
+   Countdown + Event + Poll
+
+   Paste immediately BEFORE the final init();
+   ========================================================= */
+
+(function(){
+
+  const WIDGET_KEY="niche-widget-draft";
+
+  let currentWidget=null;
+
+  /* -------------------------------------------------------
+     Helpers
+     ------------------------------------------------------- */
+
+  function widgetEsc(v){
+    return esc(String(v??""));
+  }
+
+  function widgetDateValue(v){
+    if(!v)return "";
+
+    const d=new Date(v);
+
+    if(Number.isNaN(d.getTime()))return "";
+
+    return d.toISOString();
+  }
+
+  function formatCountdown(ms){
+
+    if(ms<=0){
+      return "00d 00h 00m 00s";
+    }
+
+    let total=Math.floor(ms/1000);
+
+    const days=Math.floor(total/86400);
+
+    total%=86400;
+
+    const hours=Math.floor(total/3600);
+
+    total%=3600;
+
+    const minutes=Math.floor(total/60);
+
+    const seconds=total%60;
+
+    return (
+      String(days).padStart(2,"0")+"d "+
+      String(hours).padStart(2,"0")+"h "+
+      String(minutes).padStart(2,"0")+"m "+
+      String(seconds).padStart(2,"0")+"s"
+    );
+  }
+
+  function widgetTimeText(v){
+
+    if(!v)return "";
+
+    const d=new Date(v);
+
+    if(Number.isNaN(d.getTime()))return "";
+
+    return d.toLocaleString(
+      undefined,
+      {
+        dateStyle:"medium",
+        timeStyle:"short"
+      }
+    );
+  }
+
+  function closeWidgetModal(){
+
+    document
+      .getElementById("niche-widget-modal")
+      ?.remove();
+
+    currentWidget=null;
+  }
+
+  /* -------------------------------------------------------
+     Widget preview
+     ------------------------------------------------------- */
+
+  function widgetPreviewHTML(){
+
+    if(!currentWidget)return "";
+
+    if(currentWidget.type==="countdown"){
+
+      return `
+        <div class="niche-widget-preview">
+
+          <div class="niche-widget-label">
+            ⏳ COUNTDOWN
+          </div>
+
+          <div class="niche-countdown-preview">
+            ${formatCountdown(
+              new Date(currentWidget.target).getTime()
+              -Date.now()
+            )}
+          </div>
+
+          <div class="niche-widget-title">
+            ${widgetEsc(currentWidget.title)}
+          </div>
+
+        </div>
+      `;
+    }
+
+    if(currentWidget.type==="event"){
+
+      return `
+        <div class="niche-widget-preview">
+
+          <div class="niche-widget-label">
+            📅 EVENT
+          </div>
+
+          <div class="niche-widget-title">
+            ${widgetEsc(currentWidget.title)}
+          </div>
+
+          <div class="niche-widget-detail">
+            ${widgetEsc(
+              widgetTimeText(currentWidget.start)
+            )}
+          </div>
+
+          ${
+            currentWidget.location
+            ? `
+              <div class="niche-widget-detail">
+                📍 ${widgetEsc(currentWidget.location)}
+              </div>
+            `
+            :""
+          }
+
+          ${
+            currentWidget.description
+            ? `
+              <div class="niche-widget-detail">
+                ${widgetEsc(currentWidget.description)}
+              </div>
+            `
+            :""
+          }
+
+        </div>
+      `;
+    }
+
+    if(currentWidget.type==="poll"){
+
+      return `
+        <div class="niche-widget-preview">
+
+          <div class="niche-widget-label">
+            📊 POLL
+          </div>
+
+          <div class="niche-widget-title">
+            ${widgetEsc(currentWidget.question)}
+          </div>
+
+          ${
+            currentWidget.options
+              .filter(Boolean)
+              .map((x,i)=>`
+                <div class="niche-poll-preview-option">
+                  ${i+1}. ${widgetEsc(x)}
+                </div>
+              `)
+              .join("")
+          }
+
+        </div>
+      `;
+    }
+
+    return "";
+  }
+
+  /* -------------------------------------------------------
+     Widget modal
+     ------------------------------------------------------- */
+
+  function openWidgetModal(){
+
+    closeWidgetModal();
+
+    currentWidget={
+      type:"countdown",
+      title:"",
+      target:"",
+      start:"",
+      location:"",
+      description:"",
+      question:"",
+      options:["","","",""]
+    };
+
+    const root=document.createElement("div");
+
+    root.id="niche-widget-modal";
+
+    root.innerHTML=`
+
+      <div class="modal-backdrop niche-widget-backdrop">
+
+        <div class="modal niche-widget-modal">
+
+          <h2>Add widget</h2>
+
+          <p>
+            Add an interactive widget to your post.
+          </p>
+
+          <div class="niche-widget-tabs">
+
+            <button
+              type="button"
+              class="niche-widget-tab active"
+              data-widget-type="countdown"
+            >
+              ⏳ Countdown
+            </button>
+
+            <button
+              type="button"
+              class="niche-widget-tab"
+              data-widget-type="event"
+            >
+              📅 Event
+            </button>
+
+            <button
+              type="button"
+              class="niche-widget-tab"
+              data-widget-type="poll"
+            >
+              📊 Poll
+            </button>
+
+          </div>
+
+          <div id="niche-widget-form"></div>
+
+          <div id="niche-widget-preview"></div>
+
+          <div class="modal-actions">
+
+            <button
+              type="button"
+              class="secondary"
+              id="niche-widget-cancel"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              class="primary"
+              id="niche-widget-save"
+            >
+              Add widget
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(root);
+
+    const tabs=
+      root.querySelectorAll(".niche-widget-tab");
+
+    tabs.forEach(tab=>{
+
+      tab.addEventListener(
+        "click",
+        ()=>{
+
+          tabs.forEach(x=>
+            x.classList.remove("active")
+          );
+
+          tab.classList.add("active");
+
+          currentWidget={
+            type:tab.dataset.widgetType,
+            title:"",
+            target:"",
+            start:"",
+            location:"",
+            description:"",
+            question:"",
+            options:["","","",""]
+          };
+
+          renderWidgetForm();
+        }
+      );
+
+    });
+
+    root.querySelector(
+      "#niche-widget-cancel"
+    )?.addEventListener(
+      "click",
+      closeWidgetModal
+    );
+
+    root.querySelector(
+      "#niche-widget-save"
+    )?.addEventListener(
+      "click",
+      saveWidget
+    );
+
+    renderWidgetForm();
+  }
+
+  /* -------------------------------------------------------
+     Widget forms
+     ------------------------------------------------------- */
+
+  function renderWidgetForm(){
+
+    const form=
+      document.getElementById(
+        "niche-widget-form"
+      );
+
+    const preview=
+      document.getElementById(
+        "niche-widget-preview"
+      );
+
+    if(!form)return;
+
+    if(currentWidget.type==="countdown"){
+
+      form.innerHTML=`
+
+        <label class="label">
+          Countdown title
+        </label>
+
+        <input
+          id="widget-title"
+          class="input"
+          maxlength="80"
+          placeholder="Event starts!"
+          value="${widgetEsc(currentWidget.title)}"
+        >
+
+        <label class="label niche-widget-field">
+          Date and time
+        </label>
+
+        <input
+          id="widget-target"
+          class="input"
+          type="datetime-local"
+          value="${widgetEsc(
+            currentWidget.target
+          )}"
+        >
+
+      `;
+    }
+
+    if(currentWidget.type==="event"){
+
+      form.innerHTML=`
+
+        <label class="label">
+          Event name
+        </label>
+
+        <input
+          id="widget-title"
+          class="input"
+          maxlength="80"
+          placeholder="NICHE Community Event"
+        >
+
+        <label class="label niche-widget-field">
+          Date and time
+        </label>
+
+        <input
+          id="widget-start"
+          class="input"
+          type="datetime-local"
+        >
+
+        <label class="label niche-widget-field">
+          Location
+        </label>
+
+        <input
+          id="widget-location"
+          class="input"
+          maxlength="100"
+          placeholder="Online or a location"
+        >
+
+        <label class="label niche-widget-field">
+          Description
+        </label>
+
+        <textarea
+          id="widget-description"
+          class="textarea"
+          maxlength="180"
+          placeholder="Optional event details..."
+        ></textarea>
+
+      `;
+    }
+
+    if(currentWidget.type==="poll"){
+
+      form.innerHTML=`
+
+        <label class="label">
+          Question
+        </label>
+
+        <input
+          id="widget-question"
+          class="input"
+          maxlength="160"
+          placeholder="What should we add next?"
+        >
+
+        <label class="label niche-widget-field">
+          Choices
+        </label>
+
+        <div class="niche-poll-fields">
+
+          ${[0,1,2,3].map(i=>`
+
+            <input
+              id="widget-option-${i}"
+              class="input"
+              maxlength="80"
+              placeholder="Choice ${i+1}"
+            >
+
+          `).join("")}
+
+        </div>
+
+      `;
+    }
+
+    attachWidgetInputs();
+
+    if(preview){
+      preview.innerHTML=
+        widgetPreviewHTML();
+    }
+  }
+
+  function attachWidgetInputs(){
+
+    const ids=[
+      "widget-title",
+      "widget-target",
+      "widget-start",
+      "widget-location",
+      "widget-description",
+      "widget-question",
+      "widget-option-0",
+      "widget-option-1",
+      "widget-option-2",
+      "widget-option-3"
+    ];
+
+    ids.forEach(id=>{
+
+      const el=document.getElementById(id);
+
+      if(!el)return;
+
+      el.addEventListener(
+        "input",
+        updateWidgetFromForm
+      );
+
+      el.addEventListener(
+        "change",
+        updateWidgetFromForm
+      );
+
+    });
+  }
+
+  function updateWidgetFromForm(){
+
+    if(!currentWidget)return;
+
+    const value=id=>
+      document.getElementById(id)?.value||"";
+
+    if(currentWidget.type==="countdown"){
+
+      currentWidget.title=
+        value("widget-title");
+
+      currentWidget.target=
+        value("widget-target");
+    }
+
+    if(currentWidget.type==="event"){
+
+      currentWidget.title=
+        value("widget-title");
+
+      currentWidget.start=
+        value("widget-start");
+
+      currentWidget.location=
+        value("widget-location");
+
+      currentWidget.description=
+        value("widget-description");
+    }
+
+    if(currentWidget.type==="poll"){
+
+      currentWidget.question=
+        value("widget-question");
+
+      currentWidget.options=[
+        0,1,2,3
+      ].map(
+        i=>value("widget-option-"+i)
+      );
+    }
+
+    const preview=
+      document.getElementById(
+        "niche-widget-preview"
+      );
+
+    if(preview){
+      preview.innerHTML=
+        widgetPreviewHTML();
+    }
+  }
+
+  /* -------------------------------------------------------
+     Save widget selection
+     ------------------------------------------------------- */
+
+  function saveWidget(){
+
+    updateWidgetFromForm();
+
+    if(!currentWidget)return;
+
+    if(currentWidget.type==="countdown"){
+
+      if(!currentWidget.title.trim()){
+        return toast(
+          "Enter a countdown title."
+        );
+      }
+
+      if(!currentWidget.target){
+        return toast(
+          "Choose a date and time."
+        );
+      }
+
+      const target=
+        new Date(
+          currentWidget.target
+        ).getTime();
+
+      if(
+        !Number.isFinite(target)||
+        target<=Date.now()
+      ){
+        return toast(
+          "Choose a future date and time."
+        );
+      }
+    }
+
+    if(currentWidget.type==="event"){
+
+      if(!currentWidget.title.trim()){
+        return toast(
+          "Enter an event name."
+        );
+      }
+
+      if(!currentWidget.start){
+        return toast(
+          "Choose the event date and time."
+        );
+      }
+
+      const start=
+        new Date(
+          currentWidget.start
+        ).getTime();
+
+      if(
+        !Number.isFinite(start)||
+        start<=Date.now()
+      ){
+        return toast(
+          "Choose a future event date and time."
+        );
+      }
+    }
+
+    if(currentWidget.type==="poll"){
+
+      currentWidget.options=
+        currentWidget.options
+        .map(x=>x.trim())
+        .filter(Boolean);
+
+      if(!currentWidget.question.trim()){
+        return toast(
+          "Enter a poll question."
+        );
+      }
+
+      if(currentWidget.options.length<2){
+        return toast(
+          "Add at least 2 choices."
+        );
+      }
+    }
+
+    window.__nicheSelectedWidget=
+      JSON.parse(
+        JSON.stringify(currentWidget)
+      );
+
+    closeWidgetModal();
+
+    updateWidgetComposerButton();
+
+    toast("Widget added to your post.");
+  }
+
+  function removeWidget(){
+
+    window.__nicheSelectedWidget=null;
+
+    updateWidgetComposerButton();
+
+    toast("Widget removed.");
+  }
+
+  /* -------------------------------------------------------
+     Composer integration
+     ------------------------------------------------------- */
+
+  const originalComposer=
+    window.composer;
+
+  window.composer=function(){
+
+    let html=originalComposer();
+
+    const marker=
+      `<div id="moderation"></div>`;
+
+    const widgetButton=`
+
+      <div
+        class="niche-composer-widget-row"
+      >
+
+        <button
+          type="button"
+          class="secondary niche-add-widget"
+          onclick="window.__nicheOpenWidget()"
+        >
+          ＋ Add widget
+        </button>
+
+        <span
+          id="niche-widget-status"
+          class="niche-widget-status"
+        ></span>
+
+      </div>
+    `;
+
+    if(html.includes(marker)){
+      html=html.replace(
+        marker,
+        marker+widgetButton
+      );
+    }
+
+    return html;
+  };
+
+  function updateWidgetComposerButton(){
+
+    const status=
+      document.getElementById(
+        "niche-widget-status"
+      );
+
+    if(!status)return;
+
+    const w=
+      window.__nicheSelectedWidget;
+
+    if(!w){
+
+      status.innerHTML="";
+
+      return;
+    }
+
+    let label="";
+
+    if(w.type==="countdown"){
+      label="⏳ Countdown added";
+    }else if(w.type==="event"){
+      label="📅 Event added";
+    }else if(w.type==="poll"){
+      label="📊 Poll added";
+    }
+
+    status.innerHTML=`
+
+      <span>
+        ${label}
+      </span>
+
+      <button
+        type="button"
+        class="linkbtn"
+        onclick="window.__nicheRemoveWidget()"
+      >
+        Remove
+      </button>
+
+    `;
+  }
+
+  /* -------------------------------------------------------
+     Protect createPost
+     ------------------------------------------------------- */
+
+  const originalCreatePost=
+    window.createPost;
+
+  window.createPost=
+    async function(){
+
+      const widget=
+        window.__nicheSelectedWidget;
+
+      if(!widget){
+
+        await originalCreatePost();
+
+        return;
+      }
+
+      const t=
+        document.getElementById(
+          "composer"
+        );
+
+      const b=
+        t?.value.trim();
+
+      if(!b)return;
+
+      const bad=
+        moderationMatch(b);
+
+      if(bad){
+
+        return toast(
+          "Please remove inappropriate language before posting."
+        );
+      }
+
+      const hs=tags(b);
+
+      if(!hs.length){
+
+        return toast(
+          "Add a hashtag such as #football."
+        );
+      }
+
+      const btn=
+        document.getElementById(
+          "postbtn"
+        );
+
+      if(btn)btn.disabled=true;
+
+      let widgetData=
+        JSON.parse(
+          JSON.stringify(widget)
+        );
+
+      if(widgetData.type==="countdown"){
+
+        widgetData.target=
+          widgetDateValue(
+            widgetData.target
+          );
+      }
+
+      if(widgetData.type==="event"){
+
+        widgetData.start=
+          widgetDateValue(
+            widgetData.start
+          );
+      }
+
+      let{error}=await sb
+        .from("posts")
+        .insert({
+
+          author_id:S.user.id,
+
+          body:b,
+
+          hashtag:hs[0],
+
+          widget_data:widgetData
+
+        });
+
+      if(error){
+
+        console.error(
+          "Widget post failed:",
+          error
+        );
+
+        toast(error.message);
+
+      }else{
+
+        t.value="";
+
+        window.__nicheSelectedWidget=null;
+
+        toast("Posted!");
+
+        await refresh();
+      }
+
+      if(btn)btn.disabled=false;
+
+      preview();
+    };
+
+  /* -------------------------------------------------------
+     Widget rendering
+     ------------------------------------------------------- */
+
+  function countdownHTML(w){
+
+    const target=
+      new Date(
+        w.target
+      ).getTime();
+
+    const id=
+      "niche-countdown-"+Math.random()
+        .toString(36)
+        .slice(2);
+
+    setTimeout(()=>{
+
+      const el=
+        document.getElementById(id);
+
+      if(!el)return;
+
+      const update=()=>{
+
+        const left=
+          target-Date.now();
+
+        el.textContent=
+          formatCountdown(left);
+
+        if(left<=0){
+
+          el.textContent=
+            "00d 00h 00m 00s";
+
+          return;
+        }
+
+        setTimeout(update,1000);
+      };
+
+      update();
+
+    },0);
+
+    return `
+
+      <div class="niche-widget niche-countdown">
+
+        <div class="niche-widget-label">
+          ⏳ COUNTDOWN
+        </div>
+
+        <div
+          id="${id}"
+          class="niche-countdown-value"
+        >
+          ${formatCountdown(
+            target-Date.now()
+          )}
+        </div>
+
+        <div class="niche-widget-title">
+          ${widgetEsc(w.title)}
+        </div>
+
+        <div class="niche-widget-time">
+          ${widgetEsc(
+            widgetTimeText(w.target)
+          )}
+        </div>
+
+      </div>
+    `;
+  }
+
+  function eventHTML(w){
+
+    return `
+
+      <div class="niche-widget niche-event">
+
+        <div class="niche-widget-label">
+          📅 EVENT
+        </div>
+
+        <div class="niche-widget-title">
+          ${widgetEsc(w.title)}
+        </div>
+
+        <div class="niche-widget-time">
+          ${widgetEsc(
+            widgetTimeText(w.start)
+          )}
+        </div>
+
+        ${
+          w.location
+          ? `
+            <div class="niche-widget-detail">
+              📍 ${widgetEsc(w.location)}
+            </div>
+          `
+          :""
+        }
+
+        ${
+          w.description
+          ? `
+            <div class="niche-widget-detail">
+              ${widgetEsc(w.description)}
+            </div>
+          `
+          :""
+        }
+
+      </div>
+    `;
+  }
+
+  function pollHTML(p,w){
+
+    const postId=
+      String(p.id);
+
+    const options=
+      Array.isArray(w.options)
+      ?w.options.slice(0,4)
+      :[];
+
+    return `
+
+      <div
+        class="niche-widget niche-poll"
+        id="niche-poll-${widgetEsc(postId)}"
+      >
+
+        <div class="niche-widget-label">
+          📊 POLL
+        </div>
+
+        <div class="niche-widget-title">
+          ${widgetEsc(w.question)}
+        </div>
+
+        <div
+          class="niche-poll-options"
+          id="niche-poll-options-${widgetEsc(postId)}"
+        >
+
+          ${options.map((option,i)=>`
+
+            <button
+              type="button"
+              class="niche-poll-option"
+              onclick="
+                window.__nicheVotePoll(
+                  '${widgetEsc(postId)}',
+                  ${i}
+                )
+              "
+            >
+
+              <span>
+                ${widgetEsc(option)}
+              </span>
+
+              <span
+                id="niche-poll-count-${widgetEsc(postId)}-${i}"
+                class="niche-poll-count"
+              >
+                0
+              </span>
+
+            </button>
+
+          `).join("")}
+
+        </div>
+
+        <div
+          id="niche-poll-total-${widgetEsc(postId)}"
+          class="niche-widget-time"
+        >
+          Loading votes…
+        </div>
+
+      </div>
+    `;
+  }
+
+  function widgetHTML(p){
+
+    const w=p?.widget_data;
+
+    if(!w||!w.type)return "";
+
+    if(w.type==="countdown"){
+      return countdownHTML(w);
+    }
+
+    if(w.type==="event"){
+      return eventHTML(w);
+    }
+
+    if(w.type==="poll"){
+      return pollHTML(p,w);
+    }
+
+    return "";
+  }
+
+  /* -------------------------------------------------------
+     Wrap postHTML
+     ------------------------------------------------------- */
+
+  const originalPostHTML=
+    window.postHTML;
+
+  window.postHTML=function(p){
+
+    let html=
+      originalPostHTML(p);
+
+    const widget=
+      widgetHTML(p);
+
+    if(!widget)return html;
+
+    const marker=
+      `<div class="actions">`;
+
+    if(html.includes(marker)){
+
+      html=html.replace(
+        marker,
+        widget+marker
+      );
+
+    }
+
+    return html;
+  };
+
+  /* -------------------------------------------------------
+     Poll loading
+     ------------------------------------------------------- */
+
+  async function loadPollVotes(postId){
+
+    const{data,error}=await sb
+      .from("poll_votes")
+      .select("choice")
+      .eq("post_id",postId);
+
+    if(error){
+
+      console.error(
+        "Poll votes unavailable:",
+        error
+      );
+
+      return [];
+    }
+
+    return data||[];
+  }
+
+  async function renderPollResults(postId){
+
+    const post=
+      S.posts.find(
+        x=>String(x.id)===String(postId)
+      );
+
+    if(!post?.widget_data)return;
+
+    const w=
+      post.widget_data;
+
+    if(w.type!=="poll")return;
+
+    const votes=
+      await loadPollVotes(postId);
+
+    const counts=
+      [0,0,0,0];
+
+    votes.forEach(v=>{
+
+      const i=
+        Number(v.choice);
+
+      if(
+        Number.isInteger(i)&&
+        i>=0&&
+        i<4
+      ){
+        counts[i]++;
+      }
+
+    });
+
+    counts.forEach((count,i)=>{
+
+      const el=
+        document.getElementById(
+          "niche-poll-count-"+
+          postId+
+          "-"+
+          i
+        );
+
+      if(el){
+        el.textContent=count;
+      }
+
+    });
+
+    const total=
+      counts.reduce(
+        (a,b)=>a+b,
+        0
+      );
+
+    const totalEl=
+      document.getElementById(
+        "niche-poll-total-"+postId
+      );
+
+    if(totalEl){
+
+      totalEl.textContent=
+        total+
+        (total===1?" vote":" votes");
+    }
+  }
+
+  async function votePoll(postId,choice){
+
+    if(!S.user?.id)return;
+
+    const post=
+      S.posts.find(
+        x=>String(x.id)===String(postId)
+      );
+
+    if(!post?.widget_data){
+      return;
+    }
+
+    const options=
+      post.widget_data.options||[];
+
+    if(
+      !Number.isInteger(choice)||
+      choice<0||
+      choice>=options.length
+    ){
+      return;
+    }
+
+    const buttons=
+      document.querySelectorAll(
+        "#niche-poll-"+postId+
+        " .niche-poll-option"
+      );
+
+    buttons.forEach(
+      b=>b.disabled=true
+    );
+
+    const{error}=await sb
+      .from("poll_votes")
+      .insert({
+
+        post_id:postId,
+
+        user_id:S.user.id,
+
+        choice
+
+      });
+
+    if(error){
+
+      buttons.forEach(
+        b=>b.disabled=false
+      );
+
+      if(
+        String(error.message||"")
+          .toLowerCase()
+          .includes("duplicate")
+      ){
+
+        toast(
+          "You already voted in this poll."
+        );
+
+      }else{
+
+        toast(
+          error.message
+        );
+      }
+
+      await renderPollResults(postId);
+
+      return;
+    }
+
+    toast("Vote recorded.");
+
+    await renderPollResults(postId);
+  }
+
+  /* -------------------------------------------------------
+     Load poll results after rendering
+     ------------------------------------------------------- */
+
+  const originalRender=
+    window.render;
+
+  window.render=
+    async function(){
+
+      await originalRender();
+
+      setTimeout(
+        ()=>{
+          const posts=
+            S.posts||[];
+
+          posts.forEach(p=>{
+
+            if(
+              p.widget_data?.type==="poll"
+            ){
+
+              renderPollResults(p.id);
+
+            }
+
+          });
+
+          updateWidgetComposerButton();
+
+        },
+        0
+      );
+    };
+
+  /* -------------------------------------------------------
+     Expose controls
+     ------------------------------------------------------- */
+
+  window.__nicheOpenWidget=
+    openWidgetModal;
+
+  window.__nicheRemoveWidget=
+    removeWidget;
+
+  window.__nicheVotePoll=
+    votePoll;
+
+  /* -------------------------------------------------------
+     Styling
+     ------------------------------------------------------- */
+
+})();
+init();
