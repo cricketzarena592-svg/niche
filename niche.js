@@ -3254,207 +3254,133 @@ async function setActivityPrivacy(privateMode){
 }
 
 function settings(){
-return` <div class="settings">
+  return`
+    <div class="settings">
 
-```
-  <section class="setting-section">
+      <section class="setting-section">
 
-    <h1>Appearance</h1>
+        <h1>Appearance</h1>
 
-    <p>
-      Dark, System, and Light stay independent.
-    </p>
+        <p>
+          Dark, System, and Light stay independent.
+        </p>
 
-    <div class="themes">
+        <div class="themes">
 
-      ${
-        [
-          ["dark","Dark"],
-          ["system","System"],
-          ["light","Light"]
-        ].map(x=>`
-          <button
-            class="themeopt ${S.theme===x[0]?"active":""}"
-            onclick="setTheme('${x[0]}')"
-          >
-            ${x[1]}
-          </button>
-        `).join("")
-      }
-
-    </div>
-
-  </section>
-
-
-  <section class="setting-section interface-style-section">
-
-    <h1>Interface style</h1>
-
-    <p>
-      Choose how NICHE looks and feels.
-    </p>
-
-    <div class="interface-styles">
-
-      <button
-        class="interface-style ${
-          S.interfaceStyle==="basic"?"active":""
-        }"
-        onclick="setInterfaceStyle('basic')"
-      >
-
-        <span class="interface-style-preview basic-preview">
-          <span></span>
-          <span></span>
-          <span></span>
-        </span>
-
-        <span class="interface-style-info">
-          <b>Basic</b>
-          <small>Current NICHE interface</small>
-        </span>
-
-        <span class="interface-style-check">
           ${
-            S.interfaceStyle==="basic"?"✓":""
+            [
+              ["dark","Dark"],
+              ["system","System"],
+              ["light","Light"]
+            ].map(x=>`
+              <button
+                class="themeopt ${S.theme===x[0]?"active":""}"
+                onclick="setTheme('${x[0]}')"
+              >
+                ${x[1]}
+              </button>
+            `).join("")
           }
-        </span>
 
-      </button>
-
-
-      <button
-        class="interface-style ${
-          S.interfaceStyle==="glass"?"active":""
-        }"
-        onclick="setInterfaceStyle('glass')"
-      >
-
-        <span class="interface-style-preview glass-preview">
-          <span></span>
-          <span></span>
-          <span></span>
-        </span>
-
-        <span class="interface-style-info">
-          <b>Glass</b>
-          <small>Frutiger Aero / glass UI</small>
-        </span>
-
-        <span class="interface-style-check">
-          ${
-            S.interfaceStyle==="glass"?"✓":""
-          }
-        </span>
-
-      </button>
-
-    </div>
-
-  </section>
-
-
-  <section class="setting-section">
-
-    <h1>Activity privacy</h1>
-
-    <p>
-      When on, other people cannot see your likes,
-      reposts, or the niches and accounts you follow.
-    </p>
-
-    <div class="activity-row">
-
-      <div>
-
-        <b style="font-size:13px">
-          ${
-            S.activityPrivate
-            ?"Private activity"
-            :"Activity visible"
-          }
-        </b>
-
-        <div
-          style="
-            color:var(--muted);
-            font-size:11px;
-            margin-top:3px
-          "
-        >
-          ${
-            S.activityPrivate
-            ?"Only you can see your activity."
-            :"People can see your public activity."
-          }
         </div>
 
-      </div>
+      </section>
 
-      <button
-        class="switch-control ${
-          S.activityPrivate?"on":""
-        }"
-        onclick="
-          setActivityPrivacy(
-            !S.activityPrivate
-          )
-        "
-      >
-        <span class="switch-knob"></span>
-      </button>
+      <section class="setting-section">
+
+        <h1>Activity privacy</h1>
+
+        <p>
+          When on, other people cannot see your likes,
+          reposts, or the niches and accounts you follow.
+        </p>
+
+        <div class="activity-row">
+
+          <div>
+
+            <b style="font-size:13px">
+              ${
+                S.activityPrivate
+                ?"Private activity"
+                :"Activity visible"
+              }
+            </b>
+
+            <div
+              style="
+                color:var(--muted);
+                font-size:11px;
+                margin-top:3px
+              "
+            >
+              ${
+                S.activityPrivate
+                ?"Only you can see your activity."
+                :"People can see your public activity."
+              }
+            </div>
+
+          </div>
+
+          <button
+            class="switch-control ${
+              S.activityPrivate?"on":""
+            }"
+            onclick="
+              setActivityPrivacy(
+                !S.activityPrivate
+              )
+            "
+          >
+            <span class="switch-knob"></span>
+          </button>
+
+        </div>
+
+      </section>
+
+      <section class="setting-section">
+
+        <h1>Security</h1>
+
+        <p>
+          Signed in as ${esc(S.user?.email||"")}
+        </p>
+
+        <button
+          class="secondary"
+          onclick="requestPasswordReset()"
+        >
+          Reset password
+        </button>
+
+      </section>
+
+      <section class="setting-section">
+
+        <h1>Account</h1>
+
+        <button
+          class="secondary"
+          onclick="sb.auth.signOut()"
+        >
+          Log out
+        </button>
+
+        <button
+          class="danger"
+          style="margin-left:8px"
+          onclick="deleteAccount()"
+        >
+          Delete account
+        </button>
+
+      </section>
 
     </div>
-
-  </section>
-
-
-  <section class="setting-section">
-
-    <h1>Security</h1>
-
-    <p>
-      Signed in as ${esc(S.user?.email||"")}
-    </p>
-
-    <button
-      class="secondary"
-      onclick="requestPasswordReset()"
-    >
-      Reset password
-    </button>
-
-  </section>
-
-
-  <section class="setting-section">
-
-    <h1>Account</h1>
-
-    <button
-      class="secondary"
-      onclick="sb.auth.signOut()"
-    >
-      Log out
-    </button>
-
-    <button
-      class="danger"
-      style="margin-left:8px"
-      onclick="deleteAccount()"
-    >
-      Delete account
-    </button>
-
-  </section>
-
-</div>
-```
-
-`;
+  `;
 }
-
 /* =========================================================
    NOTIFICATIONS
    ========================================================= */
