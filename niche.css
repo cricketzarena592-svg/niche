@@ -2350,10 +2350,6 @@ html[data-glass="on"] .radio-skip{
   font-size:12px
 }
 
-.radio-subregion-search{
-  margin-bottom:7px
-}
-
 .radio-region-hint{
   margin-top:6px;
   color:var(--muted);

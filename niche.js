@@ -52,9 +52,6 @@ const S={
   glassBackground:localStorage.getItem("niche-glass-background")||"sky",
   radioEnabled:localStorage.getItem("niche-radio-enabled")==="on",
   radioRegionCode:(localStorage.getItem("niche-radio-region")||"GLOBAL").toUpperCase(),
-  radioSubregions:[],
-  radioSubregion:localStorage.getItem("niche-radio-subregion")||"",
-  radioSubregionSearch:"",
   radioCountries:[],
   radioCountriesLoaded:false,
   notifications:[],
@@ -3299,7 +3296,7 @@ function settings(){
         <h1>Radio player</h1>
 
         <p>
-          Choose whether the mini-player is shown and which region supplies stations.
+          Choose whether the mini-player is shown, a region, and a station.
         </p>
 
         <div class="activity-row">
@@ -3339,37 +3336,23 @@ function settings(){
           `).join("")}
         </select>
 
-        ${S.radioRegionCode!=="GLOBAL"?`
-          <label class="radio-region-label" for="radio-subregion-search">Find a subregion</label>
-          <input
-            class="radio-region-select radio-subregion-search"
-            id="radio-subregion-search"
-            type="search"
-            placeholder="Search states or regions"
-            value="${esc(S.radioSubregionSearch)}"
-            oninput="filterRadioSubregions(this.value)"
-            ${S.radioEnabled?"":"disabled"}
-          >
-          <select
-            class="radio-region-select"
-            id="radio-subregion"
-            aria-label="Station subregion"
-            onchange="setRadioSubregion(this.value)"
-            ${S.radioEnabled?"":"disabled"}
-          >
-            <option value="">All subregions</option>
-            ${S.radioSubregions
-              .filter(region=>region.name.toLowerCase().includes(S.radioSubregionSearch.toLowerCase()))
-              .map(region=>`<option value="${esc(region.name)}" ${S.radioSubregion===region.name?"selected":""}>${esc(region.name)} (${region.stationcount})</option>`)
-              .join("")}
-          </select>
-          <div class="radio-region-hint" id="radio-subregion-hint">
-            ${S.radioSubregions.length?"Choose a subregion or leave all subregions selected.":"Loading subregions…"}
-          </div>
-        `:""}
+        <label class="radio-region-label" for="radio-station-select">Choose station</label>
+        <select
+          class="radio-region-select"
+          id="radio-station-select"
+          aria-label="Choose radio station"
+          onchange="selectRadioStation(this.value)"
+          ${S.radioEnabled&&radioStations.length?"":"disabled"}
+        >
+          ${radioStations.length?radioStations.map((station,index)=>`
+            <option value="${index}" ${radioStationIndex===index?"selected":""}>
+              ${esc(station.name||"Unknown station")}${station.country?` · ${esc(station.country)}`:""}
+            </option>
+          `).join(""):"<option value=\"\">Stations load when the player is enabled</option>"}
+        </select>
 
         <div class="radio-region-hint" id="radio-region-hint">
-          ${S.radioCountriesLoaded?"Stations are selected from the region you choose.":"Loading available regions…"}
+          ${S.radioCountriesLoaded?"Choose a station from the list above.":"Loading available regions…"}
         </div>
 
       </section>
@@ -6715,65 +6698,26 @@ function renderRadioCountryOptions(){
   if(hint)hint.textContent="Stations are selected from the region you choose.";
 }
 
-function renderRadioSubregions(){
-  const select=document.getElementById("radio-subregion");
+function renderRadioStationOptions(){
+  const select=document.getElementById("radio-station-select");
   if(!select)return;
 
-  const search=document.getElementById("radio-subregion-search");
-  const query=search?.value.trim().toLowerCase()||"";
-  const regions=S.radioSubregions.filter(region=>region.name.toLowerCase().includes(query));
-  select.innerHTML=`
-    <option value="">All subregions</option>
-    ${regions.map(region=>`
-      <option value="${esc(region.name)}">${esc(region.name)} (${region.stationcount})</option>
-    `).join("")}
-  `;
-  select.value=S.radioSubregion;
+  select.innerHTML=radioStations.length
+    ?radioStations.map((station,index)=>`
+      <option value="${index}">
+        ${esc(station.name||"Unknown station")}${station.country?` · ${esc(station.country)}`:""}
+      </option>
+    `).join("")
+    :"<option value=\"\">No stations available</option>";
+  select.disabled=!S.radioEnabled||!radioStations.length;
+  if(radioStations.length)select.value=String(radioStationIndex);
+}
 
-  const hint=document.getElementById("radio-subregion-hint");
-  if(hint){
-    hint.textContent=S.radioSubregions.length
-      ?regions.length?"Choose a subregion or leave all subregions selected.":"No matching subregions."
-      :"No subregions are available for this country.";
+function selectRadioStation(index){
+  const stationIndex=Number(index);
+  if(Number.isInteger(stationIndex)&&stationIndex>=0&&stationIndex<radioStations.length){
+    loadRadioStation(stationIndex,true);
   }
-}
-
-function filterRadioSubregions(query){
-  S.radioSubregionSearch=String(query||"");
-  renderRadioSubregions();
-}
-
-async function loadRadioSubregions(countryCode){
-  const normalized=String(countryCode||"").toUpperCase();
-  S.radioSubregions=[];
-  render();
-  if(!normalized||normalized==="GLOBAL")return;
-
-  try{
-    const regions=await radioApi(`/json/states/bycountrycodeexact/${encodeURIComponent(normalized)}`);
-    if(S.radioRegionCode!==normalized)return;
-    S.radioSubregions=(regions||[])
-      .filter(region=>region.name&&Number(region.stationcount)>0)
-      .sort((a,b)=>Number(b.stationcount)-Number(a.stationcount));
-    if(!S.radioSubregions.some(region=>region.name===S.radioSubregion)){
-      S.radioSubregion="";
-      localStorage.removeItem("niche-radio-subregion");
-    }
-    renderRadioSubregions();
-  }catch(error){
-    const hint=document.getElementById("radio-subregion-hint");
-    if(hint)hint.textContent="Subregions are unavailable for this country.";
-  }
-}
-
-function setRadioSubregion(name){
-  const selected=String(name||"");
-  S.radioSubregion=S.radioSubregions.some(region=>region.name===selected)?selected:"";
-  localStorage.setItem("niche-radio-subregion",S.radioSubregion);
-  radioRequestId++;
-  radioLoadingRegion=false;
-  radioStations=[];
-  if(S.radioEnabled&&S.session&&!needSetup())loadRadioStationsForRegion();
 }
 
 async function loadRadioCountries(){
@@ -6785,7 +6729,6 @@ async function loadRadioCountries(){
     S.radioCountriesLoaded=true;
     radioCountriesLoaded=true;
     renderRadioCountryOptions();
-    if(S.radioRegionCode!=="GLOBAL")loadRadioSubregions(S.radioRegionCode);
   }catch(error){
     const hint=document.getElementById("radio-region-hint");
     if(hint)hint.textContent="Region list is unavailable. Global stations are still available.";
@@ -6804,6 +6747,8 @@ async function loadRadioStation(index,autoplay){
   if(!audio)return;
 
   setRadioStation(station);
+  const stationSelect=document.getElementById("radio-station-select");
+  if(stationSelect)stationSelect.value=String(radioStationIndex);
   updateRadioFavorite(station);
   audio.pause();
   audio.src=station.url_resolved;
@@ -6846,7 +6791,6 @@ async function loadRadioStationsForRegion(){
         order:"clickcount",
         reverse:"true"
       });
-      if(S.radioSubregion)query.set("state",S.radioSubregion);
       stations=playableStations(await radioApi(`/json/stations/search?${query}`));
     }
   }catch(error){
@@ -6875,6 +6819,7 @@ async function loadRadioStationsForRegion(){
   }
   radioLoadingRegion=false;
   radioStations=stations;
+  renderRadioStationOptions();
 
   if(!radioStations.length){
     setRadioStatus("Radio stations are currently unavailable");
@@ -6893,16 +6838,13 @@ function setRadioRegion(regionCode){
   const valid=normalized==="GLOBAL"||S.radioCountries.some(country=>country.iso_3166_1===normalized);
   S.radioRegionCode=valid?normalized:"GLOBAL";
   localStorage.setItem("niche-radio-region",S.radioRegionCode);
-  S.radioSubregions=[];
-  S.radioSubregion="";
-  S.radioSubregionSearch="";
-  localStorage.removeItem("niche-radio-subregion");
   updateRadioRegionLabel();
-  loadRadioSubregions(S.radioRegionCode);
 
   radioRequestId++;
   radioLoadingRegion=false;
   radioStations=[];
+  radioStationIndex=0;
+  renderRadioStationOptions();
   if(S.radioEnabled&&S.session&&!needSetup())loadRadioStationsForRegion();
 }
 
@@ -6933,8 +6875,7 @@ function setRadioEnabled(enabled){
   const audio=document.getElementById("radio-audio");
   const button=document.querySelector(".radio-settings [role='switch']");
   const select=document.getElementById("radio-region");
-  const subregionSearch=document.getElementById("radio-subregion-search");
-  const subregionSelect=document.getElementById("radio-subregion");
+  const stationSelect=document.getElementById("radio-station-select");
 
   document.documentElement.classList.toggle("radio-disabled",!S.radioEnabled);
   if(player)player.hidden=!S.radioEnabled;
@@ -6943,8 +6884,7 @@ function setRadioEnabled(enabled){
     button.setAttribute("aria-checked",String(S.radioEnabled));
   }
   if(select)select.disabled=!S.radioEnabled;
-  if(subregionSearch)subregionSearch.disabled=!S.radioEnabled;
-  if(subregionSelect)subregionSelect.disabled=!S.radioEnabled;
+  if(stationSelect)stationSelect.disabled=!S.radioEnabled||!radioStations.length;
 
   if(!S.radioEnabled){
     radioRequestId++;
