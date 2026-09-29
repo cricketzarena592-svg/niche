@@ -1990,6 +1990,10 @@ html[data-glass="on"] .primary{
   --radio-player-height:104px
 }
 
+html.radio-player-minimized{
+  --radio-player-height:48px
+}
+
 #app{
   padding-bottom:var(--radio-player-height)
 }
@@ -2206,6 +2210,21 @@ html.radio-unavailable #app{
   font-size:11px
 }
 
+.radio-collapse{
+  width:27px;
+  height:27px;
+  border:1px solid var(--border);
+  border-radius:50%;
+  background:var(--surface2);
+  color:var(--muted);
+  font-size:18px;
+  line-height:1
+}
+
+.radio-collapse:hover{
+  color:var(--text)
+}
+
 .radio-play{
   width:34px;
   height:34px;
@@ -2244,6 +2263,45 @@ html.radio-unavailable #app{
   width:100%;
   min-width:45px;
   accent-color:var(--blue)
+}
+
+.radio-player.minimized{
+  width:min(360px,calc(100vw - 32px));
+  min-height:0;
+  grid-template-columns:minmax(0,1fr);
+  gap:0;
+  padding:9px 12px;
+  border-radius:22px
+}
+
+.radio-player.minimized .radio-art,
+.radio-player.minimized .radio-region-label,
+.radio-player.minimized #radio-tags,
+.radio-player.minimized .radio-favorite,
+.radio-player.minimized .radio-live-track,
+.radio-player.minimized .radio-volume,
+.radio-player.minimized .radio-status{
+  display:none
+}
+
+.radio-player.minimized .radio-content{
+  display:flex;
+  align-items:center;
+  gap:10px
+}
+
+.radio-player.minimized .radio-heading{
+  flex:1;
+  align-items:center
+}
+
+.radio-player.minimized .radio-control-row{
+  display:flex;
+  gap:0
+}
+
+.radio-player.minimized .radio-controls{
+  gap:2px
 }
 
 @media(min-width:701px){
@@ -2431,12 +2489,23 @@ html[data-glass="on"] .radio-skip{
     height:28px
   }
 
+  .radio-collapse{
+    width:23px;
+    height:23px;
+    font-size:16px
+  }
+
   .radio-info #radio-tags{
     font-size:9px
   }
 
   .radio-status{
     font-size:8px
+  }
+
+  .radio-player.minimized{
+    width:min(340px,calc(100vw - 20px));
+    padding:7px 9px
   }
 
   html.device-mobile #app{

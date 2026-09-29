@@ -6581,6 +6581,19 @@ function setRadioPlaying(playing){
   button.setAttribute("aria-label",playing?"Pause station":"Play station");
 }
 
+function setRadioPlayerMinimized(minimized){
+  const player=document.getElementById("radio-player");
+  const button=document.getElementById("radio-collapse");
+  if(!player||!button)return;
+
+  player.classList.toggle("minimized",minimized);
+  document.documentElement.classList.toggle("radio-player-minimized",minimized);
+  button.textContent=minimized?"+":"−";
+  button.setAttribute("aria-label",minimized?"Expand player":"Minimize player");
+  button.title=minimized?"Expand player":"Minimize player";
+  localStorage.setItem("niche-radio-minimized",minimized?"on":"off");
+}
+
 async function discoverRadioMirrors(){
   if(radioMirrors.length)return radioMirrors;
 
@@ -6920,6 +6933,11 @@ async function startRadioPlayer(){
   updateRadioRegionLabel();
   audio.volume=Number(volume?.value||0.8);
   volume?.addEventListener("input",()=>audio.volume=Number(volume.value));
+  const collapseButton=document.getElementById("radio-collapse");
+  setRadioPlayerMinimized(localStorage.getItem("niche-radio-minimized")==="on");
+  collapseButton?.addEventListener("click",()=>{
+    setRadioPlayerMinimized(!document.getElementById("radio-player")?.classList.contains("minimized"));
+  });
   playButton.addEventListener("click",async()=>{
     if(!audio.src){
       await loadRadioStationsForRegion();
