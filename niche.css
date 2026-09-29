@@ -1767,43 +1767,58 @@ html.device-mobile .niche-widget-tab{
 }
 
 html[data-glass="on"]{
+  color-scheme:light;
+  --bg:#e6f2f6;
+  --surface:rgba(235,247,255,.38);
+  --surface2:rgba(225,242,252,.42);
+  --surface3:rgba(216,237,249,.58);
+  --text:#183448;
+  --muted:#506d80;
+  --border:rgba(255,255,255,.64);
+  --blue:#3974b8;
+  --top:rgba(231,245,255,.38);
   background:var(--bg)
 }
 
 html[data-glass="on"] body{
-  background-attachment:fixed
+  min-height:100vh;
+  background-color:var(--bg);
+  background-attachment:fixed;
+  background-position:center;
+  background-size:cover
 }
 
 html[data-glass="on"][data-glass-background="sky"] body{
   background-image:
-    radial-gradient(ellipse at 12% 8%,rgba(70,205,235,.34),transparent 42%),
-    radial-gradient(ellipse at 88% 18%,rgba(231,118,186,.27),transparent 38%),
-    linear-gradient(145deg,#172433,#192533 52%,#252033)
+    linear-gradient(135deg,rgba(208,238,255,.14),rgba(255,255,255,.04)),
+    url("https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2400&q=85")
 }
 
 html[data-glass="on"][data-glass-background="orchid"] body{
   background-image:
-    radial-gradient(ellipse at 15% 12%,rgba(238,133,184,.34),transparent 42%),
-    radial-gradient(ellipse at 88% 22%,rgba(133,112,231,.3),transparent 40%),
-    linear-gradient(145deg,#242033,#29243b 52%,#1c2c39)
+    linear-gradient(135deg,rgba(233,218,248,.12),rgba(255,255,255,.04)),
+    url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2400&q=85")
 }
 
 html[data-glass="on"][data-glass-background="mint"] body{
   background-image:
-    radial-gradient(ellipse at 12% 10%,rgba(178,220,100,.32),transparent 42%),
-    radial-gradient(ellipse at 88% 20%,rgba(58,200,166,.29),transparent 40%),
-    linear-gradient(145deg,#1d302d,#1c303a 52%,#202c3a)
+    linear-gradient(135deg,rgba(218,245,222,.12),rgba(255,255,255,.04)),
+    url("https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=2400&q=85")
 }
 
 html[data-glass="on"][data-glass-background="sunset"] body{
   background-image:
-    radial-gradient(ellipse at 12% 10%,rgba(255,182,104,.34),transparent 42%),
-    radial-gradient(ellipse at 88% 20%,rgba(241,111,128,.3),transparent 40%),
-    linear-gradient(145deg,#352a30,#332837 52%,#25263a)
+    linear-gradient(135deg,rgba(255,229,201,.12),rgba(255,255,255,.04)),
+    url("https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=2400&q=85")
 }
 
 html[data-glass="on"] .top,
 html[data-glass="on"] .card,
+html[data-glass="on"] .post,
+html[data-glass="on"] .composer,
+html[data-glass="on"] .setting-section,
+html[data-glass="on"] .header,
+html[data-glass="on"] .explore,
 html[data-glass="on"] .modal,
 html[data-glass="on"] .authcard,
 html[data-glass="on"] .search,
@@ -1812,18 +1827,37 @@ html[data-glass="on"] .following-item,
 html[data-glass="on"] .customize-preview,
 html[data-glass="on"] .formatbtn,
 html[data-glass="on"] .glass-background{
-  background-color:color-mix(in srgb,var(--surface) 62%,transparent);
-  border-color:color-mix(in srgb,var(--text) 18%,transparent);
-  backdrop-filter:blur(18px) saturate(145%);
-  -webkit-backdrop-filter:blur(18px) saturate(145%);
-  box-shadow:inset 0 1px rgba(255,255,255,.12)
+  background-color:rgba(232,246,255,.43);
+  border-color:rgba(255,255,255,.66);
+  backdrop-filter:blur(22px) saturate(165%);
+  -webkit-backdrop-filter:blur(22px) saturate(165%);
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.78),
+    0 10px 28px rgba(28,66,88,.12)
 }
 
 html[data-glass="on"] .search,
 html[data-glass="on"] .following-item,
 html[data-glass="on"] .customize-preview,
 html[data-glass="on"] .formatbtn{
-  background-color:color-mix(in srgb,var(--surface2) 62%,transparent)
+  background-color:rgba(225,242,252,.49)
+}
+
+html[data-glass="on"] .post{
+  margin:8px 12px;
+  border:1px solid rgba(255,255,255,.62);
+  border-radius:14px
+}
+
+html[data-glass="on"] .side,
+html[data-glass="on"] .main{
+  border-color:rgba(255,255,255,.24)
+}
+
+html[data-glass="on"] .primary{
+  background:linear-gradient(145deg,#78afe9,#477bb9);
+  color:#fff;
+  box-shadow:inset 0 1px rgba(255,255,255,.42),0 5px 14px rgba(42,92,143,.24)
 }
 
 @media(max-width:430px){
