@@ -28,9 +28,12 @@ html[data-theme=light]{
   --top:rgba(255,255,255,.88)
 }
 
-html[data-theme=system]{color-scheme:light dark}
+html[data-theme=system]{
+  color-scheme:light dark
+}
 
 @media(prefers-color-scheme:dark){
+
   html[data-theme=system]{
     --bg:#09090a;
     --surface:#101012;
@@ -44,9 +47,11 @@ html[data-theme=system]{color-scheme:light dark}
     --green:#55d98b;
     --top:rgba(9,9,10,.86)
   }
+
 }
 
 @media(prefers-color-scheme:light){
+
   html[data-theme=system]{
     --bg:#fff;
     --surface:#fff;
@@ -60,11 +65,15 @@ html[data-theme=system]{color-scheme:light dark}
     --green:#15945b;
     --top:rgba(255,255,255,.88)
   }
+
 }
 
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box
+}
 
-html,body{
+html,
+body{
   margin:0;
   min-height:100%;
   background:var(--bg);
@@ -72,10 +81,29 @@ html,body{
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif
 }
 
-button,input,textarea{font:inherit}
-button{cursor:pointer}
-a{color:inherit;text-decoration:none}
-#app{min-height:100vh}
+button,
+input,
+textarea{
+  font:inherit
+}
+
+button{
+  cursor:pointer
+}
+
+a{
+  color:inherit;
+  text-decoration:none
+}
+
+#app{
+  min-height:100vh
+}
+
+
+/* =========================================================
+   MAIN DESKTOP LAYOUT
+   ========================================================= */
 
 .shell{
   min-height:100vh;
@@ -97,9 +125,18 @@ a{color:inherit;text-decoration:none}
   border-right:1px solid var(--border)
 }
 
-.right{padding:25px 18px}
+.right{
+  padding:25px 18px
+}
 
-.mobile-following{display:none}
+.mobile-following{
+  display:none
+}
+
+
+/* =========================================================
+   BRAND
+   ========================================================= */
 
 .brand{
   display:inline-block;
@@ -121,6 +158,11 @@ a{color:inherit;text-decoration:none}
   font-size:11px
 }
 
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
 .nav{
   margin-top:34px;
   display:grid;
@@ -137,7 +179,9 @@ a{color:inherit;text-decoration:none}
   font-weight:750
 }
 
-.nav button:hover{background:var(--surface2)}
+.nav button:hover{
+  background:var(--surface2)
+}
 
 .nav i{
   display:inline-block;
@@ -146,6 +190,11 @@ a{color:inherit;text-decoration:none}
   text-align:center;
   margin-right:7px
 }
+
+
+/* =========================================================
+   MINI PROFILE
+   ========================================================= */
 
 .mini{
   margin-top:40px;
@@ -156,16 +205,21 @@ a{color:inherit;text-decoration:none}
   align-items:center
 }
 
-.mini .txt{min-width:0}
+.mini .txt{
+  min-width:0
+}
 
-.mini strong,.mini small{
+.mini strong,
+.mini small{
   display:block;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap
 }
 
-.mini strong{font-size:13px}
+.mini strong{
+  font-size:13px
+}
 
 .mini small{
   color:var(--muted);
@@ -186,7 +240,14 @@ a{color:inherit;text-decoration:none}
   font-size:12px
 }
 
-.linkbtn:hover{color:var(--text)}
+.linkbtn:hover{
+  color:var(--text)
+}
+
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
 
 .top{
   height:68px;
@@ -237,6 +298,11 @@ a{color:inherit;text-decoration:none}
   background:var(--surface);
   color:var(--text)
 }
+
+
+/* =========================================================
+   NOTIFICATIONS
+   ========================================================= */
 
 .notif-wrap{
   position:relative;
@@ -292,7 +358,9 @@ a{color:inherit;text-decoration:none}
   border-bottom:1px solid var(--border)
 }
 
-.notif-head strong{font-size:13px}
+.notif-head strong{
+  font-size:13px
+}
 
 .notif-head button{
   border:0;
@@ -313,9 +381,13 @@ a{color:inherit;text-decoration:none}
   border-bottom:1px solid var(--border)
 }
 
-.notification:last-child{border-bottom:0}
+.notification:last-child{
+  border-bottom:0
+}
 
-.notification:hover{background:var(--surface2)}
+.notification:hover{
+  background:var(--surface2)
+}
 
 .notification .avatar{
   width:34px;
@@ -329,7 +401,9 @@ a{color:inherit;text-decoration:none}
   line-height:1.45
 }
 
-.notification-text b{font-weight:850}
+.notification-text b{
+  font-weight:850
+}
 
 .notification-time{
   display:block;
@@ -344,6 +418,11 @@ a{color:inherit;text-decoration:none}
   color:var(--muted);
   font-size:12px
 }
+
+
+/* =========================================================
+   FOLLOWING
+   ========================================================= */
 
 .following-list{
   display:grid;
@@ -360,7 +439,9 @@ a{color:inherit;text-decoration:none}
   background:var(--surface2)
 }
 
-.following-item:hover{background:var(--surface3)}
+.following-item:hover{
+  background:var(--surface3)
+}
 
 .following-item .avatar{
   width:32px;
@@ -382,6 +463,11 @@ a{color:inherit;text-decoration:none}
   color:var(--muted);
   margin-top:2px
 }
+
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
 
 .edit-profile{
   display:flex;
@@ -423,6 +509,11 @@ a{color:inherit;text-decoration:none}
   border-top:1px solid var(--border)
 }
 
+
+/* =========================================================
+   AVATARS
+   ========================================================= */
+
 .avatar{
   width:44px;
   height:44px;
@@ -442,6 +533,11 @@ a{color:inherit;text-decoration:none}
   font-size:39px
 }
 
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
 .card{
   padding:17px;
   border:1px solid var(--border);
@@ -449,7 +545,9 @@ a{color:inherit;text-decoration:none}
   background:var(--surface)
 }
 
-.card+.card{margin-top:12px}
+.card+.card{
+  margin-top:12px
+}
 
 .card h3{
   margin:0;
@@ -463,7 +561,14 @@ a{color:inherit;text-decoration:none}
   line-height:1.55
 }
 
-.primary,.secondary,.danger{
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.primary,
+.secondary,
+.danger{
   border-radius:999px;
   padding:9px 16px;
   font-size:13px;
@@ -493,6 +598,11 @@ button:disabled{
   cursor:not-allowed
 }
 
+
+/* =========================================================
+   COMPOSER
+   ========================================================= */
+
 .composer{
   padding:19px 18px 15px;
   border-bottom:1px solid var(--border);
@@ -520,7 +630,9 @@ button:disabled{
   font-weight:800
 }
 
-.formatbtn:hover{background:var(--surface3)}
+.formatbtn:hover{
+  background:var(--surface3)
+}
 
 .format-help{
   margin-left:4px;
@@ -545,7 +657,9 @@ button:disabled{
   font-size:10px
 }
 
-.body strong{font-weight:900}
+.body strong{
+  font-weight:900
+}
 
 .body code{
   padding:2px 5px;
@@ -556,11 +670,18 @@ button:disabled{
   font-size:.9em
 }
 
-.body em{font-style:italic}
+.body em{
+  font-style:italic
+}
 
-.body u{text-decoration:underline;text-underline-offset:2px}
+.body u{
+  text-decoration:underline;
+  text-underline-offset:2px
+}
 
-.body s{text-decoration:line-through}
+.body s{
+  text-decoration:line-through
+}
 
 .format-note{
   margin-top:8px;
@@ -586,7 +707,9 @@ button:disabled{
   line-height:1.55
 }
 
-.composer textarea::placeholder{color:var(--muted)}
+.composer textarea::placeholder{
+  color:var(--muted)
+}
 
 .composer-foot{
   display:flex;
@@ -613,6 +736,11 @@ button:disabled{
   color:var(--muted);
   font-size:11px
 }
+
+
+/* =========================================================
+   POSTS
+   ========================================================= */
 
 .post{
   padding:19px 18px;
@@ -649,13 +777,16 @@ button:disabled{
   max-width:240px
 }
 
-.handle,.time{
+.handle,
+.time{
   color:var(--muted);
   font-size:12px;
   white-space:nowrap
 }
 
-.dot{color:var(--muted)}
+.dot{
+  color:var(--muted)
+}
 
 .body{
   margin-top:8px;
@@ -682,6 +813,11 @@ button:disabled{
   font-weight:800
 }
 
+
+/* =========================================================
+   POST ACTIONS
+   ========================================================= */
+
 .actions{
   max-width:470px;
   margin-top:14px;
@@ -707,8 +843,18 @@ button:disabled{
   color:var(--text)
 }
 
-.liked{color:var(--red)}
-.reposted{color:var(--green)}
+.liked{
+  color:var(--red)
+}
+
+.reposted{
+  color:var(--green)
+}
+
+
+/* =========================================================
+   COMMENTS
+   ========================================================= */
 
 .comments{
   margin-top:14px;
@@ -732,7 +878,9 @@ button:disabled{
   padding:9px 13px
 }
 
-.comment-input:focus{border-color:var(--text)}
+.comment-input:focus{
+  border-color:var(--text)
+}
 
 .comment-list{
   margin-top:11px;
@@ -755,9 +903,13 @@ button:disabled{
   font-size:16px
 }
 
-.comment-text{min-width:0}
+.comment-text{
+  min-width:0
+}
 
-.comment-meta{font-size:11px}
+.comment-meta{
+  font-size:11px
+}
 
 .comment-meta span{
   color:var(--muted);
@@ -778,6 +930,11 @@ button:disabled{
   font-size:12px;
   margin-top:10px
 }
+
+
+/* =========================================================
+   HEADERS / NICHES
+   ========================================================= */
 
 .header{
   padding:24px 20px 19px;
@@ -830,9 +987,18 @@ button:disabled{
   flex-wrap:wrap
 }
 
-.stats b{font-size:14px}
+.stats b{
+  font-size:14px
+}
 
-.stats span{color:var(--muted)}
+.stats span{
+  color:var(--muted)
+}
+
+
+/* =========================================================
+   PROFILE HEADER
+   ========================================================= */
 
 .profile-head{
   display:flex;
@@ -865,12 +1031,18 @@ button:disabled{
   text-indent:0
 }
 
+
+/* =========================================================
+   EXPLORE
+   ========================================================= */
+
 .explore{
   padding:24px 20px 16px;
   border-bottom:1px solid var(--border)
 }
 
-.explore h1,.settings h1{
+.explore h1,
+.settings h1{
   margin:0;
   font-size:25px;
   letter-spacing:-.04em
@@ -882,9 +1054,13 @@ button:disabled{
   border-bottom:1px solid var(--border)
 }
 
-.result:hover{background:var(--surface2)}
+.result:hover{
+  background:var(--surface2)
+}
 
-.result b{font-size:14px}
+.result b{
+  font-size:14px
+}
 
 .result small{
   display:block;
@@ -892,12 +1068,20 @@ button:disabled{
   margin-top:5px
 }
 
-.empty,.loading{
+
+/* =========================================================
+   EMPTY / LOADING / ERROR
+   ========================================================= */
+
+.empty,
+.loading{
   text-align:center;
   padding:70px 25px
 }
 
-.empty .icon{font-size:42px}
+.empty .icon{
+  font-size:42px
+}
 
 .empty h2{
   font-size:19px;
@@ -926,15 +1110,22 @@ button:disabled{
   font-size:13px
 }
 
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
 .auth{
   min-height:100vh;
   display:grid;
   place-items:center;
   padding:25px;
   background:
-    radial-gradient(circle at 50% 0,
-    color-mix(in srgb,var(--text) 6%,transparent),
-    transparent 40%),
+    radial-gradient(
+      circle at 50% 0,
+      color-mix(in srgb,var(--text) 6%,transparent),
+      transparent 40%
+    ),
     var(--bg)
 }
 
@@ -970,7 +1161,13 @@ button:disabled{
   gap:10px
 }
 
-.input,.textarea{
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+.input,
+.textarea{
   width:100%;
   border:1px solid var(--border);
   border-radius:13px;
@@ -980,10 +1177,16 @@ button:disabled{
   padding:13px
 }
 
-.input:focus,.textarea:focus{
+.input:focus,
+.textarea:focus{
   background:var(--surface);
   border-color:var(--text)
 }
+
+
+/* =========================================================
+   AUTH SWITCH
+   ========================================================= */
 
 .switch{
   width:100%;
@@ -993,6 +1196,11 @@ button:disabled{
   margin-top:14px;
   font-size:12px
 }
+
+
+/* =========================================================
+   SETUP
+   ========================================================= */
 
 .setup{
   min-height:100vh;
@@ -1006,7 +1214,9 @@ button:disabled{
   letter-spacing:-.05em
 }
 
-.group{margin-top:19px}
+.group{
+  margin-top:19px
+}
 
 .label{
   display:block;
@@ -1039,6 +1249,11 @@ button:disabled{
   padding:12px
 }
 
+
+/* =========================================================
+   EMOJI
+   ========================================================= */
+
 .emoji-grid{
   display:grid;
   grid-template-columns:repeat(8,1fr);
@@ -1058,6 +1273,11 @@ button:disabled{
   border-color:var(--text);
   background:var(--surface3)
 }
+
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
 
 .setting-section{
   padding:22px 20px;
@@ -1092,6 +1312,11 @@ button:disabled{
   border-color:var(--text);
   background:var(--surface2)
 }
+
+
+/* =========================================================
+   MODALS
+   ========================================================= */
 
 .modal-backdrop{
   position:fixed;
@@ -1132,6 +1357,11 @@ button:disabled{
   margin-top:18px
 }
 
+
+/* =========================================================
+   EMAIL VERIFICATION
+   ========================================================= */
+
 .verify-dialog-icon{
   width:52px;
   height:52px;
@@ -1159,6 +1389,11 @@ button:disabled{
   text-align:center
 }
 
+
+/* =========================================================
+   ACTIVITY SWITCH
+   ========================================================= */
+
 .activity-row{
   display:flex;
   align-items:center;
@@ -1178,7 +1413,9 @@ button:disabled{
   padding:0
 }
 
-.switch-control.on{background:var(--text)}
+.switch-control.on{
+  background:var(--text)
+}
 
 .switch-knob{
   position:absolute;
@@ -1194,6 +1431,11 @@ button:disabled{
 .switch-control.on .switch-knob{
   transform:translateX(20px)
 }
+
+
+/* =========================================================
+   PROFILE FOLLOWING
+   ========================================================= */
 
 .profile-following{
   margin-top:18px;
@@ -1214,6 +1456,11 @@ button:disabled{
   font-size:12px;
   margin-top:10px
 }
+
+
+/* =========================================================
+   MOBILE NAV
+   ========================================================= */
 
 .mobile-nav{
   display:none;
@@ -1277,398 +1524,571 @@ button:disabled{
   border:2px solid var(--surface)
 }
 
-@media(max-width:767px){
-  .shell{
-    grid-template-columns:76px minmax(0,680px)
-  }
-
-  .right{display:none}
-
-  .side{padding:24px 11px}
-
-  .brand b{
-    text-align:center;
-    font-size:23px
-  }
-
-  .brand span,.nav label,.mini{display:none}
-
-  .nav button{text-align:center}
-
-  .nav i{margin:0}
-}
-
-@media(max-width:700px){
-  .notif-menu{
-    position:fixed;
-    right:10px;
-    top:64px;
-    width:min(360px,calc(100vw - 20px));
-    max-height:calc(100vh - 145px)
-  }
-
-  .notif-list{
-    max-height:calc(100vh - 205px)
-  }
-
-  .shell{display:block}
-
-  .side{display:none}
-
-  .main{
-    border:0;
-    padding-bottom:78px
-  }
-
-  .mobile-brand{display:block}
-
-  .top{height:58px}
-
-  .composer,.post{
-    padding-left:14px;
-    padding-right:14px
-  }
-
-  .header,.explore,.setting-section{
-    padding-left:15px;
-    padding-right:15px
-  }
-
-  .title{font-size:27px}
-
-  .actions{max-width:100%}
-
-  .themes{grid-template-columns:1fr}
-
-  .profile-head{gap:12px}
-
-  .avatar.big{
-    width:68px;
-    height:68px;
-    flex-basis:68px;
-    font-size:34px
-  }
-
-  .mobile-nav{display:grid}
-
-  .stats{gap:14px}
-}
-
-@media(max-width:430px){
-  .handle,.dot{display:none}
-  .time{display:inline-block;font-size:10px;flex-shrink:0}
-
-  .name{max-width:170px}
-
-  .emoji-grid{
-    grid-template-columns:repeat(6,1fr)
-  }
-}
-
-    /* =========================================================
-   RESPONSIVE TABLET / PHONE LAYOUT
-   The compact interface is based on viewport + touch capability,
-   not only a small pixel width. This keeps iPad/Pixel-sized devices
-   and landscape phones on the same mobile navigation.
-   ========================================================= */
-
-@media (hover:none) and (pointer:coarse){
-  .shell{
-    display:block !important;
-    width:100%;
-    max-width:none;
-  }
-
-  .side,
-  .right{
-    display:none !important;
-  }
-
-  .main{
-    width:100%;
-    max-width:none;
-    border-right:0;
-    padding-bottom:82px;
-  }
-
-  .mobile-brand{
-    display:block !important;
-  }
-
-  .mobile-nav{
-    display:grid !important;
-  }
-
-  .mobile-following{
-    display:block;
-    padding:0 14px 18px;
-  }
-
-  .mobile-following .card{
-    margin-top:0;
-  }
-
-  .top{
-    height:60px;
-  }
-
-  .post,
-  .composer,
-  .header,
-  .explore,
-  .setting-section,
-  .niche-header{
-    width:100%;
-    max-width:none;
-  }
-}
-
-/* Landscape: never switch back to the desktop three-column layout. */
-@media (orientation:landscape) and (max-height:700px){
-  .shell{
-    display:block !important;
-    width:100%;
-  }
-
-  .side,
-  .right{
-    display:none !important;
-  }
-
-  .main{
-    width:100%;
-    max-width:none;
-    border-right:0;
-    padding-bottom:82px;
-  }
-
-  .mobile-brand{display:block !important}
-  .mobile-nav{display:grid !important}
-  .mobile-following{display:block;padding:0 14px 18px}
-}
 
 /* =========================================================
-   PIN + POST WIDGET STYLES (integrated from feature modules)
+   DESKTOP DEVICE
+   Windows / macOS / Linux
+   ========================================================= */
+
+html.device-desktop .shell{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:245px minmax(0,680px) 290px;
+  justify-content:center
+}
+
+html.device-desktop .side{
+  display:block
+}
+
+html.device-desktop .right{
+  display:block
+}
+
+html.device-desktop .mobile-nav{
+  display:none
+}
+
+html.device-desktop .mobile-brand{
+  display:none
+}
+
+html.device-desktop .mobile-following{
+  display:none
+}
+
+
+/* =========================================================
+   MOBILE DEVICE
+   Android / iPhone / iPad
+   ========================================================= */
+
+html.device-mobile .shell{
+  display:block !important;
+  width:100%;
+  max-width:none
+}
+
+html.device-mobile .side,
+html.device-mobile .right{
+  display:none !important
+}
+
+html.device-mobile .main{
+  width:100%;
+  max-width:none;
+  border-right:0;
+  padding-bottom:82px
+}
+
+html.device-mobile .mobile-brand{
+  display:block !important
+}
+
+html.device-mobile .mobile-nav{
+  display:grid !important
+}
+
+html.device-mobile .mobile-following{
+  display:block;
+  padding:0 14px 18px
+}
+
+html.device-mobile .top{
+  height:60px
+}
+
+html.device-mobile .post,
+html.device-mobile .composer{
+  padding-left:14px;
+  padding-right:14px
+}
+
+html.device-mobile .header,
+html.device-mobile .explore,
+html.device-mobile .setting-section{
+  padding-left:15px;
+  padding-right:15px
+}
+
+html.device-mobile .title{
+  font-size:27px
+}
+
+html.device-mobile .actions{
+  max-width:100%
+}
+
+html.device-mobile .themes{
+  grid-template-columns:1fr
+}
+
+html.device-mobile .profile-head{
+  gap:12px
+}
+
+html.device-mobile .avatar.big{
+  width:68px;
+  height:68px;
+  flex-basis:68px;
+  font-size:34px
+}
+
+html.device-mobile .stats{
+  gap:14px
+}
+
+
+/* =========================================================
+   MOBILE NOTIFICATIONS
+   ========================================================= */
+
+html.device-mobile .notif-menu{
+  position:fixed;
+  right:10px;
+  top:64px;
+  width:min(360px,calc(100vw - 20px));
+  max-height:calc(100vh - 145px)
+}
+
+html.device-mobile .notif-list{
+  max-height:calc(100vh - 205px)
+}
+
+
+/* =========================================================
+   MOBILE WIDGETS
+   ========================================================= */
+
+html.device-mobile .niche-countdown-value{
+  font-size:20px
+}
+
+html.device-mobile .niche-widget-tabs{
+  display:grid;
+  grid-template-columns:1fr
+}
+
+html.device-mobile .niche-widget-tab{
+  width:100%
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE SCREENS
+   This does NOT determine desktop/mobile mode.
+   It only fine-tunes narrow phones.
+   ========================================================= */
+
+@media(max-width:430px){
+
+  html.device-mobile .handle,
+  html.device-mobile .dot{
+    display:none
+  }
+
+  html.device-mobile .time{
+    display:inline-block;
+    font-size:10px;
+    flex-shrink:0
+  }
+
+  html.device-mobile .name{
+    max-width:170px
+  }
+
+  html.device-mobile .emoji-grid{
+    grid-template-columns:repeat(6,1fr)
+  }
+
+}
+
+
+/* =========================================================
+   PIN + POST WIDGET STYLES
    ========================================================= */
 
 .niche-pin-backdrop{
-      z-index:1000;
-    }
+  z-index:1000
+}
 
-    .niche-pin-modal{
-      width:min(390px,calc(100vw - 30px));
-    }
+.niche-pin-modal{
+  width:min(390px,calc(100vw - 30px))
+}
 
-    .niche-pin-modal .input{
-      width:100%;
-      margin-top:10px;
-      text-align:center;
-      letter-spacing:.3em;
-      font-size:20px;
-    }
+.niche-pin-modal .input{
+  width:100%;
+  margin-top:10px;
+  text-align:center;
+  letter-spacing:.3em;
+  font-size:20px
+}
 
-    .niche-pin-modal .modal-actions{
-      margin-top:14px;
-    }
+.niche-pin-modal .modal-actions{
+  margin-top:14px
+}
+
+
+/* =========================================================
+   COMPOSER WIDGET
+   ========================================================= */
 
 .niche-composer-widget-row{
-      display:flex;
-      align-items:center;
-      gap:9px;
-      flex-wrap:wrap;
-      margin:9px 0;
-    }
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex-wrap:wrap;
+  margin:9px 0
+}
 
-    .niche-add-widget{
-      padding:7px 12px;
-      font-size:11px;
-    }
+.niche-add-widget{
+  padding:7px 12px;
+  font-size:11px
+}
 
-    .niche-widget-status{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color:var(--muted);
-      font-size:11px;
-    }
+.niche-widget-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:11px
+}
 
-    .niche-widget-status span{
-      color:var(--text);
-      font-weight:700;
-    }
-
-    .niche-widget-modal{
-      width:min(460px,calc(100vw - 28px));
-      max-height:calc(100vh - 40px);
-      overflow:auto;
-    }
-
-    .niche-widget-tabs{
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-      margin:15px 0;
-    }
-
-    .niche-widget-tab{
-      border:1px solid var(--border);
-      background:var(--surface2);
-      color:var(--muted);
-      border-radius:999px;
-      padding:8px 12px;
-      font-size:11px;
-      font-weight:800;
-    }
-
-    .niche-widget-tab.active{
-      background:var(--text);
-      color:var(--bg);
-      border-color:var(--text);
-    }
-
-    .niche-widget-field{
-      display:block;
-      margin-top:12px;
-    }
-
-    .niche-widget-modal .input,
-    .niche-widget-modal .textarea{
-      width:100%;
-    }
-
-    .niche-poll-fields{
-      display:grid;
-      gap:8px;
-    }
-
-    .niche-widget-preview{
-      margin-top:15px;
-      padding:15px;
-      border:1px solid var(--border);
-      border-radius:15px;
-      background:var(--surface2);
-    }
-
-    .niche-widget-label{
-      color:var(--muted);
-      font-size:10px;
-      font-weight:900;
-      letter-spacing:.08em;
-    }
-
-    .niche-widget-title{
-      margin-top:7px;
-      font-size:15px;
-      font-weight:850;
-      line-height:1.4;
-      word-break:break-word;
-    }
-
-    .niche-countdown-preview{
-      margin-top:10px;
-      font-size:24px;
-      font-weight:900;
-      letter-spacing:.02em;
-      font-variant-numeric:tabular-nums;
-    }
-
-    .niche-widget{
-      margin-top:13px;
-      padding:15px;
-      border:1px solid var(--border);
-      border-radius:15px;
-      background:var(--surface2);
-    }
-
-    .niche-countdown-value{
-      margin-top:9px;
-      font-size:25px;
-      font-weight:900;
-      letter-spacing:.02em;
-      font-variant-numeric:tabular-nums;
-      overflow-wrap:anywhere;
-    }
-
-    .niche-widget-time{
-      margin-top:7px;
-      color:var(--muted);
-      font-size:10px;
-      line-height:1.45;
-    }
-
-    .niche-widget-detail{
-      margin-top:7px;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.45;
-      word-break:break-word;
-    }
-
-    .niche-poll-options{
-      display:grid;
-      gap:7px;
-      margin-top:12px;
-    }
-
-    .niche-poll-option{
-      width:100%;
-      min-height:40px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      text-align:left;
-      border:1px solid var(--border);
-      background:var(--surface);
-      color:var(--text);
-      border-radius:11px;
-      padding:9px 11px;
-      font-size:12px;
-    }
-
-    .niche-poll-option:hover{
-      background:var(--surface3);
-    }
-
-    .niche-poll-option:disabled{
-      cursor:not-allowed;
-    }
-
-    .niche-poll-count{
-      color:var(--muted);
-      font-size:10px;
-      font-weight:800;
-      flex-shrink:0;
-    }
-
-    .niche-poll-preview-option{
-      margin-top:7px;
-      padding:8px 10px;
-      border:1px solid var(--border);
-      border-radius:9px;
-      font-size:11px;
-    }
-
-    @media(max-width:700px){
-
-      .niche-countdown-value{
-        font-size:20px;
-      }
-
-      .niche-widget-tabs{
-        display:grid;
-        grid-template-columns:1fr;
-      }
-
-      .niche-widget-tab{
-        width:100%;
-      }
-
-    }
+.niche-widget-status span{
+  color:var(--text);
+  font-weight:700
+}
 
 
-/* Following page */
-.following-page-body{padding:18px}
-.following-page-body>.card{max-width:680px;margin:0 auto}
-@media(max-width:700px){.following-page-body{padding:14px}}
-@media(hover:none) and (pointer:coarse){.following-page-body{padding-bottom:95px}}
+/* =========================================================
+   WIDGET MODAL
+   ========================================================= */
+
+.niche-widget-modal{
+  width:min(460px,calc(100vw - 28px));
+  max-height:calc(100vh - 40px);
+  overflow:auto
+}
+
+.niche-widget-tabs{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin:15px 0
+}
+
+.niche-widget-tab{
+  border:1px solid var(--border);
+  background:var(--surface2);
+  color:var(--muted);
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:11px;
+  font-weight:800
+}
+
+.niche-widget-tab.active{
+  background:var(--text);
+  color:var(--bg);
+  border-color:var(--text)
+}
+
+.niche-widget-field{
+  display:block;
+  margin-top:12px
+}
+
+.niche-widget-modal .input,
+.niche-widget-modal .textarea{
+  width:100%
+}
+
+
+/* =========================================================
+   POLL
+   ========================================================= */
+
+.niche-poll-fields{
+  display:grid;
+  gap:8px
+}
+
+.niche-widget-preview{
+  margin-top:15px;
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:var(--surface2)
+}
+
+.niche-widget-label{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em
+}
+
+.niche-widget-title{
+  margin-top:7px;
+  font-size:15px;
+  font-weight:850;
+  line-height:1.4;
+  word-break:break-word
+}
+
+.niche-countdown-preview{
+  margin-top:10px;
+  font-size:24px;
+  font-weight:900;
+  letter-spacing:.02em;
+  font-variant-numeric:tabular-nums
+}
+
+.niche-widget{
+  margin-top:13px;
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:var(--surface2)
+}
+
+.niche-countdown-value{
+  margin-top:9px;
+  font-size:25px;
+  font-weight:900;
+  letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere
+}
+
+.niche-widget-time{
+  margin-top:7px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.45
+}
+
+.niche-widget-detail{
+  margin-top:7px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+  word-break:break-word
+}
+
+.niche-poll-options{
+  display:grid;
+  gap:7px;
+  margin-top:12px
+}
+
+.niche-poll-option{
+  width:100%;
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  text-align:left;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text);
+  border-radius:11px;
+  padding:9px 11px;
+  font-size:12px
+}
+
+.niche-poll-option:hover{
+  background:var(--surface3)
+}
+
+.niche-poll-option:disabled{
+  cursor:not-allowed
+}
+
+.niche-poll-count{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+  flex-shrink:0
+}
+
+.niche-poll-preview-option{
+  margin-top:7px;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  font-size:11px
+}
+
+
+/* =========================================================
+   MATCH WIDGET
+   ========================================================= */
+
+.niche-match-backdrop{
+  z-index:1000
+}
+
+.niche-match-modal{
+  width:min(430px,calc(100vw - 30px));
+  max-height:85vh;
+  overflow-y:auto
+}
+
+.niche-match-modal label{
+  display:block;
+  margin-top:12px;
+  margin-bottom:5px;
+  font-size:11px;
+  color:var(--muted)
+}
+
+.niche-match-modal .input{
+  width:100%
+}
+
+.match-score-inputs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px
+}
+
+.niche-match-add-button{
+  margin-left:6px
+}
+
+.niche-match-widget{
+  margin-top:14px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:15px;
+  background:var(--surface2);
+  overflow:hidden
+}
+
+.niche-match-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:15px
+}
+
+.niche-match-sport{
+  font-size:12px;
+  font-weight:700
+}
+
+.niche-match-status{
+  font-size:10px;
+  font-weight:800;
+  padding:5px 9px;
+  border-radius:999px;
+  background:var(--surface)
+}
+
+.niche-match-status.live{
+  color:var(--green)
+}
+
+.niche-match-status.finished{
+  color:var(--muted)
+}
+
+.niche-match-status.upcoming{
+  color:var(--blue)
+}
+
+.niche-match-teams{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:12px;
+  text-align:center
+}
+
+.niche-match-team-name{
+  font-size:13px;
+  font-weight:700;
+  word-break:break-word
+}
+
+.niche-match-score{
+  margin-top:6px;
+  font-size:26px;
+  line-height:1;
+  font-weight:800
+}
+
+.niche-match-vs{
+  font-size:10px;
+  color:var(--muted);
+  font-weight:700
+}
+
+.niche-match-info{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid var(--border);
+  font-size:10px;
+  color:var(--muted);
+  text-align:center
+}
+
+
+/* =========================================================
+   FOLLOWING PAGE
+   ========================================================= */
+
+.following-page-body{
+  padding:18px
+}
+
+.following-page-body>.card{
+  max-width:680px;
+  margin:0 auto
+}
+
+
+/* =========================================================
+   MOBILE-SPECIFIC WIDGET ADJUSTMENTS
+   ========================================================= */
+
+html.device-mobile .niche-match-widget{
+  padding:13px
+}
+
+html.device-mobile .niche-match-score{
+  font-size:23px
+}
+
+html.device-mobile .niche-match-team-name{
+  font-size:12px
+}
+
+html.device-mobile .following-page-body{
+  padding:14px;
+  padding-bottom:95px
+}
+
+
+/* =========================================================
+   SMALL MOBILE MATCH / WIDGET DETAILS
+   ========================================================= */
+
+@media(max-width:430px){
+
+  html.device-mobile .niche-match-teams{
+    gap:8px
+  }
+
+  html.device-mobile .niche-match-score{
+    font-size:21px
+  }
+
+  html.device-mobile .niche-match-team-name{
+    font-size:11px
+  }
+
+}
