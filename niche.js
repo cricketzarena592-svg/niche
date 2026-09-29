@@ -47,6 +47,7 @@ const S={
   search:"",
   results:[],
   theme:localStorage.getItem("niche-theme")||"system",
+interfaceStyle:localStorage.getItem("niche-interface-style")||"basic",
   notifications:[],
   notificationsOpen:false,
   notificationsLoaded:false,
@@ -147,10 +148,41 @@ function applyTheme(){
   document.documentElement.dataset.theme=S.theme;
 }
 
+function applyInterfaceStyle(){
+  const style=
+    S.interfaceStyle==="glass"
+      ?"glass"
+      :"basic";
+
+  document.documentElement.dataset.interface=style;
+}
+
+function setInterfaceStyle(style){
+  S.interfaceStyle=
+    style==="glass"
+      ?"glass"
+      :"basic";
+
+  localStorage.setItem(
+    "niche-interface-style",
+    S.interfaceStyle
+  );
+
+  applyInterfaceStyle();
+
+  toast(
+    S.interfaceStyle==="glass"
+      ?"Glass style enabled"
+      :"Basic style enabled"
+  );
+
+  render();
+}
+
 function setTheme(t){
   S.theme=["dark","light","system"].includes(t)
-    ? t
-    : "system";
+    ?t
+    :"system";
 
   localStorage.setItem(
     "niche-theme",
@@ -161,6 +193,15 @@ function setTheme(t){
   render();
 }
 
+function cycleTheme(){
+  let a=["system","dark","light"];
+  let i=a.indexOf(S.theme);
+
+  setTheme(a[(i+1)%3]);
+}
+
+applyTheme();
+applyInterfaceStyle();
 function cycleTheme(){
   let a=["system","dark","light"];
   let i=a.indexOf(S.theme);
@@ -2766,6 +2807,68 @@ function editProfilePage(){
         </div>
 
       </section>
+            </section>
+
+      <section class="setting-section interface-style-section">
+
+        <h1>Interface style</h1>
+
+        <p>
+          Choose how NICHE looks and feels.
+        </p>
+
+        <div class="interface-styles">
+
+          <button
+            class="interface-style ${
+              S.interfaceStyle==="basic"?"active":""
+            }"
+            onclick="setInterfaceStyle('basic')"
+          >
+            <span class="interface-style-preview basic-preview">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+
+            <span class="interface-style-info">
+              <b>Basic</b>
+              <small>Current NICHE interface</small>
+            </span>
+
+            <span class="interface-style-check">
+              ${S.interfaceStyle==="basic"?"✓":""}
+            </span>
+          </button>
+
+          <button
+            class="interface-style ${
+              S.interfaceStyle==="glass"?"active":""
+            }"
+            onclick="setInterfaceStyle('glass')"
+          >
+            <span class="interface-style-preview glass-preview">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+
+            <span class="interface-style-info">
+              <b>Glass</b>
+              <small>Frutiger Aero / glass UI</small>
+            </span>
+
+            <span class="interface-style-check">
+              ${S.interfaceStyle==="glass"?"✓":""}
+            </span>
+          </button>
+
+        </div>
+
+      </section>
+
+      <section class="setting-section">
+        <h1>Activity privacy</h1>
 
     </div>
   `;
