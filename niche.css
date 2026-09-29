@@ -1705,6 +1705,140 @@ html.device-mobile .niche-widget-tab{
 
 
 /* =========================================================
+   GLASS THEME
+   ========================================================= */
+
+.glass-setting{
+  margin-top:18px
+}
+
+.glass-description{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:11px
+}
+
+.glass-backgrounds{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-top:14px
+}
+
+.glass-background{
+  min-width:0;
+  display:grid;
+  justify-items:start;
+  gap:7px;
+  padding:7px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:var(--surface);
+  color:var(--text);
+  font-size:10px;
+  font-weight:750
+}
+
+.glass-background.active{
+  border-color:var(--blue);
+  box-shadow:0 0 0 1px var(--blue)
+}
+
+.glass-swatch{
+  width:100%;
+  height:34px;
+  border-radius:7px
+}
+
+.glass-swatch.sky{
+  background:linear-gradient(130deg,#52d5ed,#577be9 58%,#ed9bc6)
+}
+
+.glass-swatch.orchid{
+  background:linear-gradient(130deg,#ef99bd,#a681ed 58%,#66c9e6)
+}
+
+.glass-swatch.mint{
+  background:linear-gradient(130deg,#bce779,#44c9ac 55%,#63a9e9)
+}
+
+.glass-swatch.sunset{
+  background:linear-gradient(130deg,#ffc477,#f17878 55%,#b17ce0)
+}
+
+html[data-glass="on"]{
+  background:var(--bg)
+}
+
+html[data-glass="on"] body{
+  background-attachment:fixed
+}
+
+html[data-glass="on"][data-glass-background="sky"] body{
+  background-image:
+    radial-gradient(ellipse at 12% 8%,rgba(70,205,235,.34),transparent 42%),
+    radial-gradient(ellipse at 88% 18%,rgba(231,118,186,.27),transparent 38%),
+    linear-gradient(145deg,#172433,#192533 52%,#252033)
+}
+
+html[data-glass="on"][data-glass-background="orchid"] body{
+  background-image:
+    radial-gradient(ellipse at 15% 12%,rgba(238,133,184,.34),transparent 42%),
+    radial-gradient(ellipse at 88% 22%,rgba(133,112,231,.3),transparent 40%),
+    linear-gradient(145deg,#242033,#29243b 52%,#1c2c39)
+}
+
+html[data-glass="on"][data-glass-background="mint"] body{
+  background-image:
+    radial-gradient(ellipse at 12% 10%,rgba(178,220,100,.32),transparent 42%),
+    radial-gradient(ellipse at 88% 20%,rgba(58,200,166,.29),transparent 40%),
+    linear-gradient(145deg,#1d302d,#1c303a 52%,#202c3a)
+}
+
+html[data-glass="on"][data-glass-background="sunset"] body{
+  background-image:
+    radial-gradient(ellipse at 12% 10%,rgba(255,182,104,.34),transparent 42%),
+    radial-gradient(ellipse at 88% 20%,rgba(241,111,128,.3),transparent 40%),
+    linear-gradient(145deg,#352a30,#332837 52%,#25263a)
+}
+
+html[data-glass="on"] .top,
+html[data-glass="on"] .card,
+html[data-glass="on"] .modal,
+html[data-glass="on"] .authcard,
+html[data-glass="on"] .search,
+html[data-glass="on"] .theme,
+html[data-glass="on"] .following-item,
+html[data-glass="on"] .customize-preview,
+html[data-glass="on"] .formatbtn,
+html[data-glass="on"] .glass-background{
+  background-color:color-mix(in srgb,var(--surface) 62%,transparent);
+  border-color:color-mix(in srgb,var(--text) 18%,transparent);
+  backdrop-filter:blur(18px) saturate(145%);
+  -webkit-backdrop-filter:blur(18px) saturate(145%);
+  box-shadow:inset 0 1px rgba(255,255,255,.12)
+}
+
+html[data-glass="on"] .search,
+html[data-glass="on"] .following-item,
+html[data-glass="on"] .customize-preview,
+html[data-glass="on"] .formatbtn{
+  background-color:color-mix(in srgb,var(--surface2) 62%,transparent)
+}
+
+@media(max-width:430px){
+  .glass-backgrounds{
+    gap:5px
+  }
+
+  .glass-background{
+    padding:6px;
+    font-size:9px
+  }
+}
+
+
+/* =========================================================
    PIN + POST WIDGET STYLES
    ========================================================= */
 

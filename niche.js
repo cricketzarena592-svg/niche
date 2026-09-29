@@ -47,6 +47,8 @@ const S={
   search:"",
   results:[],
   theme:localStorage.getItem("niche-theme")||"system",
+  glassTheme:localStorage.getItem("niche-glass-theme")==="on",
+  glassBackground:localStorage.getItem("niche-glass-background")||"sky",
   notifications:[],
   notificationsOpen:false,
   notificationsLoaded:false,
@@ -145,6 +147,8 @@ function toast(m){
 
 function applyTheme(){
   document.documentElement.dataset.theme=S.theme;
+  document.documentElement.dataset.glass=S.glassTheme?"on":"off";
+  document.documentElement.dataset.glassBackground=S.glassBackground;
 }
 
 function setTheme(t){
@@ -166,6 +170,32 @@ function cycleTheme(){
   let i=a.indexOf(S.theme);
 
   setTheme(a[(i+1)%3]);
+}
+
+function setGlassTheme(enabled){
+  S.glassTheme=!!enabled;
+
+  localStorage.setItem(
+    "niche-glass-theme",
+    S.glassTheme?"on":"off"
+  );
+
+  applyTheme();
+  render();
+}
+
+function setGlassBackground(background){
+  S.glassBackground=["sky","orchid","mint","sunset"].includes(background)
+    ? background
+    : "sky";
+
+  localStorage.setItem(
+    "niche-glass-background",
+    S.glassBackground
+  );
+
+  applyTheme();
+  render();
 }
 
 function hrefN(t){
@@ -3178,6 +3208,48 @@ function settings(){
               </button>
             `).join("")
           }
+
+        </div>
+
+        <div class="glass-setting">
+          <div class="activity-row">
+            <div>
+              <b style="font-size:13px">Glass theme</b>
+              <div class="glass-description">
+                Soft, translucent surfaces with a colorful backdrop.
+              </div>
+            </div>
+
+            <button
+              class="switch-control ${S.glassTheme?"on":""}"
+              role="switch"
+              aria-checked="${S.glassTheme}"
+              aria-label="Glass theme"
+              onclick="setGlassTheme(!S.glassTheme)"
+            >
+              <span class="switch-knob"></span>
+            </button>
+          </div>
+
+          ${S.glassTheme?`
+            <div class="glass-backgrounds" aria-label="Glass theme background">
+              ${[
+                ["sky","Sky"],
+                ["orchid","Orchid"],
+                ["mint","Mint"],
+                ["sunset","Sunset"]
+              ].map(([id,label])=>`
+                <button
+                  class="glass-background ${S.glassBackground===id?"active":""}"
+                  aria-pressed="${S.glassBackground===id}"
+                  onclick="setGlassBackground('${id}')"
+                >
+                  <span class="glass-swatch ${id}"></span>
+                  ${label}
+                </button>
+              `).join("")}
+            </div>
+          `:""}
 
         </div>
 
