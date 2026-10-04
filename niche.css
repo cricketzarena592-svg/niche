@@ -626,10 +626,25 @@ html[data-glass="on"] .social-page-plate .explore{
   line-height:1.55
 }
 
+.more-page,
+.calendar-page{
+  margin:12px;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:var(--surface);
+  box-shadow:0 10px 28px rgba(0,0,0,.14)
+}
+
+.more-page .header,
+.calendar-page .header{
+  background:var(--surface)
+}
+
 .more-links{
   display:grid;
   gap:8px;
-  padding:0 18px 20px
+  padding:14px 18px 20px
 }
 
 .more-link{
@@ -702,6 +717,281 @@ html[data-glass="on"] .social-page-plate .explore{
   border:1px solid var(--border);
   border-radius:15px;
   background:var(--surface)
+}
+
+.todo-pane,
+.leaderboard-pane{
+  margin:0 18px 16px;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--surface)
+}
+
+.todo-pane-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px
+}
+
+.todo-pane-heading h2{
+  margin:0;
+  font-size:16px
+}
+
+.todo-pane-heading p{
+  margin:5px 0 0;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.45
+}
+
+.todo-progress-count{
+  display:grid;
+  min-width:42px;
+  min-height:34px;
+  place-items:center;
+  padding:0 9px;
+  border-radius:999px;
+  background:var(--surface2);
+  color:var(--blue);
+  font-size:12px;
+  font-weight:850
+}
+
+.todo-create-form{
+  display:flex;
+  gap:8px;
+  margin-top:14px
+}
+
+.todo-create-form input{
+  min-width:0;
+  flex:1;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  background:var(--surface2);
+  color:var(--text);
+  font-size:12px
+}
+
+.todo-create-form .primary{
+  padding:9px 15px;
+  font-size:11px
+}
+
+.todo-list,
+.profile-todo-list,
+.todo-leaderboard{
+  display:grid;
+  gap:7px;
+  margin:12px 0 0;
+  padding:0;
+  list-style:none
+}
+
+.todo-list li,
+.profile-todo-list li{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  padding:9px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface2)
+}
+
+.todo-list li label{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  flex:1;
+  font-size:12px;
+  overflow-wrap:anywhere
+}
+
+.todo-list input{
+  flex:0 0 auto;
+  width:17px;
+  height:17px;
+  accent-color:var(--blue)
+}
+
+.todo-list li.completed label span,
+.profile-todo-list li.completed > span:last-child{
+  color:var(--muted);
+  text-decoration:line-through
+}
+
+.todo-delete{
+  width:28px;
+  height:28px;
+  flex:0 0 28px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--muted);
+  font-size:18px
+}
+
+.todo-delete:hover{
+  background:color-mix(in srgb,var(--red) 12%,var(--surface));
+  color:var(--red)
+}
+
+.todo-empty{
+  margin:12px 0 0;
+  padding:14px;
+  border:1px dashed var(--border);
+  border-radius:10px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.5;
+  text-align:center;
+  overflow-wrap:anywhere
+}
+
+.leaderboard-icon{
+  font-size:23px
+}
+
+.todo-leaderboard{
+  counter-reset:leaderboard;
+  gap:6px
+}
+
+.todo-leaderboard li{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  padding:8px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface2)
+}
+
+.leaderboard-rank{
+  width:23px;
+  flex:0 0 23px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:850;
+  text-align:center
+}
+
+.todo-leaderboard li:nth-child(-n+3) .leaderboard-rank{
+  color:var(--blue)
+}
+
+.todo-leaderboard a{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  flex:1
+}
+
+.todo-leaderboard .avatar{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  font-size:17px
+}
+
+.leaderboard-person{
+  min-width:0
+}
+
+.leaderboard-person strong,
+.leaderboard-person small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap
+}
+
+.leaderboard-person strong{
+  font-size:11px
+}
+
+.leaderboard-person small{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:9px
+}
+
+.leaderboard-score{
+  min-width:26px;
+  color:var(--blue);
+  font-size:13px;
+  text-align:right
+}
+
+.profile-todos{
+  margin:0 18px 20px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:var(--surface)
+}
+
+.profile-todos-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px
+}
+
+.profile-todos-heading h2{
+  margin:0;
+  font-size:14px
+}
+
+.profile-todos-heading span{
+  color:var(--muted);
+  font-size:10px
+}
+
+.profile-todo-list li{
+  padding:8px 10px;
+  font-size:11px;
+  overflow-wrap:anywhere
+}
+
+.todo-check{
+  flex:0 0 16px;
+  color:var(--blue);
+  font-weight:900
+}
+
+.profile-todos .todo-empty{
+  margin-top:10px
+}
+
+html[data-glass="on"] .more-page,
+html[data-glass="on"] .calendar-page,
+html[data-glass="on"] .todo-pane,
+html[data-glass="on"] .leaderboard-pane,
+html[data-glass="on"] .profile-todos{
+  background:var(--pane-solid,var(--surface))
+}
+
+html[data-glass="on"] .more-link,
+html[data-glass="on"] .calendar-month,
+html[data-glass="on"] .calendar-event,
+html[data-glass="on"] .calendar-event-form{
+  background:var(--pane-solid,var(--surface))
+}
+
+html[data-glass="on"] .todo-list li,
+html[data-glass="on"] .profile-todo-list li,
+html[data-glass="on"] .todo-leaderboard li{
+  background:var(--pane-solid-alt,var(--surface2))
 }
 
 .calendar-month-heading{
@@ -2530,6 +2820,18 @@ html.device-mobile .niche-widget-tab{
     padding:10px 7px
   }
 
+  html.device-mobile .todo-pane,
+  html.device-mobile .leaderboard-pane{
+    margin-right:12px;
+    margin-left:12px;
+    padding:12px
+  }
+
+  html.device-mobile .profile-todos{
+    margin-right:12px;
+    margin-left:12px
+  }
+
   html.device-mobile .calendar-month-heading{
     gap:6px
   }
@@ -2667,6 +2969,8 @@ html.device-mobile .niche-widget-tab{
 html[data-glass="on"]{
   color-scheme:light;
   --bg:#e6f2f6;
+  --pane-solid:#edf7ff;
+  --pane-solid-alt:#e3f0fa;
   --surface:rgba(244,250,255,.62);
   --surface2:rgba(236,247,255,.68);
   --surface3:rgba(224,240,251,.78);
@@ -2689,6 +2993,8 @@ html[data-glass="on"]{
 html[data-glass="on"][data-glass-appearance="dark"]{
   color-scheme:dark;
   --bg:#111923;
+  --pane-solid:#0f1c2a;
+  --pane-solid-alt:#15263a;
   --surface:rgba(20,34,49,.68);
   --surface2:rgba(25,42,59,.76);
   --surface3:rgba(32,51,70,.86);

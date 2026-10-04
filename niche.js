@@ -72,6 +72,11 @@ const S={
   calendarDate:calendarDateKey(new Date()),
   calendarEvents:[],
   calendarEditingId:null,
+  todoItems:[],
+  publicTodoItems:[],
+  todoLeaderboard:[],
+  todoBoardError:"",
+  publicTodosError:"",
   chatTab:"messages",
   chatRequests:[],
   chatConversations:[],
@@ -1967,6 +1972,24 @@ async function loadPublicProfile(u){
   S.publicProfile=data;
 }
 
+async function loadPublicTodos(userId){
+  let{data,error}=await sb
+    .from("todo_items")
+    .select("id,user_id,title,is_complete,completed_at,created_at")
+    .eq("user_id",userId)
+    .order("created_at",{ascending:true});
+
+  if(error){
+    console.error("Public to-dos unavailable:",error);
+    S.publicTodosError=error.message;
+    S.publicTodoItems=[];
+    return;
+  }
+
+  S.publicTodosError="";
+  S.publicTodoItems=data||[];
+}
+
 async function profilePosts(id){
   let{data}=await sb
     .from("posts")
@@ -2689,6 +2712,11 @@ function profilePage(){
               following
             </span>
 
+            <span>
+              <b>${S.publicTodoItems.filter(item=>item.is_complete).length}/${S.publicTodoItems.length}</b>
+              to-dos done
+            </span>
+
           </div>
 
           <div class="profile-actions">
@@ -2731,6 +2759,27 @@ function profilePage(){
       </div>
 
     </header>
+
+    <section class="profile-todos">
+      <div class="profile-todos-heading">
+        <h2>To-do progress</h2>
+        <span>${S.publicTodoItems.filter(item=>item.is_complete).length} of ${S.publicTodoItems.length} complete</span>
+      </div>
+      ${
+        S.publicTodosError
+          ?`<p class="todo-empty">To-do progress is unavailable right now.</p>`
+          :S.publicTodoItems.length
+            ?`<ul class="profile-todo-list">
+              ${S.publicTodoItems.map(item=>`
+                <li class="${item.is_complete?"completed":""}">
+                  <span class="todo-check" aria-hidden="true">${item.is_complete?"✓":"○"}</span>
+                  <span>${esc(item.title)}</span>
+                </li>
+              `).join("")}
+            </ul>`
+            :`<p class="todo-empty">No to-dos shared yet.</p>`
+      }
+    </section>
 
     ${
       S.posts.length
@@ -4718,8 +4767,179 @@ function morePage(){
           <span class="more-link-arrow" aria-hidden="true">›</span>
         </button>
       </nav>
+      <section class="todo-pane">
+        <header class="todo-pane-heading">
+          <div>
+            <h2>To-do list</h2>
+            <p>Tasks and progress are public on profiles.</p>
+          </div>
+          <span class="todo-progress-count">${S.todoItems.filter(item=>item.is_complete).length}/${S.todoItems.length}</span>
+        </header>
+        <form class="todo-create-form" onsubmit="event.preventDefault();addTodoItem()">
+          <input id="new-todo-title" type="text" maxlength="120" required placeholder="Add a to-do..." aria-label="New to-do">
+          <button class="primary" type="submit">Add</button>
+        </form>
+        ${
+          S.todoBoardError
+            ?`<p class="todo-empty">To-dos could not be loaded. ${esc(S.todoBoardError)}</p>`
+            :S.todoItems.length
+              ?`<ul class="todo-list">
+                ${S.todoItems.map(item=>`
+                  <li class="${item.is_complete?"completed":""}">
+                    <label>
+                      <input type="checkbox" ${item.is_complete?"checked":""} onchange="setTodoComplete('${esc(item.id)}',this.checked)">
+                      <span>${esc(item.title)}</span>
+                    </label>
+                    <button class="todo-delete" type="button" aria-label="Delete ${esc(item.title)}" onclick="deleteTodoItem('${esc(item.id)}')">×</button>
+                  </li>
+                `).join("")}
+              </ul>`
+              :`<p class="todo-empty">No to-dos yet. Add one to start tracking your progress.</p>`
+        }
+      </section>
+      <section class="leaderboard-pane">
+        <header class="todo-pane-heading">
+          <div>
+            <h2>To-do leaderboard</h2>
+            <p>Ranked by total completed to-dos.</p>
+          </div>
+          <span class="leaderboard-icon" aria-hidden="true">🏆</span>
+        </header>
+        ${
+          S.todoBoardError
+            ?`<p class="todo-empty">Leaderboard is unavailable right now.</p>`
+            :S.todoLeaderboard.length
+              ?`<ol class="todo-leaderboard">
+                ${S.todoLeaderboard.map((person,index)=>`
+                  <li>
+                    <span class="leaderboard-rank">${index+1}</span>
+                    <a href="${hrefP(person.username)}" onclick="event.preventDefault();nav('/profile/${encodeURIComponent(person.username)}')">
+                      <span class="avatar">${esc(person.avatar_emoji||"🙂")}</span>
+                      <span class="leaderboard-person">
+                        <strong>${esc(person.display_name||person.username)}</strong>
+                        <small>@${esc(person.username)}</small>
+                      </span>
+                    </a>
+                    <strong class="leaderboard-score">${person.completedCount}</strong>
+                  </li>
+                `).join("")}
+              </ol>`
+              :`<p class="todo-empty">No one has completed a to-do yet.</p>`
+        }
+      </section>
     </section>
   `;
+}
+
+async function loadTodoBoard(){
+  let[todosResult,leaderboardResult]=await Promise.all([
+    sb
+      .from("todo_items")
+      .select("id,user_id,title,is_complete,completed_at,created_at")
+      .eq("user_id",S.user.id)
+      .order("created_at",{ascending:true}),
+    sb
+      .from("todo_leaderboard")
+      .select("user_id,completed_count")
+      .order("completed_count",{ascending:false})
+      .order("user_id",{ascending:true})
+      .limit(50)
+  ]);
+
+  if(todosResult.error||leaderboardResult.error){
+    let error=todosResult.error||leaderboardResult.error;
+    console.error("To-do board unavailable:",error);
+    S.todoBoardError=error.message;
+    S.todoItems=[];
+    S.todoLeaderboard=[];
+    return;
+  }
+
+  S.todoItems=todosResult.data||[];
+  S.todoBoardError="";
+  let ranks=(leaderboardResult.data||[]).map(row=>({
+    user_id:row.user_id,
+    completedCount:Number(row.completed_count)
+  }));
+  let userIds=ranks.map(person=>person.user_id);
+  if(!userIds.length){
+    S.todoLeaderboard=[];
+    return;
+  }
+
+  let{data:profiles,error:profilesError}=await sb
+    .from("profiles")
+    .select("id,username,display_name,avatar_emoji")
+    .in("id",userIds);
+
+  if(profilesError){
+    console.error("To-do leaderboard profiles unavailable:",profilesError);
+    S.todoBoardError=profilesError.message;
+    S.todoLeaderboard=[];
+    return;
+  }
+  let profileById=new Map((profiles||[]).map(profile=>[profile.id,profile]));
+  S.todoLeaderboard=ranks
+    .map(person=>({...person,...profileById.get(person.user_id)}))
+    .filter(person=>person.username)
+    .sort((a,b)=>b.completedCount-a.completedCount||a.username.localeCompare(b.username));
+}
+
+async function addTodoItem(){
+  let title=document.getElementById("new-todo-title")?.value.trim()||"";
+  if(!title){
+    toast("Enter a to-do.");
+    return;
+  }
+
+  let{error}=await sb.from("todo_items").insert({
+    user_id:S.user.id,
+    title
+  });
+
+  if(error){
+    console.error("To-do could not be added:",error);
+    toast(`To-do could not be added: ${error.message}`);
+    return;
+  }
+
+  await render();
+}
+
+async function setTodoComplete(id,isComplete){
+  let{error}=await sb
+    .from("todo_items")
+    .update({
+      is_complete:isComplete,
+      completed_at:isComplete?new Date().toISOString():null
+    })
+    .eq("id",id)
+    .eq("user_id",S.user.id);
+
+  if(error){
+    console.error("To-do progress could not be updated:",error);
+    toast(`To-do progress could not be updated: ${error.message}`);
+    await render();
+    return;
+  }
+
+  await render();
+}
+
+async function deleteTodoItem(id){
+  let{error}=await sb
+    .from("todo_items")
+    .delete()
+    .eq("id",id)
+    .eq("user_id",S.user.id);
+
+  if(error){
+    console.error("To-do could not be deleted:",error);
+    toast(`To-do could not be deleted: ${error.message}`);
+    return;
+  }
+
+  await render();
 }
 
 function calendarDateKey(date){
@@ -5222,6 +5442,8 @@ async function refresh(){
         S.publicProfile.id
       );
 
+      await loadPublicTodos(S.publicProfile.id);
+
       await loadFollowCounts(
         S.publicProfile.id
       );
@@ -5229,6 +5451,8 @@ async function refresh(){
     }else{
 
       S.posts=[];
+      S.publicTodoItems=[];
+      S.publicTodosError="";
 
     }
 
@@ -5354,6 +5578,8 @@ async function render(){
         S.publicProfile.id
       );
 
+      await loadPublicTodos(S.publicProfile.id);
+
       await loadFollowCounts(
         S.publicProfile.id
       );
@@ -5361,6 +5587,8 @@ async function render(){
     }else{
 
       S.posts=[];
+      S.publicTodoItems=[];
+      S.publicTodosError="";
 
     }
 
@@ -5384,6 +5612,7 @@ async function render(){
 
   }else if(r.type==="more"){
 
+    await loadTodoBoard();
     document.getElementById("app").innerHTML=
       layout(morePage());
 
