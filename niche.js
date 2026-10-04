@@ -68,6 +68,10 @@ const S={
   note:"",
   presenceUpdateTimer:null,
   myStuffTab:"explore",
+  calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),
+  calendarDate:calendarDateKey(new Date()),
+  calendarEvents:[],
+  calendarEditingId:null,
   chatTab:"messages",
   chatRequests:[],
   chatConversations:[],
@@ -411,6 +415,14 @@ function route(){
 
   if(/^\/settings\/?$/i.test(r)){
     return{type:"settings"};
+  }
+
+  if(/^\/more\/?$/i.test(r)){
+    return{type:"more"};
+  }
+
+  if(/^\/calendar\/?$/i.test(r)){
+    return{type:"calendar"};
   }
 
   if(/^\/following\/?$/i.test(r)){
@@ -4687,6 +4699,274 @@ function followingPage(){
   `;
 }
 
+function morePage(){
+  return`
+    <section class="more-page">
+      <header class="header">
+        <h1 class="title">More</h1>
+        <div class="sub">Your calendar and account settings.</div>
+      </header>
+      <nav class="more-links" aria-label="More">
+        <button class="more-link" onclick="nav('/calendar')">
+          <span class="more-link-icon" aria-hidden="true">▦</span>
+          <span><strong>Calendar</strong><small>Plan and manage your events</small></span>
+          <span class="more-link-arrow" aria-hidden="true">›</span>
+        </button>
+        <button class="more-link" onclick="nav('/settings')">
+          <span class="more-link-icon" aria-hidden="true">⚙</span>
+          <span><strong>Settings</strong><small>Appearance, privacy, and account</small></span>
+          <span class="more-link-arrow" aria-hidden="true">›</span>
+        </button>
+      </nav>
+    </section>
+  `;
+}
+
+function calendarDateKey(date){
+  let year=date.getFullYear();
+  let month=String(date.getMonth()+1).padStart(2,"0");
+  let day=String(date.getDate()).padStart(2,"0");
+  return`${year}-${month}-${day}`;
+}
+
+function calendarDateLabel(dateKey,options={weekday:"long",month:"long",day:"numeric",year:"numeric"}){
+  let[year,month,day]=dateKey.split("-").map(Number);
+  return new Date(year,month-1,day).toLocaleDateString(undefined,options);
+}
+
+async function loadCalendarEvents(){
+  let{data,error}=await sb
+    .from("calendar_events")
+    .select("id,title,event_date,details")
+    .eq("user_id",S.user.id)
+    .order("event_date",{ascending:true})
+    .order("created_at",{ascending:true});
+
+  if(error){
+    console.error("Calendar events unavailable:",error);
+    toast(`Calendar events could not be loaded: ${error.message}`);
+    S.calendarEvents=[];
+    return;
+  }
+
+  S.calendarEvents=data||[];
+}
+
+function calendarPage(){
+  let year=S.calendarMonth.getFullYear();
+  let month=S.calendarMonth.getMonth();
+  let daysInMonth=new Date(year,month+1,0).getDate();
+  let firstWeekday=new Date(year,month,1).getDay();
+  let selectedEvents=S.calendarEvents.filter(event=>event.event_date===S.calendarDate);
+  let cells=[];
+
+  for(let index=0;index<firstWeekday;index++){
+    cells.push(`<span class="calendar-day empty" aria-hidden="true"></span>`);
+  }
+  for(let day=1;day<=daysInMonth;day++){
+    let dateKey=calendarDateKey(new Date(year,month,day));
+    let eventCount=S.calendarEvents.filter(event=>event.event_date===dateKey).length;
+    let isToday=dateKey===calendarDateKey(new Date());
+    cells.push(`
+      <button
+        class="calendar-day ${dateKey===S.calendarDate?"selected":""} ${isToday?"today":""} ${eventCount?"has-events":""}"
+        type="button"
+        aria-label="${esc(calendarDateLabel(dateKey,{weekday:"long",month:"long",day:"numeric",year:"numeric"}))}${eventCount?`, ${eventCount} event${eventCount===1?"":"s"}`:""}"
+        aria-pressed="${dateKey===S.calendarDate}"
+        onclick="selectCalendarDate('${dateKey}')"
+      >
+        <span>${day}</span>
+        ${eventCount?`<i aria-hidden="true">${eventCount>9?"9+":eventCount}</i>`:""}
+      </button>
+    `);
+  }
+
+  return`
+    <section class="calendar-page">
+      <header class="header calendar-header">
+        <div>
+          <h1 class="title">Calendar</h1>
+          <div class="sub">Your personal plans, wherever you sign in.</div>
+        </div>
+        <button class="primary" type="button" onclick="startCalendarEvent()">+ Add event</button>
+      </header>
+
+      <section class="calendar-month" aria-label="Calendar">
+        <div class="calendar-month-heading">
+          <button class="secondary" type="button" aria-label="Previous month" onclick="changeCalendarMonth(-1)">‹</button>
+          <h2>${esc(S.calendarMonth.toLocaleDateString(undefined,{month:"long",year:"numeric"}))}</h2>
+          <button class="secondary" type="button" aria-label="Next month" onclick="changeCalendarMonth(1)">›</button>
+          <button class="calendar-today" type="button" onclick="goToCalendarToday()">Today</button>
+        </div>
+        <div class="calendar-grid" role="grid" aria-label="${esc(S.calendarMonth.toLocaleDateString(undefined,{month:"long",year:"numeric"}))}">
+          ${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(day=>`<span class="calendar-weekday" role="columnheader">${day}</span>`).join("")}
+          ${cells.join("")}
+        </div>
+      </section>
+
+      <section class="calendar-day-events">
+        <div class="calendar-events-heading">
+          <h2>${esc(calendarDateLabel(S.calendarDate))}</h2>
+          ${selectedEvents.length?`<span>${selectedEvents.length} event${selectedEvents.length===1?"":"s"}</span>`:""}
+        </div>
+        ${selectedEvents.length?`
+          <div class="calendar-event-list">
+            ${selectedEvents.map(event=>`
+              <article class="calendar-event">
+                <div class="calendar-event-copy">
+                  <h3>${esc(event.title)}</h3>
+                  ${event.details?`<p>${esc(event.details)}</p>`:""}
+                </div>
+                <div class="calendar-event-actions">
+                  <button class="secondary" type="button" onclick="editCalendarEvent('${esc(event.id)}')">Edit</button>
+                  <button class="secondary" type="button" onclick="deleteCalendarEvent('${esc(event.id)}')">Delete</button>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        `:`<p class="calendar-empty">Nothing planned for this day.</p>`}
+      </section>
+
+      ${calendarEventForm()}
+    </section>
+  `;
+}
+
+function calendarEventForm(){
+  let event=S.calendarEvents.find(item=>item.id===S.calendarEditingId);
+  let isEditing=!!event;
+  return`
+    <form
+      class="calendar-event-form"
+      id="calendar-event-form"
+      onsubmit="event.preventDefault();saveCalendarEvent()"
+      ${S.calendarEditingId?"":"hidden"}
+    >
+      <h2>${isEditing?"Edit event":"New event"}</h2>
+      <label for="calendar-event-title">Title</label>
+      <input
+        id="calendar-event-title"
+        type="text"
+        maxlength="100"
+        required
+        value="${esc(event?.title||"")}"
+        placeholder="What are you planning?"
+      >
+      <label for="calendar-event-date">Date</label>
+      <input
+        id="calendar-event-date"
+        type="date"
+        required
+        value="${esc(event?.event_date||S.calendarDate)}"
+      >
+      <label for="calendar-event-details">Details <span>(optional)</span></label>
+      <textarea
+        id="calendar-event-details"
+        maxlength="1000"
+        placeholder="Add a note..."
+      >${esc(event?.details||"")}</textarea>
+      <div class="calendar-form-actions">
+        <button class="primary" type="submit">${isEditing?"Save changes":"Save event"}</button>
+        <button class="secondary" type="button" onclick="cancelCalendarEvent()">Cancel</button>
+      </div>
+    </form>
+  `;
+}
+
+function selectCalendarDate(dateKey){
+  S.calendarDate=dateKey;
+  S.calendarEditingId=null;
+  render();
+}
+
+function changeCalendarMonth(delta){
+  let nextMonth=new Date(S.calendarMonth.getFullYear(),S.calendarMonth.getMonth()+delta,1);
+  let[selectedYear,selectedMonth,selectedDay]=S.calendarDate.split("-").map(Number);
+  let day=Math.min(selectedDay,new Date(nextMonth.getFullYear(),nextMonth.getMonth()+1,0).getDate());
+  S.calendarMonth=nextMonth;
+  S.calendarDate=calendarDateKey(new Date(selectedYear,selectedMonth-1+delta,day));
+  render();
+}
+
+function goToCalendarToday(){
+  let today=new Date();
+  S.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);
+  S.calendarDate=calendarDateKey(today);
+  S.calendarEditingId=null;
+  render();
+}
+
+function startCalendarEvent(){
+  S.calendarEditingId="new";
+  render().then(()=>document.getElementById("calendar-event-title")?.focus());
+}
+
+function editCalendarEvent(id){
+  S.calendarEditingId=id;
+  render().then(()=>document.getElementById("calendar-event-title")?.focus());
+}
+
+function cancelCalendarEvent(){
+  S.calendarEditingId=null;
+  render();
+}
+
+async function saveCalendarEvent(){
+  let title=document.getElementById("calendar-event-title")?.value.trim()||"";
+  let eventDate=document.getElementById("calendar-event-date")?.value||"";
+  let details=document.getElementById("calendar-event-details")?.value.trim()||"";
+
+  if(!title||!eventDate){
+    toast("Add an event title and date.");
+    return;
+  }
+
+  let[year,month,day]=eventDate.split("-").map(Number);
+  if(
+    !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)||
+    calendarDateKey(new Date(year,month-1,day))!==eventDate
+  ){
+    toast("Choose a valid event date.");
+    return;
+  }
+
+  let payload={title,event_date:eventDate,details:details||null};
+  let result=S.calendarEditingId&&S.calendarEditingId!=="new"
+    ?await sb.from("calendar_events").update(payload).eq("id",S.calendarEditingId).eq("user_id",S.user.id)
+    :await sb.from("calendar_events").insert({...payload,user_id:S.user.id});
+
+  if(result.error){
+    console.error("Calendar event could not be saved:",result.error);
+    toast(`Calendar event could not be saved: ${result.error.message}`);
+    return;
+  }
+
+  S.calendarDate=eventDate;
+  let[eventYear,eventMonth]=eventDate.split("-").map(Number);
+  S.calendarMonth=new Date(eventYear,eventMonth-1,1);
+  S.calendarEditingId=null;
+  await render();
+  toast("Event saved.");
+}
+
+async function deleteCalendarEvent(id){
+  let{error}=await sb
+    .from("calendar_events")
+    .delete()
+    .eq("id",id)
+    .eq("user_id",S.user.id);
+
+  if(error){
+    console.error("Calendar event could not be deleted:",error);
+    toast(`Calendar event could not be deleted: ${error.message}`);
+    return;
+  }
+
+  S.calendarEditingId=null;
+  await render();
+  toast("Event deleted.");
+}
+
 /* =========================================================
    LAYOUT
    ========================================================= */
@@ -4742,9 +5022,9 @@ function layout(content){
             Chat
           </button>
 
-          <button onclick="nav('/settings')">
-            <i>⚙</i>
-            Settings
+          <button onclick="nav('/more')">
+            <i>⋯</i>
+            More
           </button>
 
         </nav>
@@ -4796,11 +5076,13 @@ function layout(content){
           <a
             class="mobile-brand"
             href="#/"
+            aria-label="NICHE home"
             onclick="
               event.preventDefault();
               nav('/')
             "
           >
+            <img src="niche-icon.svg" alt="">
             NICHE
           </a>
 
@@ -4904,9 +5186,9 @@ function layout(content){
           <span>Profile</span>
         </button>
 
-        <button onclick="nav('/settings')">
-          <i>⚙</i>
-          <span>Settings</span>
+        <button onclick="nav('/more')">
+          <i>⋯</i>
+          <span>More</span>
         </button>
 
       </nav>
@@ -5099,6 +5381,17 @@ async function render(){
 
     document.getElementById("app").innerHTML=
       layout(settings());
+
+  }else if(r.type==="more"){
+
+    document.getElementById("app").innerHTML=
+      layout(morePage());
+
+  }else if(r.type==="calendar"){
+
+    await loadCalendarEvents();
+    document.getElementById("app").innerHTML=
+      layout(calendarPage());
 
   }else if(r.type==="following"){
 
