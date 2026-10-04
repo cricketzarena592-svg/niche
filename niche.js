@@ -73,6 +73,9 @@ const S={
   chatConversations:[],
   chatProfiles:{},
   chatMessages:[],
+  chatGroupCreateOpen:false,
+  chatGroupPeople:[],
+  chatGroupSelectedIds:new Set(),
   activeChatId:null,
   followCounts:{},
   activityPrivate:false,
@@ -2225,7 +2228,6 @@ async function loadChatData(){
         .from("chat_conversations")
         .select("id,kind,title,created_at")
         .in("id",conversationIds)
-        .eq("kind","direct")
         .order("created_at",{ascending:false}),
       sb
         .from("chat_members")
@@ -2273,6 +2275,9 @@ async function loadChatData(){
   );
   S.chatConversations=conversations.map(conversation=>({
     ...conversation,
+    memberIds:participants
+      .filter(person=>person.conversation_id===conversation.id)
+      .map(person=>person.user_id),
     otherUserId:participants.find(person=>
       person.conversation_id===conversation.id&&person.user_id!==S.user.id
     )?.user_id
@@ -2307,7 +2312,7 @@ async function requestChat(userId){
   await loadChatData();
 
   let existingChat=S.chatConversations.find(
-    conversation=>conversation.otherUserId===userId
+    conversation=>conversation.kind==="direct"&&conversation.otherUserId===userId
   );
   if(existingChat){
     await openChat(existingChat.id);
@@ -2384,6 +2389,104 @@ async function openChat(conversationId){
   }else{
     render();
   }
+}
+
+function setChatGroupCreateOpen(open){
+  S.chatGroupCreateOpen=!!open;
+  S.chatGroupPeople=[];
+  S.chatGroupSelectedIds=new Set();
+  render();
+}
+
+function chatGroupPeopleHTML(){
+  if(!S.chatGroupPeople.length){
+    return`<p class="chat-group-help">Search by username to choose members.</p>`;
+  }
+
+  return S.chatGroupPeople.map(profile=>`
+    <label class="chat-group-person">
+      <input
+        type="checkbox"
+        ${S.chatGroupSelectedIds.has(profile.id)?"checked":""}
+        onchange="setChatGroupMember('${esc(profile.id)}',this.checked)"
+      >
+      <span class="avatar">${esc(profile.avatar_emoji||"🙂")}</span>
+      <span class="chat-group-person-copy">
+        <strong>${esc(profile.display_name||profile.username||"NICHE user")}</strong>
+        <small>@${esc(profile.username||"")}</small>
+      </span>
+    </label>
+  `).join("");
+}
+
+function setChatGroupMember(userId,selected){
+  if(selected)S.chatGroupSelectedIds.add(userId);
+  else S.chatGroupSelectedIds.delete(userId);
+  let count=document.getElementById("chat-group-selection-count");
+  if(count)count.textContent=`${S.chatGroupSelectedIds.size} selected`;
+}
+
+async function searchChatGroupPeople(value){
+  let query=String(value||"").trim();
+  let root=document.getElementById("chat-group-people");
+  if(!root)return;
+  if(!query){
+    S.chatGroupPeople=[];
+    root.innerHTML=chatGroupPeopleHTML();
+    return;
+  }
+
+  const{data,error}=await sb
+    .from("profiles")
+    .select("id,username,display_name,avatar_emoji")
+    .neq("id",S.user.id)
+    .ilike("username",`%${query}%`)
+    .limit(20);
+
+  if(document.getElementById("chat-group-search")?.value.trim()!==query)return;
+  if(error){
+    console.error("Group member search unavailable:",error);
+    root.innerHTML=`<p class="chat-group-help">Could not search people right now.</p>`;
+    return;
+  }
+
+  S.chatGroupPeople=data||[];
+  root.innerHTML=S.chatGroupPeople.length
+    ?chatGroupPeopleHTML()
+    :`<p class="chat-group-help">No matching people.</p>`;
+}
+
+async function createChatGroup(){
+  let title=document.getElementById("chat-group-title")?.value.trim()||"";
+  let memberIds=[...S.chatGroupSelectedIds];
+  if(!title){
+    toast("Enter a group name.");
+    return;
+  }
+  if(!memberIds.length){
+    toast("Choose at least one person.");
+    return;
+  }
+
+  const{data,error}=await sb.rpc("create_group_chat",{
+    p_title:title,
+    p_member_ids:memberIds
+  });
+  if(error){
+    toast(error.message);
+    return;
+  }
+
+  S.chatGroupCreateOpen=false;
+  S.chatGroupPeople=[];
+  S.chatGroupSelectedIds=new Set();
+  S.activeChatId=data;
+  S.chatTab="messages";
+  await loadChatData();
+  await loadChatMessages(data);
+  toast("Group created.");
+  if(route().type==="chat")render();
+  else nav("/chat");
 }
 
 async function sendChatMessage(){
@@ -4419,21 +4522,27 @@ function chatRequestsHTML(){
   `;
 }
 
-function chatConversationsHTML(){
-  if(!S.chatConversations.length){
-    return`<section class="social-empty"><h2>No conversations yet</h2><p>Send a chat request from someone’s profile. Messages open after they accept.</p></section>`;
+function chatConversationsHTML(kind="direct"){
+  let conversations=S.chatConversations.filter(
+    conversation=>conversation.kind===kind
+  );
+  if(!conversations.length){
+    return kind==="group"
+      ?`<section class="social-empty"><h2>No groups yet</h2><p>Create a group and choose who to include.</p></section>`
+      :`<section class="social-empty"><h2>No conversations yet</h2><p>Send a chat request from someone’s profile. Messages open after they accept.</p></section>`;
   }
 
   return`
     <div class="chat-list">
-      ${S.chatConversations.map(conversation=>{
+      ${conversations.map(conversation=>{
         let person=chatProfile(conversation.otherUserId);
+        let isGroup=conversation.kind==="group";
         return`
           <button class="chat-row" onclick="openChat('${esc(conversation.id)}')">
-            <span class="avatar">${esc(person.avatar_emoji||"🙂")}</span>
+            <span class="avatar">${esc(isGroup?"👥":person.avatar_emoji||"🙂")}</span>
             <span class="chat-row-copy">
-              <strong>${esc(person.display_name||person.username||"NICHE user")}</strong>
-              <small>@${esc(person.username||"")}</small>
+              <strong>${esc(isGroup?conversation.title:person.display_name||person.username||"NICHE user")}</strong>
+              <small>${isGroup?`${conversation.memberIds.length} members`:`@${esc(person.username||"")}`}</small>
             </span>
             <span class="chat-row-arrow">›</span>
           </button>
@@ -4450,14 +4559,15 @@ function chatThreadHTML(){
   if(!conversation)return"";
 
   let person=chatProfile(conversation.otherUserId);
+  let isGroup=conversation.kind==="group";
 
   return`
     <section class="chat-thread-view">
       <header class="chat-thread-header">
         <button class="back" onclick="S.activeChatId=null;S.chatMessages=[];render()">← Chats</button>
         <div>
-          <strong>${esc(person.display_name||person.username||"NICHE user")}</strong>
-          <small>@${esc(person.username||"")}</small>
+          <strong>${esc(isGroup?conversation.title:person.display_name||person.username||"NICHE user")}</strong>
+          <small>${isGroup?`${conversation.memberIds.length} members`:`@${esc(person.username||"")}`}</small>
         </div>
       </header>
       <div class="chat-thread-messages" id="chat-thread-messages">
@@ -4505,14 +4615,31 @@ function chatPage(tab=S.chatTab){
       </div>
 
       ${tab==="groups"?`
-        <section class="social-empty">
-          <h2>No groups yet</h2>
-          <p>Group conversations will appear here.</p>
+        <section class="chat-conversations-section">
+          <div class="chat-section-heading">
+            <h2>Groups</h2>
+            <button class="primary" type="button" onclick="setChatGroupCreateOpen(!S.chatGroupCreateOpen)">${S.chatGroupCreateOpen?"Cancel":"Create group"}</button>
+          </div>
+          ${S.chatGroupCreateOpen?`
+            <form class="chat-group-form" onsubmit="event.preventDefault();createChatGroup()">
+              <label class="chat-group-label" for="chat-group-title">Group name</label>
+              <input id="chat-group-title" maxlength="80" placeholder="Name this group" required>
+              <label class="chat-group-label" for="chat-group-search">Add people</label>
+              <input id="chat-group-search" type="search" placeholder="Search by username" autocomplete="off" oninput="searchChatGroupPeople(this.value)">
+              <div class="chat-group-selection-head">
+                <strong>People</strong>
+                <small id="chat-group-selection-count">${S.chatGroupSelectedIds.size} selected</small>
+              </div>
+              <div class="chat-group-people" id="chat-group-people">${chatGroupPeopleHTML()}</div>
+              <button class="primary" type="submit">Create group</button>
+            </form>
+          `:""}
+          ${chatConversationsHTML("group")}
         </section>
       `:tab==="requests"?chatRequestsHTML():S.activeChatId?chatThreadHTML():`
         <section class="chat-conversations-section">
           <h2>Messages</h2>
-          ${chatConversationsHTML()}
+          ${chatConversationsHTML("direct")}
         </section>
 
         <section class="social-empty">
