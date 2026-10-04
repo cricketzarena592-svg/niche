@@ -978,20 +978,46 @@ html[data-glass="on"] .calendar-page,
 html[data-glass="on"] .todo-pane,
 html[data-glass="on"] .leaderboard-pane,
 html[data-glass="on"] .profile-todos{
-  background:var(--pane-solid,var(--surface))
+  background:var(--glass-panel-strong,var(--pane-solid,var(--surface)));
+  border-color:var(--glass-border,var(--border));
+  box-shadow:var(--glass-inset),var(--glass-shadow);
+  backdrop-filter:blur(24px) saturate(155%);
+  -webkit-backdrop-filter:blur(24px) saturate(155%)
 }
 
 html[data-glass="on"] .more-link,
 html[data-glass="on"] .calendar-month,
 html[data-glass="on"] .calendar-event,
-html[data-glass="on"] .calendar-event-form{
-  background:var(--pane-solid,var(--surface))
-}
-
+html[data-glass="on"] .calendar-event-form,
 html[data-glass="on"] .todo-list li,
 html[data-glass="on"] .profile-todo-list li,
-html[data-glass="on"] .todo-leaderboard li{
-  background:var(--pane-solid-alt,var(--surface2))
+html[data-glass="on"] .todo-leaderboard li,
+html[data-glass="on"] .todo-create-form input{
+  background:var(--glass-panel,var(--pane-solid,var(--surface)));
+  border-color:var(--glass-border,var(--border));
+  box-shadow:var(--glass-inset),0 6px 18px rgba(22,55,78,.08);
+  backdrop-filter:blur(18px) saturate(145%);
+  -webkit-backdrop-filter:blur(18px) saturate(145%)
+}
+
+html[data-glass="on"] .more-link:hover,
+html[data-glass="on"] .calendar-today,
+html[data-glass="on"] .todo-progress-count{
+  background:var(--glass-hover,var(--surface2))
+}
+
+html[data-glass="on"] .more-link-icon{
+  background:var(--glass-panel-strong,var(--surface2));
+  box-shadow:var(--glass-inset)
+}
+
+html[data-glass="on"] .calendar-day.selected{
+  background:color-mix(in srgb,var(--blue) 20%,var(--glass-panel-strong));
+  box-shadow:var(--glass-inset),0 4px 14px rgba(22,55,78,.12)
+}
+
+html[data-glass="on"] .todo-delete:hover{
+  background:color-mix(in srgb,var(--red) 20%,var(--glass-panel))
 }
 
 .calendar-month-heading{

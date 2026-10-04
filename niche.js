@@ -426,6 +426,10 @@ function route(){
     return{type:"more"};
   }
 
+  if(/^\/todos\/?$/i.test(r)){
+    return{type:"todos"};
+  }
+
   if(/^\/calendar\/?$/i.test(r)){
     return{type:"calendar"};
   }
@@ -4753,12 +4757,17 @@ function morePage(){
     <section class="more-page">
       <header class="header">
         <h1 class="title">More</h1>
-        <div class="sub">Your calendar and account settings.</div>
+        <div class="sub">Your calendar, to-dos, and account settings.</div>
       </header>
       <nav class="more-links" aria-label="More">
         <button class="more-link" onclick="nav('/calendar')">
           <span class="more-link-icon" aria-hidden="true">▦</span>
           <span><strong>Calendar</strong><small>Plan and manage your events</small></span>
+          <span class="more-link-arrow" aria-hidden="true">›</span>
+        </button>
+        <button class="more-link" onclick="nav('/todos')">
+          <span class="more-link-icon" aria-hidden="true">✓</span>
+          <span><strong>To-dos</strong><small>Track progress and view the leaderboard</small></span>
           <span class="more-link-arrow" aria-hidden="true">›</span>
         </button>
         <button class="more-link" onclick="nav('/settings')">
@@ -4767,11 +4776,23 @@ function morePage(){
           <span class="more-link-arrow" aria-hidden="true">›</span>
         </button>
       </nav>
+    </section>
+  `;
+}
+
+function todosPage(){
+  return`
+    <section class="more-page todos-page">
+      <header class="header">
+        <button class="back" onclick="nav('/more')">← More</button>
+        <h1 class="title">To-dos</h1>
+        <div class="sub">Tasks and progress are public on profiles.</div>
+      </header>
       <section class="todo-pane">
         <header class="todo-pane-heading">
           <div>
-            <h2>To-do list</h2>
-            <p>Tasks and progress are public on profiles.</p>
+            <h2>My to-do list</h2>
+            <p>Track your progress and keep moving forward.</p>
           </div>
           <span class="todo-progress-count">${S.todoItems.filter(item=>item.is_complete).length}/${S.todoItems.length}</span>
         </header>
@@ -4800,7 +4821,7 @@ function morePage(){
       <section class="leaderboard-pane">
         <header class="todo-pane-heading">
           <div>
-            <h2>To-do leaderboard</h2>
+            <h2>Leaderboard</h2>
             <p>Ranked by total completed to-dos.</p>
           </div>
           <span class="leaderboard-icon" aria-hidden="true">🏆</span>
@@ -5612,9 +5633,14 @@ async function render(){
 
   }else if(r.type==="more"){
 
-    await loadTodoBoard();
     document.getElementById("app").innerHTML=
       layout(morePage());
+
+  }else if(r.type==="todos"){
+
+    await loadTodoBoard();
+    document.getElementById("app").innerHTML=
+      layout(todosPage());
 
   }else if(r.type==="calendar"){
 
